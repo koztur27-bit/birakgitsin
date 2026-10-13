@@ -1,0 +1,489 @@
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CalendarGrid } from '../components/CalendarGrid';
+import { Card } from '../components/Card';
+import { ProgressBar } from '../components/ProgressBar';
+import { WeekChart } from '../components/WeekChart';
+import { useApp } from '../context/AppContext';
+import { badgeDefs } from '../lib/badges';
+import {
+  averageIntensity,
+  buildDaysStat,
+  cigarettesAvoided,
+  cravingHours,
+  dailyGoal,
+  daysSinceStart,
+  elapsedDays,
+  formatDuration,
+  formatMoney,
+  formatUntil,
+  getLog,
+  milestones,
+  riskiestHours,
+  topTriggerCounts,
+  totalMoneySaved,
+  totalSmoked,
+} from '../lib/calculations';
+import { colors, fontSizes, radius, spacing } from '../theme';
+
+const MONTHS = [
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
+];
+
+export function StatsScreen() {
+  const insets = useSafeAreaInsets();
+  const { data } = useApp();
+  const plan = data.plan;
+  const now = new Date();
+  const [monthOffset, setMonthOffset] = useState(0);
+  const cursor = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+
+  if (!plan) return null;
+
+  const week = buildDaysStat(plan, data.logs, 7);
+  const avg = week.reduce((s, d) => s + d.smoked, 0) / week.length;
+  const days = daysSinceStart(plan);
+  const saved = totalMoneySaved(plan, data.logs);
+  const avoided = cigarettesAvoided(plan, data.logs);
+  const smoked = totalSmoked(data.logs);
+  const list = milestones();
+  const todayRecord = getLog(data.logs, new Date().toISOString().slice(0, 10));
+
+  const monthPrefix = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+  const monthLogs = data.logs.filter((l) => l.date.startsWith(monthPrefix));
+  const monthSmoked = monthLogs.reduce((s, l) => s + l.smoked, 0);
+  const monthOK = monthLogs.filter((l) => l.smoked <= dailyGoal(plan, l.date)).length;
+  const monthOver = monthLogs.filter((l) => l.smoked > dailyGoal(plan, l.date)).length;
+  const officialDaysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
+  const badges = data.badges ?? [];
+  const badgesWon = badges.length;
+  const elapsed = elapsedDays(plan);
+  const reachedCount = list.filter((m) => elapsed >= m.days).length;
+  const nextHealth = list[reachedCount];
+  const prevHealthDays = reachedCount > 0 ? list[reachedCount - 1].days : 0;
+  const healthProgress = nextHealth
+    ? Math.min(1, Math.max(0, (elapsed - prevHealthDays) / (nextHealth.days - prevHealthDays)))
+    : 1;
+  const riskHours = riskiestHours(data.cravings, 3);
+  const riskMax = riskHours.length ? riskHours[0].count : 1;
+  const triggers = topTriggerCounts(data.cravings, 4);
+  const hourHist = cravingHours(data.cravings);
+  const avgIntensity = averageIntensity(data.cravings);
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>İstatistikler</Text>
+
+        <View style={styles.grid}>
+          <Card style={styles.gridCard}>
+            <Text style={styles.cardLabel}>Toplam tasarruf</Text>
+            <Text style={styles.bigMoney}>{formatMoney(saved, plan.currency)}</Text>
+            <Text style={styles.cardHint}>{plan.currency} karşılığı içilmeyen sigara</Text>
+          </Card>
+          <Card style={styles.gridCard}>
+            <Text style={styles.cardLabel}>İçmediğin sigara</Text>
+            <Text style={styles.bigNumber}>{avoided}</Text>
+            <Text style={styles.cardHint}>
+              {formatDuration(days)} boyunca {smoked} adet içtin
+            </Text>
+          </Card>
+        </View>
+
+        <Card>
+          <Text style={styles.cardLabel}>Son 7 gün</Text>
+          <WeekChart stats={week} />
+          <Text style={styles.avgText}>
+            Son 7 günün ortalaması: {avg.toFixed(1)} sigara / gün
+          </Text>
+        </Card>
+
+        <Card>
+          <View style={styles.monthHead}>
+            <Pressable
+              onPress={() => setMonthOffset(monthOffset - 1)}
+              style={styles.monthNav}
+              hitSlop={8}
+            >
+              <Text style={styles.monthNavText}>‹</Text>
+            </Pressable>
+            <Text style={styles.monthTitle}>
+              {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
+            </Text>
+            <Pressable
+              onPress={() => setMonthOffset(monthOffset + 1)}
+              style={styles.monthNav}
+              hitSlop={8}
+              disabled={monthOffset >= 0}
+            >
+              <Text
+                style={[styles.monthNavText, monthOffset >= 0 && styles.monthNavDisabled]}
+              >
+                ›
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={styles.calendarLegend}>
+            <Text style={{ color: colors.success, fontWeight: '800' }}>yeşil</Text> hedef
+            altı · <Text style={{ color: colors.danger, fontWeight: '800' }}>kırmızı</Text>{' '}
+            hedef üstü · çerçeve bugün
+          </Text>
+          <View style={styles.calendarWrap}>
+            <CalendarGrid
+              plan={plan}
+              logs={data.logs}
+              year={cursor.getFullYear()}
+              month={cursor.getMonth()}
+            />
+          </View>
+          {monthSmoked > 0 ? (
+            <Text style={styles.avgText}>
+              {MONTHS[cursor.getMonth()]} özeti: {monthSmoked} sigara içildi ·{' '}
+              {monthOK} gün hedefin altında · {monthOver} gün üstünde ·
+              {monthLogs.length > 0
+                ? ` ortalama ${(monthSmoked / monthLogs.length).toFixed(1)} /gün`
+                : ''}
+            </Text>
+          ) : (
+            <Text style={styles.avgText}>Bu ay şimdilik kayıt yok.</Text>
+          )}
+          <Text style={styles.calendarHint}>
+            {Math.round((monthOK / Math.max(1, officialDaysInMonth)) * 100)}% hedefi
+            tutturma oranı (ay başına göre)
+          </Text>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>Rozetlerim</Text>
+          <Text style={styles.cardHint}>
+            {badgesWon} / {badgeDefs().length} rozet kazandın. Rozet kazanınca kutlama
+            bildirimi alırsın.
+          </Text>
+          <View style={styles.badgeGrid}>
+            {badgeDefs().map((b) => {
+              const won = badges.includes(b.id);
+              return (
+                <View key={b.id} style={[styles.badge, won && styles.badgeWon]}>
+                  <Text style={styles.badgeEmoji}>{won ? b.emoji : '🔒'}</Text>
+                  <Text
+                    style={[styles.badgeTitle, !won && styles.badgeTitleLocked]}
+                    numberOfLines={2}
+                  >
+                    {b.title}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>Sağlık kilometre taşları</Text>
+          {nextHealth ? (
+            <>
+              <Text style={styles.healthNext}>
+                Sıradaki: {nextHealth.emoji} {nextHealth.label} ·{' '}
+                {formatUntil(nextHealth.days - elapsed)} kaldı
+              </Text>
+              <View style={styles.healthBar}>
+                <ProgressBar progress={healthProgress} color={colors.primary} height={8} />
+              </View>
+            </>
+          ) : (
+            <Text style={styles.healthNext}>
+              🎉 Tüm büyük sağlık kilometre taşlarını geçtin!
+            </Text>
+          )}
+          <View style={styles.milestones}>
+            {list.map((m) => {
+              const reached = elapsed >= m.days;
+              return (
+                <View key={m.id} style={styles.milestoneRow}>
+                  <View style={[styles.milestoneDot, reached && styles.milestoneDotDone]}>
+                    {reached ? (
+                      <Text style={styles.milestoneCheck}>✓</Text>
+                    ) : (
+                      <Text style={styles.milestoneEmoji}>{m.emoji}</Text>
+                    )}
+                  </View>
+                  <View style={styles.milestoneBody}>
+                    <Text
+                      style={[
+                        styles.milestoneLabel,
+                        reached && styles.milestoneLabelDone,
+                      ]}
+                    >
+                      {m.label}
+                    </Text>
+                    <Text style={styles.milestoneDetail}>{m.detail}</Text>
+                  </View>
+                  <Text style={[styles.milestoneFlag, reached && styles.milestoneFlagDone]}>
+                    {reached ? 'kazanıldı' : 'bekliyor'}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>İstek & tetik analizi</Text>
+          {data.cravings.length === 0 ? (
+            <Text style={styles.cardHint}>
+              Kriz sekmesinde isteklerini kaydettikçe burada canının hangi saatlerde ve hangi
+              durumlarda çektiğini göstereceğiz.
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.analysisHead}>En riskli saatler</Text>
+              {riskHours.map((r) => (
+                <View key={r.hour} style={styles.riskRow}>
+                  <Text style={styles.riskHour}>
+                    {String(r.hour).padStart(2, '0')}:00–{String((r.hour + 1) % 24).padStart(2, '0')}
+                    :00
+                  </Text>
+                  <View style={styles.riskBarWrap}>
+                    <View
+                      style={[
+                        styles.riskBar,
+                        { width: `${Math.max(8, (r.count / riskMax) * 100)}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.riskCount}>{r.count}×</Text>
+                </View>
+              ))}
+              <Text style={styles.analysisHead}>En sık tetikleyiciler</Text>
+              {triggers.length > 0 ? (
+                <View style={styles.chipWrap}>
+                  {triggers.map((t) => (
+                    <View key={t.trigger} style={styles.triggerChip}>
+                      <Text style={styles.triggerChipText}>
+                        {t.trigger} · {t.count}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.cardHint}>Henüz tetikleyici işaretlenmedi.</Text>
+              )}
+              {avgIntensity != null ? (
+                <Text style={styles.cardHint}>
+                  Ortalama istek şiddeti: {avgIntensity.toFixed(1)} / 5
+                </Text>
+              ) : null}
+              <Text style={styles.cardHint}>
+                Toplam {hourHist.reduce((a, b) => a + b, 0)} istek kaydın var.
+              </Text>
+            </>
+          )}
+        </Card>
+
+        {todayRecord.smoked > 0 ? (
+          <Text style={styles.tip}>
+            Bugün {todayRecord.smoked} sigara içtin. Hedefin {dailyGoal(plan, new Date().toISOString().slice(0, 10))}.
+            İstersen ana sayfadan gün içi kayıtlarını güncelleyebilirsin.
+          </Text>
+        ) : null}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
+  scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  title: {
+    fontSize: fontSizes.xl,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  grid: { flexDirection: 'row', gap: spacing.md },
+  gridCard: { flex: 1 },
+  cardLabel: {
+    fontSize: fontSizes.sm,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  bigMoney: {
+    fontSize: fontSizes.xl,
+    fontWeight: '800',
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  bigNumber: {
+    fontSize: fontSizes.xxl,
+    fontWeight: '800',
+    color: colors.primaryDark,
+    marginTop: spacing.xs,
+  },
+  cardHint: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
+  avgText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginTop: spacing.md,
+  },
+  monthHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  monthNav: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthNavText: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+  monthNavDisabled: { opacity: 0.3 },
+  monthTitle: {
+    fontSize: fontSizes.md,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  calendarLegend: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  calendarWrap: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
+  calendarHint: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+  badgeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  badge: {
+    width: 74,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    gap: 2,
+    opacity: 0.55,
+  },
+  badgeWon: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+    opacity: 1,
+  },
+  badgeEmoji: { fontSize: fontSizes.lg },
+  badgeTitle: {
+    fontSize: fontSizes.xs,
+    fontWeight: '700',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  badgeTitleLocked: { color: colors.textMuted },
+  healthNext: {
+    fontSize: fontSizes.sm,
+    fontWeight: '700',
+    color: colors.primaryDark,
+    marginTop: spacing.sm,
+  },
+  healthBar: { marginTop: spacing.sm },
+  milestones: { marginTop: spacing.md, gap: spacing.md },
+  milestoneRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  milestoneDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  milestoneDotDone: { backgroundColor: colors.success },
+  milestoneCheck: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
+  milestoneEmoji: { fontSize: fontSizes.sm },
+  analysisHead: {
+    fontSize: fontSizes.sm,
+    fontWeight: '800',
+    color: colors.text,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  riskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  riskHour: {
+    fontSize: fontSizes.sm,
+    fontWeight: '700',
+    color: colors.text,
+    width: 110,
+  },
+  riskBarWrap: {
+    flex: 1,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.border,
+    overflow: 'hidden',
+  },
+  riskBar: { height: '100%', backgroundColor: colors.accent, borderRadius: 6 },
+  riskCount: {
+    fontSize: fontSizes.sm,
+    fontWeight: '800',
+    color: colors.primaryDark,
+    width: 34,
+    textAlign: 'right',
+  },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
+  triggerChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.round,
+    backgroundColor: colors.primarySoft,
+  },
+  triggerChipText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark },
+  milestoneBody: { flex: 1 },
+  milestoneLabel: {
+    fontSize: fontSizes.md,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  milestoneLabelDone: { color: colors.textMuted },
+  milestoneDetail: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  milestoneFlag: {
+    fontSize: fontSizes.xs,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
+  milestoneFlagDone: { color: colors.success },
+  tip: {
+    fontSize: fontSizes.sm,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: spacing.md,
+  },
+});

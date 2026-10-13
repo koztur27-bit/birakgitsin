@@ -1,0 +1,181 @@
+import { StatusBar } from 'expo-status-bar';
+import React, { Component, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { TabBar } from './src/components/TabBar';
+import { AppProvider, useApp } from './src/context/AppContext';
+import { CravingScreen } from './src/screens/CravingScreen';
+import { HomeScreen } from './src/screens/HomeScreen';
+import { Onboarding } from './src/screens/Onboarding';
+import { SettingsScreen } from './src/screens/SettingsScreen';
+import { StatsScreen } from './src/screens/StatsScreen';
+import { TimerScreen } from './src/screens/TimerScreen';
+import { colors, fontSizes, radius, spacing } from './src/theme';
+import { TabKey } from './src/types';
+
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { error: { message: string; stack?: string } | null }
+> {
+  state = { error: null as { message: string; stack?: string } | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error: { message: error.message, stack: error.stack } };
+  }
+
+  render() {
+    if (this.state.error) {
+      return <ErrorView error={this.state.error} onReload={() => this.setState({ error: null })} />;
+    }
+    return this.props.children;
+  }
+}
+
+function ErrorView({
+  error,
+  onReload,
+}: {
+  error: { message: string; stack?: string };
+  onReload: () => void;
+}) {
+  return (
+    <View style={styles.splash}>
+      <Text style={styles.errorTitle}>Bir sorun oluştu</Text>
+      <ScrollView style={styles.errorScroll}>
+        <Text style={styles.errorMessage}>{error.message}</Text>
+        {error.stack ? <Text style={styles.errorStack}>{error.stack}</Text> : null}
+      </ScrollView>
+      <Pressable style={styles.errorBtn} onPress={onReload}>
+        <Text style={styles.errorBtnText}>Yeniden Dene</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function Root() {
+  const { data, ready, setPlan } = useApp();
+  const [tab, setTab] = useState<TabKey>('home');
+  const [editing, setEditing] = useState(false);
+
+  if (!ready) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!data.plan || editing) {
+    return (
+      <Onboarding
+        initial={editing && data.plan ? data.plan : undefined}
+        onCancel={editing ? () => setEditing(false) : undefined}
+        onComplete={(plan) => {
+          setPlan(plan);
+          setEditing(false);
+        }}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.app}>
+      <View style={styles.screen}>
+        <View style={[styles.page, tab !== 'home' && styles.hidden]}>
+          <HomeScreen onOpenCraving={() => setTab('craving')} />
+        </View>
+        <View style={[styles.page, tab !== 'craving' && styles.hidden]}>
+          <CravingScreen />
+        </View>
+        <View style={[styles.page, tab !== 'timer' && styles.hidden]}>
+          <TimerScreen />
+        </View>
+        <View style={[styles.page, tab !== 'stats' && styles.hidden]}>
+          <StatsScreen />
+        </View>
+        <View style={[styles.page, tab !== 'settings' && styles.hidden]}>
+          <SettingsScreen onEditPlan={() => setEditing(true)} />
+        </View>
+      </View>
+      <TabBar active={tab} onChange={setTab} />
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <AppProvider>
+          <StatusBar style="dark" />
+          <Root />
+        </AppProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
+  );
+}
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  app: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  screen: {
+    flex: 1,
+  },
+  page: {
+    flex: 1,
+  },
+  hidden: {
+    display: 'none',
+  },
+  errorTitle: {
+    color: '#C62828',
+    fontSize: fontSizes.xl,
+    fontWeight: '700',
+    marginBottom: spacing.md,
+  },
+  errorScroll: {
+    alignSelf: 'stretch',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    maxHeight: 320,
+    marginBottom: spacing.lg,
+  },
+  errorMessage: {
+    color: '#C62828',
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+  },
+  errorStack: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    marginTop: spacing.sm,
+    fontFamily: 'monospace',
+  },
+  errorBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+  },
+  errorBtnText: {
+    color: colors.white,
+    fontSize: fontSizes.md,
+    fontWeight: '700',
+  },
+});

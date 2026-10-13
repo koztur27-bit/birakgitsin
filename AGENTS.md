@@ -1,0 +1,49 @@
+This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+
+## Expo has changed — do not trust your training data
+
+Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+
+1. Read the major version of the `expo` package in `package.json`.
+2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
+3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+
+## Commands
+
+Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+
+```bash
+npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
+npx expo start              # start the dev server
+npx expo lint               # lint
+npx tsc --noEmit            # typecheck
+npx expo-doctor             # diagnose dependency and config issues
+npx expo install --fix      # fix incompatible package versions
+```
+
+Run lint and typecheck before declaring any task done.
+
+## Navigation & Routing
+
+- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
+- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
+- Docs: https://docs.expo.dev/router/introduction.md
+
+## Building with EAS
+
+Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
+Docs: https://docs.expo.dev/eas/index.md
+
+## Rules
+
+- Ana sayfada (üst çubuk) her zaman bir **"Güncelle"** butonu bulunmalıdır; Ayarlar'da da **"Son sürümü yükle"** kartı korunmalıdır. Web'de bu butonlar `src/lib/reload.ts` içindeki `reloadApp()` ile sayfayı yeniler. **Android'de** ise `src/lib/updater.ts` içindeki `downloadAndInstallUpdate()` ile yeni APK'yı indirip Android kurulum ekranını açar (kendi kendini güncelleme). Ana sayfadaki **"↻ Sayfayı yenile"** çubuğu her zaman `reloadApp()` çağırır. Bu butonları kaldırma veya bozma.
+- Kendi kendini güncelleme için `expo-file-system` + `expo-intent-launcher` kullanılır ve `./plugins/withInstallPermission` config plugin'i manifeste `REQUEST_INSTALL_PACKAGES` iznini ve `usesCleartextTraffic="true"` ekler. APK adresi `src/lib/updater.ts` içindeki `UPDATE_APK_URL` sabitidir (varsayılan `http://127.0.0.1:8124/birakgitsin.apk`); yeni APK derlendikten sonra web sunucusu klasörüne `birakgitsin.apk` olarak kopyalanmalıdır.
+- Uygulama simgeleri (sigara temalı) `scripts/make_icons.py` ile üretilir (harici kütüphane gerekmez, saf Python). Çalıştır: `python3 scripts/make_icons.py <web_klasoru>`. Bu betik `assets/icon.png`, `assets/favicon.png`, `assets/android-icon-*.png` ve web ikonlarını üretir. Simgeyi değiştirmek için betiği düzenle; `assets/icon.png`'yi elle başka bir görselle ezme. Varsayılan stil: koyu daire içinde **alevli sigara** (`draw_cigarette(..., flame=True)`).
+- **Ekran Haritası**: Ana sayfadaki bölümlerin numaralı sözlüğü `src/lib/screenMap.ts` (`SCREEN_MAP`) içinde tutulur ve `src/components/ScreenMapModal.tsx` ile gösterilir. Ana sayfa üst çubuğundaki **"Harita"** butonu modalı açar; modalda **"Numaraları ana sayfada göster"** anahtarı bölümlerin yanına `src/components/MapBadge.tsx` numara balonlarını (1–8, 3a–3f) ekler. Bu bölüm/numara eşlemesini ve kitapçığı koru; yeni bölüm eklersen `SCREEN_MAP` ile numaraları da güncelle.
+- Web PWA çıktısı `/tmp/opencode/web-export.sh` ile üretilir (expo export + manifest + service worker + ikonlar); statik sunucu `127.0.0.1:8124` portunda servis edilir.
+- **HIZLI GÜNCELLEME (OTA)**: Proje `expo-updates` + EAS Update kullanır (`app.json` → `updates.url`, `runtimeVersion: appVersion`; `eas.json` → her profilde `channel`). JS/UI değişikliklerini **APK yeniden derlemeden** telefona ulaştırmak için: `bash scripts/publish-update.sh "not"` (içinde `eas update --branch preview --environment preview`). Yayından sonra uygulama açılışta güncellemeyi indirir; uygulama içi **"Güncelle"** butonu da `src/lib/updater.ts` içindeki `checkOta()` ile bunu tetikler. Yalnızca **yeni yerel (native) kütüphane** eklenince `eas build` gerekir.
+- **ANLIK ÖNİZLEME (en hızlı döngü, geliştirme aşaması)**: Telefonda **dev-client** APK kuruludur (`eas build --profile development --platform android`, paket adı aynı `com.birakgitsin.app`, veriler korunur). Geliştirirken `bash scripts/dev-start.sh` ile Metro (port 8081) başlatılır; telefon aynı makinede olduğu için dev-client `http://127.0.0.1:8081`'e bağlanır. Kod kaydedilir kaydedilmez **Fast Refresh** ile <1 sn'de uygulamaya yansır — OTA/`eas update`/APK derleme **gerekmez**. Dev-client'ta native modüller de vardır (bildirim, alarm vb.). JS değişikliklerini bitirince normal kullanıcı için `scripts/publish-update.sh` ile OTA yayınlanır; kullanıcı normal APK'ya dönmek isterse `preview`/`production` profili ile `eas build` yapılır. Dev-client'ın her açılışta sunucuya ihtiyacı vardır (Metro kapalıysa bağlanamaz).
+- **hermesc emülasyonu (kritik)**: Bu makine `aarch64`; `hermesc` ise `x86_64`. OTA/EAS Update Hermes bytecode üretirken hermesc'yi çağırır. Çözüm: `/opt/x86emu/qemu-x86_64-static` + `/opt/x86emu/root` (x86_64 glibc) ile qemu-user emülasyonu ve `node_modules/hermes-compiler/hermesc/linux64-bin/hermesc` yolunun bir **sarmalayıcı script** olması (`hermesc.real` = gerçek x86_64 binary, sarmalayıcı `/usr/local/bin/hermesc-emu`'yu çağırır). `node_modules` silinip yeniden kurulursa sarmalayıcı kaybolur; şu adımlarla geri kur: gerçek binary'i `hermesc.real` yapıp `hermesc` adında `exec /usr/local/bin/hermesc-emu "$@"` içeren script yaz. Ayrıntı için `scripts/publish-update.sh` başlığına bak.
+- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
+- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
