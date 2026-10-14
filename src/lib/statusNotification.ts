@@ -125,7 +125,9 @@ export async function debugLockStatus(): Promise<string> {
   }
   if (granted) {
     try {
-      await publishLockStatus('İçilen: 0 · Sayaç: 30:00', true);
+      // Test bildirimi de gerçek gibi 30:00'dan geri saysın.
+      const testEnd = Date.now() + 30 * 60 * 1000;
+      await publishLockStatus('İçilen: 0', true, testEnd);
       lines.push('gonderim=OK');
     } catch (e) {
       lines.push('gonderim HATA: ' + String(e));
