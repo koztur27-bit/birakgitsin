@@ -3,7 +3,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 
 const ID = 'birakgitsin-status';
-const CHANNEL_ID = 'birakgitsin-status-v6';
+const CHANNEL_ID = 'birakgitsin-status-v7';
 const LEGACY_CHANNEL_ID = 'birakgitsin-status';
 const MIN_INTERVAL_MS = 60000;
 
@@ -50,16 +50,16 @@ export async function ensureStatusChannel(): Promise<void> {
     await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v3').catch(() => {});
     await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v4').catch(() => {});
     await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v5').catch(() => {});
-    // DİKKAT: "sound: null" kanalı sessiz yapıyor; MIUI sessiz bildirimleri
-    // kilit ekranında gizliyor. Bu yüzden duyulmayan bir ses (silent.wav)
-    // tanımlıyoruz ki bildirim "normal" sayılsın ama ses çıkmasın.
-    // Önem = DEFAULT: böylece saniyede bir güncellendiğinde üstte açılır
-    // pencere (heads-up) çıkmaz, ama bildirim panelde/kilit ekranında kalır.
+    await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v6').catch(() => {});
+    // DİKKAT: "sound: null" (sessiz) kanalı MIUI kilit ekranında GİZLİYOR.
+    // Bu yüzden kanalı normal (varsayılan sistem sesli) bir kanal yapıyoruz;
+    // böylece bildirim kilit ekranında görünür. Saniyede bir güncellendiğinde
+    // tekrar ses çıkmaz (bildirimde onlyAlertOnce=true kullanılıyor).
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
       name: 'Kilit ekranı durumu',
       description: 'İçilen sigara sayısı ve sayacı kilit ekranında gösterir.',
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: 'silent.wav',
+      sound: 'default',
       enableVibrate: false,
       enableLights: false,
       showBadge: false,
@@ -95,34 +95,33 @@ export async function sendTestLockStatus(
   return granted;
 }
 
-async function presentedSnapshot(): Promise<string> {
-  try {
-    const list = await Notifications.getPresentedNotificationsAsync();
-    const ours = list.filter((n) => n.request.identifier === ID).length;
-    const total = list.length;
-    return `tepsi_toplam=${total} bizimki=${ours}`;
-  } catch (e) {
-    return 'tepsi HATA: ' + String(e);
-  }
-}
-
 // Teşhis: izin, kanal, gönderim ve tepsi durumunu döndürür.
 export async function debugLockStatus(): Promise<string> {
   if (Platform.OS === 'web') return 'Web: bildirim yok.';
   const lines: string[] = [];
+  lines.push('kanal=' + CHANNEL_ID);
+  lines.push('yerel_modul=' + (getBgStatus() ? 'var' : 'yok'));
   let granted = false;
-  try {
-    await ensureStatusChannel();
-    lines.push('kanal=' + CHANNEL_ID);
-  } catch {
-    lines.push('kanal=HATA');
-  }
   try {
     granted = await ensureNotificationPermission();
     const p = await Notifications.getPermissionsAsync();
     lines.push(`izin granted=${p.granted} status=${String(p.status)}`);
   } catch (e) {
     lines.push('izin HATA: ' + String(e));
+  }
+  try {
+    const ch = await Notifications.getNotificationChannelAsync(CHANNEL_ID);
+    if (ch) {
+      lines.push(
+        `kanal_ayar importance=${String(ch.importance)} sound=${String(
+          ch.sound,
+        )} vis=${String((ch as { lockscreenVisibility?: number }).lockscreenVisibility)}`,
+      );
+    } else {
+      lines.push('kanal_ayar=yok');
+    }
+  } catch (e) {
+    lines.push('kanal_ayar HATA: ' + String(e));
   }
   if (granted) {
     try {
@@ -132,7 +131,15 @@ export async function debugLockStatus(): Promise<string> {
       lines.push('gonderim HATA: ' + String(e));
     }
     await new Promise((r) => setTimeout(r, 1600));
-    lines.push(await presentedSnapshot());
+    try {
+      const list = await Notifications.getPresentedNotificationsAsync();
+      const ids = list
+        .map((n) => `${n.request.identifier}|${String(n.request.content.title)}`)
+        .join('; ');
+      lines.push(`tepsi=${list.length} [${ids}]`);
+    } catch (e) {
+      lines.push('tepsi HATA: ' + String(e));
+    }
   } else {
     lines.push('gonderim=YOK (izin yok)');
   }

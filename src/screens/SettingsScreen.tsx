@@ -18,6 +18,7 @@ import { useApp } from '../context/AppContext';
 import { dailyGoal, formatMoney } from '../lib/calculations';
 import { useInstallPrompt } from '../lib/install';
 import { reloadApp } from '../lib/reload';
+import { playAlarmFor } from '../lib/alarm';
 import { debugLockStatus } from '../lib/statusNotification';
 import { downloadAndInstallUpdate } from '../lib/updater';
 import { colors, fontSizes, radius, spacing } from '../theme';
@@ -63,6 +64,8 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   };
 
   const testNotification = async () => {
+    // Uyarı sesini de dene (sigara/bitiş uyarısıyla aynı ses).
+    playAlarmFor(1500);
     const info = await debugLockStatus();
     try {
       await Clipboard.setStringAsync('BG-TEST ' + info);
@@ -233,10 +236,11 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Card>
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
-              <Text style={styles.cardLabel}>Kilit ekranında sessiz durum</Text>
+              <Text style={styles.cardLabel}>Kilit ekranı bildirimi</Text>
               <Text style={styles.planSub}>
-                İçilen sigara sayısı ve sayacı yalnızca telefon kilitli/arka planda
-                iken sessiz bir bildirim olarak gösterir. Ses, titreşim ve açılır pencere yok.
+                İçilen sigara sayısını ve geri sayan sayacı kilit ekranında gösterir.
+                Sigara kaydettiğinde kısa bir ses ve titreşim verir; dayanma süresi
+                dolunca alarm çalar.
               </Text>
             </View>
             <Switch

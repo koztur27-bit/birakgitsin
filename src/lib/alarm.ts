@@ -1,7 +1,16 @@
-import { createAudioPlayer } from 'expo-audio';
+import { createAudioPlayer, preload, setAudioModeAsync } from 'expo-audio';
 import { Platform, Vibration } from 'react-native';
 
 const g = globalThis as any;
+
+const ALARM_ASSET = require('../../assets/alarm.wav');
+
+// Sesi önceden yükle ki ilk çalışta gecikmesiz çalsın (uygulama açılışında).
+if (Platform.OS !== 'web') {
+  preload(ALARM_ASSET).catch(() => {});
+  // Medya sesi kapalı/sessiz olsa bile çalmayı dene.
+  setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+}
 
 // Android deseni: [gecikme, titret, bekle, titret, bekle, ...] → 5 kez titretir.
 export const FIVE_VIBRATION_PATTERN = [0, 300, 200, 300, 200, 300, 200, 300, 200, 300];
@@ -32,7 +41,7 @@ export function playAlarm(): void {
   }
   try {
     if (!nativePlayer) {
-      nativePlayer = createAudioPlayer(require('../../assets/alarm.wav'));
+      nativePlayer = createAudioPlayer(ALARM_ASSET);
     }
     nativePlayer.loop = true;
     nativePlayer.play();

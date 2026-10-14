@@ -17,14 +17,16 @@ import { clearData, loadData, persistData } from '../storage';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
-    handleNotification: async () => {
+    handleNotification: async (notification) => {
+      const cat = notification?.request?.content?.categoryIdentifier;
+      // Alarm zamanı geldiğinde (süre bitti) açılır pencere de göster.
+      const isAlarm = cat === 'birakgitsin-alarm' || cat === 'birakgitsin-party';
       return {
-        // Sayaç her saniye güncellendiği için açılır pencere (banner)
-        // istemiyoruz; bildirim panelde/kilit ekranında kalsın.
-        shouldShowBanner: false,
+        // Sayaç her saniye güncellendiği için durum bildiriminde açılır pencere
+        // (banner) istemiyoruz; bildirim panelde/kilit ekranında kalsın.
+        shouldShowBanner: isAlarm,
         shouldShowList: true,
-        // Durum bildirimi de "sessiz" sayılmasın (MIUI kilit ekranında gösterir).
-        // Gerçek sesi kanal belirler; kanalın sesi silent.wav (sessiz).
+        // Ses kanaldan gelir (durum kanalı = varsayılan sistem sesi).
         shouldPlaySound: true,
         shouldSetBadge: false,
       };
@@ -432,6 +434,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const next = withBadges(mutateLog(opts?.dateKey ?? todayKey(), 1, opts?.windowIndex === undefined ? null : opts.windowIndex), true);
     persist(next);
     restartTimerForSmoke();
+    // Sigara içildiğinde kısa ses + titreşim uyarısı ver.
+    playAlarmFor(1200);
+    if (Platform.OS === 'web') {
+      try {
+        (globalThis as any).navigator?.vibrate?.(250);
+      } catch {
+        // ignore
+      }
+    } else {
+      try {
+        Vibration.vibrate(250);
+      } catch {
+        // ignore
+      }
+    }
   };
 
   const undoCigarette = (opts?: LogOptions) =>
