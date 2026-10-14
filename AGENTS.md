@@ -34,6 +34,18 @@ Run lint and typecheck before declaring any task done.
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
+## CI ile APK derleme (EAS bulut kotası tükendiğinde)
+
+EAS bulut kotası tükenince (aylık 15 Android derleme; sıfırlanma her ayın 1'i) APK'yı GitHub Actions üzerinde `eas build --local` ile derleriz — bulut kotasını **harcamaz** ve EAS'in yönettiği mevcut keystore'u kullanır, yani imza aynı kalır (kurulumda veriler korunur).
+
+- Depo: `koztur-bit/birakgitsin` (private); `gh` CLI (arm64, `/usr/local/bin/gh`) ile yönetilir; hesap `koztur-bit`.
+- İş akışı: `.github/workflows/android.yml` (`workflow_dispatch` + `v*` etiketleri); `timeout-minutes: 120`.
+- Gizli anahtar: Actions secret `EXPO_TOKEN`.
+- Tetikle: `gh workflow run android.yml --repo koztur-bit/birakgitsin -f profile=preview`
+- **Arka planda izle, komutu bloklamayın**: ilk derleme ~15–30 dk sürer; `gh run watch <id> --repo koztur-bit/birakgitsin --exit-status` uzun bir işi **arka plan görevi** olarak çalıştırın ve bitince indirilecek artifact'ı (`birakgitsin-apk`) raporlayın. Kullanıcıyı `sleep` ile bekletmeyin.
+- `plugins/withCiFastBuild.js` yayın derlemesinde tüm alt projelerde lint görevlerini kapatır. **Kaldırma**: Android lint düşük kaynaklı CI sunucularında çok yavaştır ve `lintVitalAnalyzeRelease` fatal hatasında derlemeyi saatlerce kilitleyebilir. Ayrıca Gradle JVM bellek/paralel/önbellek ayarlarını da ekler.
+- `android/` ve `ios/` asla commit edilmez (gitignore); EAS derlemesi bunları kendi geçici kopyasında `expo prebuild` ile üretir.
+
 ## Rules
 
 - Ana sayfada (üst çubuk) her zaman bir **"Güncelle"** butonu bulunmalıdır; Ayarlar'da da **"Son sürümü yükle"** kartı korunmalıdır. Web'de bu butonlar `src/lib/reload.ts` içindeki `reloadApp()` ile sayfayı yeniler. **Android'de** ise `src/lib/updater.ts` içindeki `downloadAndInstallUpdate()` ile yeni APK'yı indirip Android kurulum ekranını açar (kendi kendini güncelleme). Ana sayfadaki **"↻ Sayfayı yenile"** çubuğu her zaman `reloadApp()` çağırır. Bu butonları kaldırma veya bozma.
