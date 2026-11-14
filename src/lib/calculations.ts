@@ -51,6 +51,12 @@ export function windowAllowances(goal: number, windows: SmokeWindow[]): number[]
   if (!windows.length) return [];
   const weights = windows.map(windowMinutes);
   const total = weights.reduce((a, b) => a + b, 0);
+  // Tüm pencereler 0 dakikaysa bölme hatası yerine hedefi ilk pencereye ver.
+  if (total <= 0) {
+    const result = windows.map(() => 0);
+    result[0] = Math.max(0, goal);
+    return result;
+  }
   const base = weights.map((w) => (goal * w) / total);
   const floors = base.map((v) => Math.floor(v));
   let remaining = goal - floors.reduce((a, b) => a + b, 0);
@@ -171,7 +177,11 @@ export function buildDaysStat(plan: Plan, logs: DayRecord[], n: number, endKey =
 export function goalStreak(plan: Plan, logs: DayRecord[]): number {
   let streak = 0;
   let key = todayKey();
+  const start = parseKey(plan.startDate);
   for (let i = 0; i < 3650; i++) {
+    const day = parseKey(key);
+    // Plan başlangıcından önceki günler seriye sayılmaz.
+    if (day.getTime() < start.getTime()) break;
     const record = getLog(logs, key);
     const goal = dailyGoal(plan, key);
     if (record.smoked <= goal) {

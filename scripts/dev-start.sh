@@ -10,11 +10,18 @@
 # Yeni bir yerel (native) kutuphane eklenirse yeniden `eas build --profile development` gerekir.
 set -euo pipefail
 
-PROJECT="/root/workspace/birakgitsin"
+PROJECT="${PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PORT="${METRO_PORT:-8081}"
-LOG="/tmp/opencode/metro.log"
+LOG="${METRO_LOG:-/tmp/opencode/metro.log}"
 
 cd "$PROJECT"
+
+if [ ! -d node_modules ]; then
+  echo "HATA: node_modules yok. Once calistir: npm ci" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$LOG")"
 
 if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$PORT/status"; then
   echo "Metro zaten calisiyor: http://127.0.0.1:$PORT"

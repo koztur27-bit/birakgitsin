@@ -42,7 +42,6 @@ export function TimerScreen() {
   };
 
   const { minutes, remaining, status } = timer;
-  const running = status === 'running';
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>

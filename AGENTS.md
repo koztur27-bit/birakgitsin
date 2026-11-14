@@ -14,6 +14,7 @@ Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
+npm ci                      # bağımlılıkları kur (package-lock.json var)
 npx expo start              # start the dev server
 npx expo lint               # lint
 npx tsc --noEmit            # typecheck
@@ -21,13 +22,14 @@ npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
+Script'ler (`scripts/dev-start.sh`, `scripts/publish-update.sh`) proje kökünü kendi konumlarından bulur; `PROJECT_DIR` ile ezilebilir. Sabit yol varsaymazlar.
+
 Run lint and typecheck before declaring any task done.
 
 ## Navigation & Routing
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+- Bu proje **Expo Router kullanmıyor**. Navigasyon `App.tsx` içinde `TabKey` state'i + `src/components/TabBar.tsx` ile yapılır; ekranlar `src/screens/` altında düz bileşenlerdir. Yeni ekran eklerken bu yapıyı izle, `src/app/` oluşturma.
+- İlk kurulum/plan düzenleme akışı `App.tsx` içindeki `editing` state'i ile `Onboarding` ekranını gösterir.
 
 ## Building with EAS
 
@@ -38,7 +40,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 EAS bulut kotası tükenince (aylık 15 Android derleme; sıfırlanma her ayın 1'i) APK'yı GitHub Actions üzerinde `eas build --local` ile derleriz — bulut kotasını **harcamaz** ve EAS'in yönettiği mevcut keystore'u kullanır, yani imza aynı kalır (kurulumda veriler korunur).
 
-- Depo: `koztur-bit/birakgitsin` (private); `gh` CLI (arm64, `/usr/local/bin/gh`) ile yönetilir; hesap `koztur-bit`.
+- Depo: `koztur-bit/birakgitsin` (private). **Dikkat:** bu ortamda `gh` hesabı `koztur27-bit` olarak girişli ve depo bu hesapla erişilemiyor ("Repository not found"). CI tetiklemeden önce erişimi olan hesapla `gh auth login` yapılmalı ya da depo yeniden oluşturulmalı. `gh` CLI: `/usr/local/bin/gh`.
 - İş akışı: `.github/workflows/android.yml` (`workflow_dispatch` + `v*` etiketleri); `timeout-minutes: 120`.
 - Gizli anahtar: Actions secret `EXPO_TOKEN`.
 - Tetikle: `gh workflow run android.yml --repo koztur-bit/birakgitsin -f profile=preview`
@@ -55,7 +57,7 @@ EAS bulut kotası tükenince (aylık 15 Android derleme; sıfırlanma her ayın 
 - Web PWA çıktısı `/tmp/opencode/web-export.sh` ile üretilir (expo export + manifest + service worker + ikonlar); statik sunucu `127.0.0.1:8124` portunda servis edilir.
 - **HIZLI GÜNCELLEME (OTA)**: Proje `expo-updates` + EAS Update kullanır (`app.json` → `updates.url`, `runtimeVersion: appVersion`; `eas.json` → her profilde `channel`). JS/UI değişikliklerini **APK yeniden derlemeden** telefona ulaştırmak için: `bash scripts/publish-update.sh "not"` (içinde `eas update --branch preview --environment preview`). Yayından sonra uygulama açılışta güncellemeyi indirir; uygulama içi **"Güncelle"** butonu da `src/lib/updater.ts` içindeki `checkOta()` ile bunu tetikler. Yalnızca **yeni yerel (native) kütüphane** eklenince `eas build` gerekir.
 - **ANLIK ÖNİZLEME (en hızlı döngü, geliştirme aşaması)**: Telefonda **dev-client** APK kuruludur (`eas build --profile development --platform android`, paket adı aynı `com.birakgitsin.app`, veriler korunur). Geliştirirken `bash scripts/dev-start.sh` ile Metro (port 8081) başlatılır; telefon aynı makinede olduğu için dev-client `http://127.0.0.1:8081`'e bağlanır. Kod kaydedilir kaydedilmez **Fast Refresh** ile <1 sn'de uygulamaya yansır — OTA/`eas update`/APK derleme **gerekmez**. Dev-client'ta native modüller de vardır (bildirim, alarm vb.). JS değişikliklerini bitirince normal kullanıcı için `scripts/publish-update.sh` ile OTA yayınlanır; kullanıcı normal APK'ya dönmek isterse `preview`/`production` profili ile `eas build` yapılır. Dev-client'ın her açılışta sunucuya ihtiyacı vardır (Metro kapalıysa bağlanamaz).
-- **hermesc emülasyonu (kritik)**: Bu makine `aarch64`; `hermesc` ise `x86_64`. OTA/EAS Update Hermes bytecode üretirken hermesc'yi çağırır. Çözüm: `/opt/x86emu/qemu-x86_64-static` + `/opt/x86emu/root` (x86_64 glibc) ile qemu-user emülasyonu ve `node_modules/hermes-compiler/hermesc/linux64-bin/hermesc` yolunun bir **sarmalayıcı script** olması (`hermesc.real` = gerçek x86_64 binary, sarmalayıcı `/usr/local/bin/hermesc-emu`'yu çağırır). `node_modules` silinip yeniden kurulursa sarmalayıcı kaybolur; şu adımlarla geri kur: gerçek binary'i `hermesc.real` yapıp `hermesc` adında `exec /usr/local/bin/hermesc-emu "$@"` içeren script yaz. Ayrıntı için `scripts/publish-update.sh` başlığına bak.
+- **hermesc emülasyonu (kritik)**: Bu makine `aarch64`; `hermesc` ise `x86_64`. OTA/EAS Update Hermes bytecode üretirken hermesc'yi çağırır. Çözüm: `qemu-user-static` + `node_modules/hermes-compiler/hermesc/linux64-bin/hermesc` yolunda **sarmalayıcı script** (`hermesc.real` = gerçek x86_64 binary). Kurulum/onarım için tek komut: `bash scripts/setup-hermesc.sh` (qemu yoksa apt ile kurar). `node_modules` silinip yeniden kurulursa bu betiği tekrar çalıştır.
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md

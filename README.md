@@ -11,20 +11,27 @@ belirler ve hedefi aşmadığın her sigara için **para + sağlık kazancı** h
 - Rozet sistemi, bildirim butonları (sigarayı say / dayandım / ertele), takvim görünümü,
   panoya yedekleme-geri yükleme.
 
-## Telefonunda test et (Expo Go)
+## Telefonunda test et (dev-client)
 
-1. Telefonuna **Expo Go** uygulamasını kur (Play Store / App Store).
-2. Projeyi çalıştır:
+Bu projede özel native modül (`modules/bg-status`), bildirimler ve ses kanalları var; bu yüzden **Expo Go yeterli değil**, `expo-dev-client` ile derlenmiş bir APK gerekir.
+
+1. Bağımlılıkları kur ve tip kontrolünü çalıştır:
 
    ```bash
-   cd birakgitsin
-   npm start
+   npm ci
+   npx tsc --noEmit
    ```
 
-3. Terminalde çıkan **QR kodu** Expo Go ile okut.
+2. Metro'yu başlat (proje kökünü kendisi bulur):
 
-> Bunu çalıştırdığım cihazda dev sunucusu zaten açık: http://localhost:8081
-> (Expo Go'da "Enter URL" → `exp://localhost:8081` da olur.)
+   ```bash
+   bash scripts/dev-start.sh
+   ```
+
+3. Telefonda kurulu dev-client APK'yı aç; `http://127.0.0.1:8081` adresine bağlanır. Kod kaydedilince Fast Refresh ile anında yansır.
+
+> Dev-client APK yoksa: `npx eas-cli build -p android --profile development` veya GitHub Actions iş akışı.
+> Not: Eski notlarda geçen "Expo Go ile QR okut" akışı bu native modüllerle çalışmaz.
 
 ## Proje yapısı
 
@@ -40,7 +47,7 @@ src/
   lib/statusNotification.ts Kilit ekranı durumu, bildirim kategorileri, kutlama
   components/               Card, Stepper, ProgressBar, TabBar, WeekChart, CalendarGrid
   screens/
-    Onboarding.tsx          İlk kurulum + plan düzenleme (6 adım)
+    Onboarding.tsx          İlk kurulum + plan düzenleme (7 adım)
     HomeScreen.tsx          Günlük hedef, içilen sigara, kazançlar
     CravingScreen.tsx       Nefes egzersizi + "dayandım" kaydı
     StatsScreen.tsx         Toplam tasarruf, 7 gün grafiği, takvim, rozetler, mil taşları
@@ -56,9 +63,15 @@ src/
 
 ## Not (bu cihaz için)
 
-Bu geliştirme makinesi ARM (Android) bir ortam. O yüzden yerelde `expo export`
-(sıkı Hermes bytecode) çalışmaz; **Expo Go ile test ve EAS cloud build** sorunsuz
-çalışır. Gerçek kullanıcı dağıtımı için:
+Bu geliştirme makinesi ARM (aarch64) bir ortam. `hermesc` yalnızca x86_64 için dağıtıldığından
+Hermes bytecode üretimi (OTA/`expo export`) için qemu-user emülasyonu kullanılır:
+
+```bash
+bash scripts/setup-hermesc.sh   # qemu + sarmalayıcıyı kurar/onarır
+npx expo export --platform android   # HBC üretimi doğrulanabilir
+```
+
+`npm ci` sonrası sarmalayıcı silinirse bu betiği tekrar çalıştır. Gerçek kullanıcı dağıtımı için:
 
 ```bash
 npx eas-cli build --platform android

@@ -12,8 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { Stepper } from '../components/Stepper';
 import { WindowEditor } from '../components/WindowEditor';
-import { currencySymbols } from '../theme';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { colors, currencySymbols, fontSizes, radius, spacing } from '../theme';
 import { Plan, SmokeWindow } from '../types';
 
 const STEPS = 7;

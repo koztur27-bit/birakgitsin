@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import * as Notifications from 'expo-notifications';
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Linking, Platform, Vibration } from 'react-native';
 import { badgeById, evaluateBadges } from '../lib/badges';
 import { formatCountdown, getLog, todayKey } from '../lib/calculations';
@@ -65,6 +65,9 @@ const defaultTimer: TimerState = { minutes: 30, remaining: 1800, status: 'idle' 
 // Açılıştan sonra bu süre boyunca (uygulama ön plandayken) kilit ekranı
 // bildirimi gönderilmez; böylece ilk açılışta bildirim çıkmaz.
 const BOOT_GRACE_MS = 30000;
+// Uygulama (JS paketi) açılış anı: render sırasında Date.now() çağırmamak için
+// modül yüklenirken bir kez hesaplanır.
+const BOOT_AT = Date.now();
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AppData>({
@@ -87,7 +90,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const prevSmokedRef = useRef(0);
   const permRequestedRef = useRef(false);
   const remoteActionRef = useRef<Record<string, () => void>>({});
-  const bootAtRef = useRef(Date.now());
 
   useEffect(() => {
     (async () => {
@@ -210,7 +212,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // BOOT_GRACE_MS boyunca (uygulama ön plandayken) gönderme. Ekranı kilitlersen
     // (uygulama arka plana geçince) hemen gönderilir; ön planda kalırsan kısa
     // süre sonra gönderilir.
-    const withinBootGrace = Date.now() - bootAtRef.current < BOOT_GRACE_MS;
+    const withinBootGrace = Date.now() - BOOT_AT < BOOT_GRACE_MS;
     const goingBackground = appState !== 'active';
     const running = timer.status === 'running';
     // Sayaç çalışarken geri sayımı native kronometre gösterir (JS gerekmez).
@@ -514,36 +516,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const exportedJson = () => JSON.stringify(data, null, 2);
 
-  remoteActionRef.current = {
-    smoke: () => logCigarette(),
-    resisted: () => dismissTimer(),
-    snooze5: () => extendTimer(5),
-  };
+  // Bildirim aksiyonları en güncel handler'ları kullansın diye render sonrası
+  // (effect içinde) güncellenir; render sırasında ref yazılmaz.
+  useEffect(() => {
+    remoteActionRef.current = {
+      smoke: () => logCigarette(),
+      resisted: () => dismissTimer(),
+      snooze5: () => extendTimer(5),
+    };
+  });
 
-  const value = useMemo<AppContextValue>(
-    () => ({
-      data,
-      ready,
-      setPlan,
-      logCigarette,
-      undoCigarette,
-      logCraving,
-      resetAll,
-      setPremium,
-      setShowLockScreen,
-      timer,
-      setTimerDuration,
-      startTimer,
-      pauseTimer,
-      resumeTimer,
-      resetTimer,
-      dismissTimer,
-      extendTimer,
-      restoreData,
-      exportedJson,
-    }),
-    [data, ready, timer],
-  );
+  const value: AppContextValue = {
+    data,
+    ready,
+    setPlan,
+    logCigarette,
+    undoCigarette,
+    logCraving,
+    resetAll,
+    setPremium,
+    setShowLockScreen,
+    timer,
+    setTimerDuration,
+    startTimer,
+    pauseTimer,
+    resumeTimer,
+    resetTimer,
+    dismissTimer,
+    extendTimer,
+    restoreData,
+    exportedJson,
+  };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

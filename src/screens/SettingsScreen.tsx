@@ -293,7 +293,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Card>
           <Text style={styles.cardLabel}>BırakGitsin Premium</Text>
           <Text style={styles.planSub}>
-            Yakında: ana ekran widget'ı (tek dokunuşla kayıt), reklamsız deneyim,
+            Yakında: ana ekran widget’ı (tek dokunuşla kayıt), reklamsız deneyim,
             kişiselleştirilmiş raporlar ve tam rozet koleksiyonu. Widget; EAS ile
             derlenen gerçek uygulama sürümünde aktif olacak.
           </Text>

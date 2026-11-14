@@ -72,24 +72,33 @@ export function CravingScreen() {
   const [intensity, setIntensity] = useState<number | null>(null);
   const [logged, setLogged] = useState<string | null>(null);
 
-  const scale = useRef(new Animated.Value(1)).current;
+  const [scale] = useState(() => new Animated.Value(1));
   const breathTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const secondsRef = useRef(PHASES[0].seconds);
+  const tapsRef = useRef(0);
+  const gameLeftRef = useRef(GAME_SECONDS);
 
   const stopBreath = () => {
     if (breathTimer.current) clearInterval(breathTimer.current);
     breathTimer.current = null;
+    secondsRef.current = PHASES[0].seconds;
     setRunning(false);
     setPhaseIndex(0);
     setSecondsLeft(PHASES[0].seconds);
     scale.setValue(1);
   };
 
-  useEffect(() => () => stopBreath(), []);
+  useEffect(
+    () => () => {
+      if (breathTimer.current) clearInterval(breathTimer.current);
+      breathTimer.current = null;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!running) return;
     const phase = PHASES[phaseIndex];
-    setSecondsLeft(phase.seconds);
     Animated.timing(scale, {
       toValue: phase.scale,
       duration: phase.seconds * 1000,
@@ -97,23 +106,23 @@ export function CravingScreen() {
     }).start();
 
     const tick = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          clearInterval(tick);
-          setPhaseIndex((i) => {
-            const next = (i + 1) % PHASES.length;
-            if (next === 0) setRounds((r) => r + 1);
-            return next;
-          });
-          return 0;
-        }
-        return s - 1;
-      });
+      const left = secondsRef.current - 1;
+      if (left > 0) {
+        secondsRef.current = left;
+        setSecondsLeft(left);
+        return;
+      }
+      // Faz bitti: sonraki nefes fazına geç. Tüm güncellemeler interval
+      // içinde (dış olay) yapılır; effect gövdesinde setState çağrılmaz.
+      const next = (phaseIndex + 1) % PHASES.length;
+      if (next === 0) setRounds((r) => r + 1);
+      secondsRef.current = PHASES[next].seconds;
+      setPhaseIndex(next);
+      setSecondsLeft(PHASES[next].seconds);
     }, 1000);
     breathTimer.current = tick;
     return () => clearInterval(tick);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running, phaseIndex]);
+  }, [running, phaseIndex, scale]);
 
   useEffect(() => {
     if (!urgeRunning) return;
@@ -134,21 +143,20 @@ export function CravingScreen() {
   useEffect(() => {
     if (!gameRunning) return;
     const t = setInterval(() => {
-      setGameLeft((s) => {
-        if (s <= 1) {
-          clearInterval(t);
-          setGameRunning(false);
-          return 0;
-        }
-        return s - 1;
-      });
+      const left = gameLeftRef.current - 1;
+      if (left > 0) {
+        gameLeftRef.current = left;
+        setGameLeft(left);
+        return;
+      }
+      clearInterval(t);
+      gameLeftRef.current = 0;
+      setGameLeft(0);
+      setBestTaps((b) => Math.max(b, tapsRef.current));
+      setGameRunning(false);
     }, 1000);
     return () => clearInterval(t);
   }, [gameRunning]);
-
-  useEffect(() => {
-    if (!gameRunning) setBestTaps((b) => Math.max(b, taps));
-  }, [gameRunning, taps]);
 
   const startUrge = () => {
     setUrgeLeft(URGES_SECONDS);
@@ -156,6 +164,8 @@ export function CravingScreen() {
   };
 
   const startGame = () => {
+    tapsRef.current = 0;
+    gameLeftRef.current = GAME_SECONDS;
     setTaps(0);
     setGameLeft(GAME_SECONDS);
     setGameRunning(true);
@@ -221,6 +231,9 @@ export function CravingScreen() {
                 style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
                 onPress={() => {
                   setRounds(0);
+                  secondsRef.current = PHASES[0].seconds;
+                  setPhaseIndex(0);
+                  setSecondsLeft(PHASES[0].seconds);
                   setRunning(true);
                 }}
               >
@@ -329,7 +342,8 @@ export function CravingScreen() {
               style={({ pressed }) => [styles.gamePad, pressed && styles.gamePadPressed]}
               disabled={!gameRunning}
               onPress={() => {
-                setTaps((t) => t + 1);
+                tapsRef.current += 1;
+                setTaps(tapsRef.current);
                 Haptics.selectionAsync().catch(() => {});
               }}
             >
