@@ -289,7 +289,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await cancelScheduled();
       notifIdRef.current = await Notifications.scheduleNotificationAsync({
         content: {
-          title: 'BırakGitsin',
+          title: 'Bırak Gitsin',
           body: 'Dayanma süren doldu. Harika iş çıkardın, devam et!',
           sound: 'default',
           categoryIdentifier: 'birakgitsin-alarm',

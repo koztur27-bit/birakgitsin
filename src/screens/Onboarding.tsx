@@ -91,7 +91,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>
-        <Text style={styles.brand}>BırakGitsin</Text>
+        <Text style={styles.brand}>Bırak Gitsin</Text>
         <Text style={styles.subtitle}>
           {initial ? 'Planını düzenle' : 'Sigarayı azaltarak bırak'}
         </Text>

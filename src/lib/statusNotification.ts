@@ -234,7 +234,7 @@ export async function publishLockStatus(
   if (native) {
     try {
       // Kronometre sayacı kendisi gösterir; gövdede tekrar yazmayalım.
-      native.showCountdown('BırakGitsin', text, endAtMs, CHANNEL_ID);
+      native.showCountdown('Bırak Gitsin', text, endAtMs, CHANNEL_ID);
       return;
     } catch {
       // modül çağrısı başarısızsa expo-notifications'a düş
@@ -245,7 +245,7 @@ export async function publishLockStatus(
     await Notifications.scheduleNotificationAsync({
       identifier: ID,
       content: {
-        title: 'BırakGitsin',
+        title: 'Bırak Gitsin',
         body: text,
         // "sound: true" bildirimi sessiz olmaktan çıkarır (MIUI kilit ekranında
         // gösterir). Gerçek ses kanalın sesidir ve o da silent.wav (sessiz).

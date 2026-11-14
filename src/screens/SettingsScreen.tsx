@@ -116,7 +116,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
     try {
       const parsed = JSON.parse(text);
       if (!parsed || !Array.isArray(parsed.logs)) {
-        Alert.alert('Geçersiz yedek', 'Bu bir BırakGitsin yedeği gibi görünmüyor.');
+        Alert.alert('Geçersiz yedek', 'Bu bir Bırak Gitsin yedeği gibi görünmüyor.');
         return;
       }
       restoreData(parsed);
@@ -291,7 +291,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         </Card>
 
         <Card>
-          <Text style={styles.cardLabel}>BırakGitsin Premium</Text>
+          <Text style={styles.cardLabel}>Bırak Gitsin Premium</Text>
           <Text style={styles.planSub}>
             Yakında: ana ekran widget’ı (tek dokunuşla kayıt), reklamsız deneyim,
             kişiselleştirilmiş raporlar ve tam rozet koleksiyonu. Widget; EAS ile
@@ -313,7 +313,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>BırakGitsin v1.0.0</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.0.0</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />

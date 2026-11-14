@@ -141,7 +141,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         <View style={styles.header}>
           <View>
             <View style={styles.mapRow}>
-              <Text style={styles.brand}>BırakGitsin</Text>
+              <Text style={styles.brand}>Bırak Gitsin</Text>
               {mapNumbers ? <MapBadge code="1" /> : null}
             </View>
             <Text style={styles.date}>{dateText}</Text>

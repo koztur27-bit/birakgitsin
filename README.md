@@ -1,4 +1,4 @@
-# BırakGitsin
+# Bırak Gitsin
 
 Sigarayı **azaltarak bırakma** uygulaması. Her gün içilen sigarayı takip eder, günlük hedef
 belirler ve hedefi aşmadığın her sigara için **para + sağlık kazancı** hesaplar.

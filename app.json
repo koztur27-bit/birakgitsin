@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "BırakGitsin",
+    "name": "Bırak Gitsin",
     "slug": "birakgitsin",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -28,8 +28,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "BırakGitsin",
-      "shortName": "BırakGitsin",
+      "name": "Bırak Gitsin",
+      "shortName": "Bırak Gitsin",
       "description": "Sigarayı azaltarak bırakma sayacı",
       "themeColor": "#2563EB",
       "backgroundColor": "#F2F6FD",
