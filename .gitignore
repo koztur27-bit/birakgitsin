@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# yerel derleme ciktilari
+birakgitsin.apk
+*.apk

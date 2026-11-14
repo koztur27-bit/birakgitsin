@@ -36,6 +36,8 @@ Run lint and typecheck before declaring any task done.
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
+**Yerel APK (EAS hesabı gerekmez)**: `bash scripts/build-apk.sh` — Android SDK (platform 36, build-tools 36.0.0, NDK 27.1) ve JDK 17 ile `assembleRelease` çalıştırır, çıktıyı `birakgitsin.apk` olarak kopyalar. Varsayılan olarak yalnızca `arm64-v8a` derler (`ABIS` ile değiştirilir). Release, prebuild'in `debug.keystore`'u ile imzalanır; Play Store'a yükleme için değil, cihazda test/kurulum içindir.
+
 ## CI ile APK derleme (EAS bulut kotası tükendiğinde)
 
 EAS bulut kotası tükenince (aylık 15 Android derleme; sıfırlanma her ayın 1'i) APK'yı GitHub Actions üzerinde `eas build --local` ile derleriz — bulut kotasını **harcamaz** ve EAS'in yönettiği mevcut keystore'u kullanır, yani imza aynı kalır (kurulumda veriler korunur).

@@ -71,7 +71,20 @@ bash scripts/setup-hermesc.sh   # qemu + sarmalayıcıyı kurar/onarır
 npx expo export --platform android   # HBC üretimi doğrulanabilir
 ```
 
-`npm ci` sonrası sarmalayıcı silinirse bu betiği tekrar çalıştır. Gerçek kullanıcı dağıtımı için:
+`npm ci` sonrası sarmalayıcı silinirse bu betiği tekrar çalıştır.
+
+### APK derleme (yerel, EAS hesabı gerekmez)
+
+```bash
+bash scripts/build-apk.sh
+# çıktı: ./birakgitsin.apk (varsayılan: yalnızca arm64-v8a)
+```
+
+Gereksinimler: JDK 17 + Android SDK (`platforms;android-36`, `build-tools;36.0.0`,
+`ndk;27.1.12297006`). Release, prebuild'in debug keystore'u ile imzalanır; bu APK
+Play Store'a yüklemek için değil, doğrudan cihaza kurmak içindir.
+
+Gerçek kullanıcı dağıtımı için:
 
 ```bash
 npx eas-cli build --platform android
