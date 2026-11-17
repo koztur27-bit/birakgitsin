@@ -1,6 +1,7 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing } from '../theme';
+import { spacing } from '../theme';
 
 type ProgressBarProps = {
   progress: number;
@@ -11,10 +12,13 @@ type ProgressBarProps = {
 
 export function ProgressBar({
   progress,
-  color = colors.primary,
+  color,
   height = 10,
   label,
 }: ProgressBarProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const resolvedColor = color ?? colors.primary;
   const clamped = Math.max(0, Math.min(1, progress));
   return (
     <View style={styles.wrap}>
@@ -28,7 +32,7 @@ export function ProgressBar({
         <View
           style={[
             styles.fill,
-            { width: `${clamped * 100}%`, backgroundColor: color, borderRadius: height / 2 },
+            { width: `${clamped * 100}%`, backgroundColor: resolvedColor, borderRadius: height / 2 },
           ]}
         />
       </View>
@@ -36,7 +40,7 @@ export function ProgressBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   wrap: { gap: spacing.xs },
   labelRow: {
     flexDirection: 'row',

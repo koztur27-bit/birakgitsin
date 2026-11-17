@@ -1,7 +1,8 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TabKey } from '../types';
-import { colors, fontSizes, spacing } from '../theme';
+import { fontSizes, spacing } from '../theme';
 
 type TabDef = { key: TabKey; label: string };
 
@@ -19,6 +20,8 @@ type TabBarProps = {
 };
 
 export function TabBar({ active, onChange }: TabBarProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.bar}>
       {TABS.map((tab) => {
@@ -40,7 +43,7 @@ export function TabBar({ active, onChange }: TabBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   bar: {
     flexDirection: 'row',
     backgroundColor: colors.card,

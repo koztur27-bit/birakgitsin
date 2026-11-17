@@ -1,6 +1,7 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
-import { colors, radius, shadows } from '../theme';
+import { radius, shadows } from '../theme';
 
 type CardProps = {
   children: React.ReactNode;
@@ -8,10 +9,12 @@ type CardProps = {
 };
 
 export function Card({ children, style }: CardProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,

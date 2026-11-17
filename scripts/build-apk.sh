@@ -38,6 +38,21 @@ fi
 
 echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
+if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
+  # SDK'nin x86_64 cmake/ninja/aapt2/clang ikilileri icin qemu koprusu.
+  bash scripts/setup-x86_64-emulation.sh
+  # arm64 host icin native cmake/ninja kullan.
+  echo "cmake.dir=/usr" >> android/local.properties
+  # aapt2'yi build-tools sarmalayicisindan kullan (Maven'daki x86_64 surumu degil).
+  if ! grep -q '^android.aapt2FromMavenOverride=' android/gradle.properties; then
+    printf '\nandroid.aapt2FromMavenOverride=%s\n' "$ANDROID_HOME/build-tools/36.0.0/aapt2" >> android/gradle.properties
+  fi
+fi
+
+# QEMU'lu derlemede 60+ paralel clang bellegi tuketiyordu; yerel clang-18 ile
+# 4 paralel guvenli ve hizli. Gerekirse CMAKE_BUILD_PARALLEL_LEVEL ile ezilir.
+export CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
+
 # Hermes bytecode icin qemu sarmalayicisi (arm64 makine).
 if [ "$(uname -m)" = "aarch64" ] && [ ! -x node_modules/hermes-compiler/hermesc/linux64-bin/hermesc.real ]; then
   bash scripts/setup-hermesc.sh

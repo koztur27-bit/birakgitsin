@@ -1,7 +1,8 @@
+import { useTheme } from '../context/ThemeContext';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { fontSizes, radius, spacing } from '../theme';
 import { SmokeWindow } from '../types';
 
 type WindowEditorProps = {
@@ -23,6 +24,8 @@ function toDate(hhmm: string): Date {
 }
 
 export function WindowEditor({ useWindows, windows, onChange }: WindowEditorProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const [pick, setPick] = useState<PickTarget | null>(null);
 
   const applyWindow = (index: number, field: keyof SmokeWindow, value: string) => {
@@ -131,7 +134,7 @@ function fromMinOffset(hhmm: string): string {
   return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   wrap: { gap: spacing.sm },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   toggleInfo: { flex: 1 },

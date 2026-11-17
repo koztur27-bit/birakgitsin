@@ -1,6 +1,7 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { fontSizes, radius, spacing } from '../theme';
 
 type StepperProps = {
   label: string;
@@ -23,6 +24,8 @@ export function Stepper({
   suffix = '',
   hint,
 }: StepperProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const atMin = value <= min;
   const atMax = value >= max;
   return (
@@ -65,7 +68,7 @@ export function Stepper({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

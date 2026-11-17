@@ -12,7 +12,7 @@ import {
   publishLockStatus,
   registerNotificationCategories,
 } from '../lib/statusNotification';
-import { AppData, DayRecord, Plan, TimerState, TimerStatus } from '../types';
+import { AppData, DayRecord, NrtKind, Plan, TimerState, TimerStatus } from '../types';
 import { clearData, loadData, persistData } from '../storage';
 
 if (Platform.OS !== 'web') {
@@ -43,6 +43,7 @@ type AppContextValue = {
   logCigarette: (opts?: LogOptions) => void;
   undoCigarette: (opts?: LogOptions) => void;
   logCraving: (resisted: boolean, meta?: { intensity?: number; trigger?: string }) => void;
+  logNrt: (kind: NrtKind, amount?: number) => void;
   resetAll: () => void;
   setPremium: (value: boolean) => void;
   setShowLockScreen: (value: boolean) => void;
@@ -478,6 +479,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ),
     );
 
+  const logNrt = (kind: NrtKind, amount = 1) =>
+    persist({
+      ...data,
+      nrtLogs: [...(data.nrtLogs ?? []), { timestamp: new Date().toISOString(), kind, amount }],
+    });
+
   const resetAll = () => {
     clearData();
     clearLockStatus();
@@ -501,6 +508,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       logs: Array.isArray(incoming.logs) ? incoming.logs : [],
       cravings: Array.isArray(incoming.cravings) ? incoming.cravings : [],
       badges: Array.isArray(incoming.badges) ? incoming.badges : [],
+      nrtLogs: Array.isArray(incoming.nrtLogs) ? incoming.nrtLogs : [],
       isPremium: !!incoming.isPremium,
       showLockScreen: incoming.showLockScreen !== false,
     };
@@ -533,6 +541,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     logCigarette,
     undoCigarette,
     logCraving,
+    logNrt,
     resetAll,
     setPremium,
     setShowLockScreen,

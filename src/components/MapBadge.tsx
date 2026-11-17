@@ -1,6 +1,7 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { colors, fontSizes, radius } from '../theme';
+import { fontSizes, radius } from '../theme';
 
 type MapBadgeProps = {
   code: string;
@@ -8,6 +9,8 @@ type MapBadgeProps = {
 };
 
 export function MapBadge({ code, style }: MapBadgeProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={[styles.badge, style]}>
       <Text style={styles.text}>{code}</Text>
@@ -15,7 +18,7 @@ export function MapBadge({ code, style }: MapBadgeProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   badge: {
     paddingHorizontal: 7,
     paddingVertical: 2,

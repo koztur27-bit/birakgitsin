@@ -1,6 +1,7 @@
+import { useTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
@@ -10,6 +11,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { StatusPopup } from '../components/StatusPopup';
 import { useApp } from '../context/AppContext';
+import { updateWidgetData } from '../lib/widgetData';
 import {
   avoidedOnDay,
   cigarettesAvoided,
@@ -34,7 +36,7 @@ import {
   windowAllowances,
   windowSmokedOn,
 } from '../lib/calculations';
-import { colors, fontSizes, radius, shadows, spacing } from '../theme';
+import { fontSizes, radius, shadows, spacing } from '../theme';
 import { reloadApp } from '../lib/reload';
 import { downloadAndInstallUpdate } from '../lib/updater';
 
@@ -43,6 +45,8 @@ type HomeScreenProps = {
 };
 
 export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const {
     data,
@@ -86,7 +90,12 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const today = todayKey();
   const record = getLog(data.logs, today);
   const todayTimes = record.times ?? [];
-  const goal = dailyGoal(plan, today);
+  const goal = dailyGoal(plan, today, data.logs);
+  const linearGoal = Math.max(
+    0,
+    plan.baselinePerDay - Math.floor(daysSinceStart(plan, today) / 7) * plan.weeklyReduction,
+  );
+  const adaptiveActive = plan.adaptive !== false && goal !== linearGoal;
   const remaining = Math.max(0, goal - record.smoked);
   const underGoal = record.smoked <= goal;
   const progress = goal > 0 ? record.smoked / goal : record.smoked > 0 ? 1 : 0;
@@ -97,12 +106,16 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const nextWindow = nextWindowInfo(plan);
   const nextWindowStr = nextWindow
     ? fromMin((nowMin() + nextWindow.minutes) % 1440)
-    : '';
+    : '--:--';
 
   const savedToday = moneySavedOnDay(plan, record);
   const savedTotal = totalMoneySaved(plan, data.logs);
   const avoided = cigarettesAvoided(plan, data.logs);
   const streak = goalStreak(plan, data.logs);
+
+  useEffect(() => {
+    updateWidgetData(record.smoked, goal, savedTotal, streak, nextWindowStr);
+  }, [record.smoked, goal, savedTotal, streak, nextWindowStr]);
   const days = daysSinceStart(plan, today);
 
   const elapsed = elapsedDays(plan);
@@ -180,7 +193,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         </Pressable>
 
         <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
+          colors={[colors.primary, colors.primaryDarker]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.hero}
@@ -226,6 +239,11 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             <CigaretteIcon size={22} style={styles.heroGoalIcon} />
             <Text style={styles.heroGoalUnit}>sigara</Text>
           </View>
+          {adaptiveActive ? (
+            <Text style={styles.adaptiveNote}>
+              Sana göre plan: bu hafta hedefin {goal} sigara.
+            </Text>
+          ) : null}
 
           <View style={[styles.mapRow, styles.heroSpacer]}>
             {mapNumbers ? <MapBadge code="3c" /> : null}
@@ -255,6 +273,8 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           <View style={styles.actions}>
             {mapNumbers ? <MapBadge code="3f" style={styles.actionsBadge} /> : null}
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Bir sigara içtim olarak kaydet"
               style={({ pressed }) => [styles.logBtn, pressed && styles.pressed]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -265,6 +285,8 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               <Text style={styles.logBtnText}>+1 Sigara içtim</Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Son sigara kaydını geri al"
               style={({ pressed }) => [
                 styles.undoBtn,
                 record.smoked === 0 && styles.undoDisabled,
@@ -468,7 +490,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   mapRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -555,6 +577,11 @@ const styles = StyleSheet.create({
   heroGoalRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   heroGoalIcon: { marginTop: 4 },
   heroGoalUnit: { fontSize: fontSizes.md, fontWeight: '600', color: colors.white },
+  adaptiveNote: {
+    fontSize: fontSizes.xs,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: spacing.xs,
+  },
   heroLabel: {
     fontSize: fontSizes.sm,
     color: 'rgba(255,255,255,0.85)',

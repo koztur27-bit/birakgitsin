@@ -1,6 +1,7 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { colors, fontSizes, radius, shadows, spacing } from '../theme';
+import { fontSizes, radius, shadows, spacing } from '../theme';
 import { SCREEN_MAP } from '../lib/screenMap';
 
 type ScreenMapModalProps = {
@@ -16,6 +17,8 @@ export function ScreenMapModal({
   showNumbers,
   onToggleNumbers,
 }: ScreenMapModalProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
@@ -65,7 +68,7 @@ export function ScreenMapModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',

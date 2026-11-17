@@ -1,3 +1,4 @@
+import { useTheme } from '../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -5,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { useApp } from '../context/AppContext';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { triggerAction } from '../lib/coach';
+import { fontSizes, radius, spacing } from '../theme';
 
 type Phase = 'inhale' | 'hold' | 'exhale';
 
@@ -48,6 +50,8 @@ const URGES_SECONDS = 180;
 const GAME_SECONDS = 20;
 
 export function CravingScreen() {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { data, logCraving } = useApp();
 
@@ -71,9 +75,11 @@ export function CravingScreen() {
   const [trigger, setTrigger] = useState<string | null>(null);
   const [intensity, setIntensity] = useState<number | null>(null);
   const [logged, setLogged] = useState<string | null>(null);
+  const action = triggerAction(trigger);
 
   const [scale] = useState(() => new Animated.Value(1));
   const breathTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const secondsRef = useRef(PHASES[0].seconds);
   const tapsRef = useRef(0);
   const gameLeftRef = useRef(GAME_SECONDS);
@@ -192,7 +198,11 @@ export function CravingScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Kriz Anı</Text>
         <Text style={styles.subtitle}>
           Canın sigara çektiğinde buraya gel. İstek ortalama 3–5 dakika sürer; bu araçlarla
@@ -386,6 +396,26 @@ export function CravingScreen() {
             })}
           </View>
 
+          {trigger ? (
+            <View style={styles.actionCard}>
+              <Text style={styles.actionTag}>
+                Tetikleyiciye özel eylem · {action.seconds} sn
+              </Text>
+              <Text style={styles.actionTitle}>{action.title}</Text>
+              <Text style={styles.actionBody}>{action.body}</Text>
+              <Pressable
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
+                onPress={() => {
+                  setTool(action.tool);
+                  scrollRef.current?.scrollTo({ y: 0, animated: true });
+                }}
+              >
+                <Text style={styles.actionBtnText}>{action.toolLabel}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           <Text style={styles.formLabel}>Şiddet (1–5)</Text>
           <View style={styles.intensityRow}>
             {[1, 2, 3, 4, 5].map((n) => {
@@ -446,7 +476,7 @@ export function CravingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   title: {
@@ -486,6 +516,41 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     alignSelf: 'flex-start',
   },
+  actionCard: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: '#F0D19A',
+  },
+  actionTag: {
+    fontSize: fontSizes.xs,
+    fontWeight: '800',
+    color: '#8A5A00',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  actionTitle: {
+    fontSize: fontSizes.md,
+    fontWeight: '800',
+    color: colors.text,
+    marginTop: spacing.xs,
+  },
+  actionBody: {
+    fontSize: fontSizes.sm,
+    color: colors.text,
+    lineHeight: fontSizes.md + 4,
+    marginTop: spacing.xs,
+  },
+  actionBtn: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+  },
+  actionBtnText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text },
   circleWrap: {
     width: 220,
     height: 220,

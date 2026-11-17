@@ -11,6 +11,7 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TabBar } from './src/components/TabBar';
 import { AppProvider, useApp } from './src/context/AppContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { CravingScreen } from './src/screens/CravingScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { Onboarding } from './src/screens/Onboarding';
@@ -60,13 +61,14 @@ function ErrorView({
 }
 
 function Root() {
+  const { colors } = useTheme();
   const { data, ready, setPlan } = useApp();
   const [tab, setTab] = useState<TabKey>('home');
   const [editing, setEditing] = useState(false);
 
   if (!ready) {
     return (
-      <View style={styles.splash}>
+      <View style={[styles.splash, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -86,7 +88,7 @@ function Root() {
   }
 
   return (
-    <View style={styles.app}>
+    <View style={[styles.app, { backgroundColor: colors.bg }]}>
       <View style={styles.screen}>
         <View style={[styles.page, tab !== 'home' && styles.hidden]}>
           <HomeScreen onOpenCraving={() => setTab('craving')} />
@@ -113,10 +115,12 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <AppProvider>
-          <StatusBar style="dark" />
-          <Root />
-        </AppProvider>
+        <ThemeProvider>
+          <AppProvider>
+            <StatusBar style="auto" />
+            <Root />
+          </AppProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );

@@ -73,10 +73,14 @@ export function windowAllowances(goal: number, windows: SmokeWindow[]): number[]
   return result;
 }
 
-export function currentWindowAllowance(plan: Plan, date: Date = new Date()): number {
+export function currentWindowAllowance(
+  plan: Plan,
+  date: Date = new Date(),
+  logs: DayRecord[] = [],
+): number {
   const idx = currentWindowIndex(plan, date);
   if (idx < 0) return 0;
-  return windowAllowances(todayGoal(plan), plan.windows)[idx] ?? 0;
+  return windowAllowances(todayGoal(plan, logs), plan.windows)[idx] ?? 0;
 }
 
 export function windowSmokedOn(record: DayRecord, index: number): number {
@@ -119,13 +123,84 @@ export function elapsedDays(plan: Plan, now: number = Date.now()): number {
   return Math.max(0, (now - start.getTime()) / MS_DAY);
 }
 
-export function dailyGoal(plan: Plan, dateKey: string): number {
-  const week = Math.floor(daysSinceStart(plan, dateKey) / 7);
-  return Math.max(0, plan.baselinePerDay - week * plan.weeklyReduction);
+function addDaysKey(key: string, days: number): string {
+  const d = parseKey(key);
+  return dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() + days));
 }
 
-export function todayGoal(plan: Plan): number {
-  return dailyGoal(plan, todayKey());
+/**
+ * Bir haftanın hedefini, o haftaya kadarki kayıtlara göre hesaplar.
+ *
+ * Uyarlanabilir plan (varsayılan açık):
+ * - Önceki haftada en az 4 gün kayıt varsa ve ortalama hedefin %15 altındaysa
+ *   bir sonraki hafta azaltmayı 1 artır.
+ * - Ortalama hedefin %15 üstündeyse o hafta azaltmayı 1 düşür (stabilize).
+ * - Yeterli kayıt yoksa kullanıcının seçtiği haftalık azaltma uygulanır.
+ *
+ * Geçmiş haftalar yalnızca kendinden önceki kayıtlara baktığı için sonradan
+ * değişmez; böylece istatistikler ve seriler tutarlı kalır.
+ */
+type GoalCache = {
+  logs: DayRecord[] | null;
+  signature: string;
+  goals: number[];
+};
+
+// Aynı plan/kayıt dizisi için haftalık hedefleri bir kez hesapla. `goalStreak`
+// gibi gün gün gezen çağrılar aksi halde her gün için tüm haftaları yeniden
+// hesaplar.
+let goalCache: GoalCache | null = null;
+
+function planGoalSignature(plan: Plan): string {
+  return [
+    plan.startDate,
+    plan.baselinePerDay,
+    plan.weeklyReduction,
+    plan.adaptive === false ? 0 : 1,
+  ].join('|');
+}
+
+function goalsUpTo(plan: Plan, logs: DayRecord[], week: number): number[] {
+  const signature = planGoalSignature(plan);
+  if (!goalCache || goalCache.logs !== logs || goalCache.signature !== signature) {
+    goalCache = {
+      logs,
+      signature,
+      goals: [Math.max(0, plan.baselinePerDay)],
+    };
+  }
+  const goals = goalCache.goals;
+  while (goals.length <= week) {
+    const w = goals.length;
+    const previous = goals[w - 1] ?? Math.max(0, plan.baselinePerDay);
+    const startKey = addDaysKey(plan.startDate, (w - 1) * 7);
+    const endKey = addDaysKey(plan.startDate, w * 7 - 1);
+    const weekLogs = logs.filter((l) => l.date >= startKey && l.date <= endKey);
+    const logged = weekLogs.length;
+    const average =
+      logged > 0 ? weekLogs.reduce((sum, l) => sum + l.smoked, 0) / logged : 0;
+
+    let reduction = Math.max(0, plan.weeklyReduction);
+    if (plan.adaptive !== false && logged >= 4 && plan.weeklyReduction > 0) {
+      if (average <= previous * 0.85) {
+        reduction += 1; // rahat tutuyor: biraz hızlan
+      } else if (average > previous * 1.15) {
+        reduction = Math.max(0, reduction - 1); // zorlanıyor: koru
+      }
+    }
+    goals.push(Math.max(0, previous - reduction));
+  }
+  return goals;
+}
+
+export function dailyGoal(plan: Plan, dateKey: string, logs: DayRecord[] = []): number {
+  const week = Math.max(0, Math.floor(daysSinceStart(plan, dateKey) / 7));
+  const goals = goalsUpTo(plan, logs, week);
+  return goals[week] ?? Math.max(0, plan.baselinePerDay);
+}
+
+export function todayGoal(plan: Plan, logs: DayRecord[] = []): number {
+  return dailyGoal(plan, todayKey(), logs);
 }
 
 export function pricePerCigarette(plan: Plan): number {
@@ -169,7 +244,7 @@ export function lastNDays(n: number, endKey = todayKey()): string[] {
 export function buildDaysStat(plan: Plan, logs: DayRecord[], n: number, endKey = todayKey()): DayStat[] {
   return lastNDays(n, endKey).map((date) => ({
     date,
-    goal: dailyGoal(plan, date),
+    goal: dailyGoal(plan, date, logs),
     smoked: getLog(logs, date).smoked,
   }));
 }
@@ -183,7 +258,7 @@ export function goalStreak(plan: Plan, logs: DayRecord[]): number {
     // Plan başlangıcından önceki günler seriye sayılmaz.
     if (day.getTime() < start.getTime()) break;
     const record = getLog(logs, key);
-    const goal = dailyGoal(plan, key);
+    const goal = dailyGoal(plan, key, logs);
     if (record.smoked <= goal) {
       streak += 1;
       const d = parseKey(key);
@@ -313,6 +388,15 @@ export function formatMoney(amount: number, currency: string): string {
   })} ${currency}`;
 }
 
+export function formatMoneyShort(amount: number, currency: string): string {
+  return `${Math.round(amount).toLocaleString('tr-TR')} ${currency}`;
+}
+
+export function formatDayShort(dateKey: string): string {
+  const d = parseKey(dateKey);
+  return `${d.getDate()}.${d.getMonth() + 1}`;
+}
+
 export function formatCountdown(sec: number): string {
   const s = Math.max(0, Math.floor(sec));
   const h = Math.floor(s / 3600);
@@ -384,4 +468,211 @@ export function averageIntensity(cravings: CravingRecord[]): number | null {
   const rated = cravings.filter((c) => typeof c.intensity === 'number');
   if (!rated.length) return null;
   return rated.reduce((s, c) => s + (c.intensity ?? 0), 0) / rated.length;
+}
+
+function cravingsInRange(
+  cravings: CravingRecord[],
+  startKey: string,
+  endKey: string,
+): CravingRecord[] {
+  return cravings.filter((c) => {
+    const key = dayKey(new Date(c.timestamp));
+    return key >= startKey && key <= endKey;
+  });
+}
+
+export type WeeklyReport = {
+  startKey: string;
+  endKey: string;
+  loggedDays: number;
+  metDays: number;
+  totalSmoked: number;
+  averageSmoked: number;
+  averageGoal: number;
+  saved: number;
+  cravings: number;
+  resisted: number;
+  resistedRate: number;
+  topTrigger: string | null;
+  riskHour: number | null;
+  bestDay: DayStat | null;
+  hardestDay: DayStat | null;
+  change: number | null;
+  headline: string;
+  suggestion: string;
+};
+
+/**
+ * Son 7 günün koç raporu. Yalnızca kayıt girilen günler ortalamaya katılır;
+ * böylece kayıt unutulan günler ceza gibi görünmez. Karşılaştırma için bir
+ * önceki 7 gün kullanılır.
+ */
+export function weeklyReport(
+  plan: Plan,
+  logs: DayRecord[],
+  cravings: CravingRecord[],
+  endKey = todayKey(),
+): WeeklyReport {
+  const keys = lastNDays(7, endKey);
+  const rows = keys.map((date) => ({
+    date,
+    goal: dailyGoal(plan, date, logs),
+    smoked: getLog(logs, date).smoked,
+    logged: logs.some((l) => l.date === date),
+  }));
+  const loggedRows = rows.filter((r) => r.logged);
+  const totalSmoked = loggedRows.reduce((sum, r) => sum + r.smoked, 0);
+  const averageSmoked = loggedRows.length ? totalSmoked / loggedRows.length : 0;
+  const averageGoal = loggedRows.length
+    ? loggedRows.reduce((sum, r) => sum + r.goal, 0) / loggedRows.length
+    : dailyGoal(plan, endKey, logs);
+  const metDays = loggedRows.filter((r) => r.smoked <= r.goal).length;
+  const saved = loggedRows.reduce(
+    (sum, r) => sum + moneySavedOnDay(plan, { date: r.date, smoked: r.smoked }),
+    0,
+  );
+  const rangeCravings = cravingsInRange(cravings, keys[0], endKey);
+  const resisted = rangeCravings.filter((c) => c.resisted).length;
+  const resistedRate = rangeCravings.length
+    ? Math.round((resisted / rangeCravings.length) * 100)
+    : 0;
+  const topTrigger = topTriggerCounts(rangeCravings, 1)[0]?.trigger ?? null;
+  const riskHour = rangeCravings.length
+    ? (riskiestHours(rangeCravings, 1)[0]?.hour ?? null)
+    : null;
+
+  const bestDay = loggedRows.length
+    ? (loggedRows.reduce((best, r) => (r.smoked < best.smoked ? r : best)) as DayStat)
+    : null;
+  const hardestDay = loggedRows.length
+    ? (loggedRows.reduce((worst, r) => (r.smoked > worst.smoked ? r : worst)) as DayStat)
+    : null;
+
+  const prevKeys = lastNDays(7, addDaysKey(keys[0], -1));
+  const prevRows = prevKeys.map((date) => ({
+    date,
+    smoked: getLog(logs, date).smoked,
+    logged: logs.some((l) => l.date === date),
+  }));
+  const prevLogged = prevRows.filter((r) => r.logged);
+  const prevAverage = prevLogged.length
+    ? prevLogged.reduce((sum, r) => sum + r.smoked, 0) / prevLogged.length
+    : 0;
+  const change = loggedRows.length && prevLogged.length ? averageSmoked - prevAverage : null;
+
+  const adherence = loggedRows.length ? metDays / loggedRows.length : 0;
+  let headline = 'Veri toplanıyor';
+  let suggestion = 'Bugün tek bir kayıt ekle; rapor 3 gün sonra anlam kazanır.';
+  if (loggedRows.length > 0) {
+    if (adherence >= 0.85) {
+      headline = 'Harika bir hafta';
+      suggestion =
+        'Hedefini haftaya 1 sigara daha düşürmeyi dene. Uyarlanabilir plan bunu senin için otomatik yapar.';
+    } else if (adherence >= 0.5) {
+      headline = 'İyi gidiyorsun';
+      suggestion = riskHour
+        ? `En riskli saat ${String(riskHour).padStart(2, '0')}:00 civarı. O saatte 5 dakikalık bir yürüyüş ekle.`
+        : 'Bir sonraki hafta için tek bir küçük hedef seç; hepsini aynı anda değiştirme.';
+    } else {
+      headline = 'Bu hafta zordu';
+      suggestion =
+        "Hedefi değiştirmeden 3 gün aynı planı dene. İstersen Ayarlar'dan uyarlanabilir planı kapat; tempo tamamen senin kontrolünde olsun.";
+    }
+    if (topTrigger) {
+      suggestion += ` En sık tetikleyicin: ${topTrigger}.`;
+    }
+  }
+
+  return {
+    startKey: keys[0],
+    endKey,
+    loggedDays: loggedRows.length,
+    metDays,
+    totalSmoked,
+    averageSmoked,
+    averageGoal,
+    saved,
+    cravings: rangeCravings.length,
+    resisted,
+    resistedRate,
+    topTrigger,
+    riskHour,
+    bestDay,
+    hardestDay,
+    change,
+    headline,
+    suggestion,
+  };
+}
+
+/**
+ * Doktor/eczacı görüşmesine götürülebilecek, kullanıcının kendi kayıtlarından
+ * üretilen 30 günlük özet. Tıbbi yorum içermez.
+ */
+export function doctorSummary(
+  plan: Plan,
+  logs: DayRecord[],
+  cravings: CravingRecord[],
+  endKey = todayKey(),
+  n = 30,
+): string {
+  const keys = lastNDays(n, endKey);
+  const rows = keys.map((date) => ({
+    date,
+    goal: dailyGoal(plan, date, logs),
+    smoked: getLog(logs, date).smoked,
+    logged: logs.some((l) => l.date === date),
+  }));
+  const loggedRows = rows.filter((r) => r.logged);
+  const totalSmoked = loggedRows.reduce((sum, r) => sum + r.smoked, 0);
+  const averageSmoked = loggedRows.length ? totalSmoked / loggedRows.length : 0;
+  const averageGoal = loggedRows.length
+    ? loggedRows.reduce((sum, r) => sum + r.goal, 0) / loggedRows.length
+    : dailyGoal(plan, endKey, logs);
+  const metDays = loggedRows.filter((r) => r.smoked <= r.goal).length;
+  const avoided = loggedRows.reduce(
+    (sum, r) => sum + avoidedOnDay(plan, { date: r.date, smoked: r.smoked }),
+    0,
+  );
+  const saved = loggedRows.reduce(
+    (sum, r) => sum + moneySavedOnDay(plan, { date: r.date, smoked: r.smoked }),
+    0,
+  );
+  const rangeCravings = cravingsInRange(cravings, keys[0], endKey);
+  const resisted = rangeCravings.filter((c) => c.resisted).length;
+  const resistedRate = rangeCravings.length
+    ? Math.round((resisted / rangeCravings.length) * 100)
+    : 0;
+  const intensity = averageIntensity(rangeCravings);
+  const riskHours = rangeCravings.length ? riskiestHours(rangeCravings, 3) : [];
+  const triggers = topTriggerCounts(rangeCravings, 3);
+  const end = parseKey(endKey);
+  const dateLabel = `${end.getDate()}.${end.getMonth() + 1}.${end.getFullYear()}`;
+
+  return [
+    'Bırak Gitsin — kişisel sigara özeti',
+    `Tarih: ${dateLabel} · Son ${n} gün`,
+    '',
+    `Plan: günde ${plan.baselinePerDay} sigara başlangıç, haftada ${plan.weeklyReduction} azaltma${
+      plan.adaptive !== false ? ' (uyarlanabilir)' : ''
+    }.`,
+    `Kayıtlı gün: ${loggedRows.length}/${n}`,
+    `Ortalama: ${averageSmoked.toFixed(1)} sigara/gün · Hedef ortalaması: ${averageGoal.toFixed(1)}`,
+    `Hedefi tutan gün: ${metDays}/${loggedRows.length || 0}`,
+    `İçilmeyen sigara: ${Math.round(avoided)} · Tasarruf: ${formatMoney(saved, plan.currency)}`,
+    `Kriz kaydı: ${rangeCravings.length} · Dayanma: ${resisted} (%${resistedRate})`,
+    intensity !== null ? `Ortalama istek şiddeti: ${intensity.toFixed(1)}/5` : null,
+    riskHours.length
+      ? `Riskli saatler: ${riskHours
+          .map((h) => `${String(h.hour).padStart(2, '0')}:00 (${h.count})`)
+          .join(', ')}`
+      : null,
+    triggers.length
+      ? `Tetikleyiciler: ${triggers.map((t) => `${t.trigger} (${t.count})`).join(', ')}`
+      : null,
+    '',
+    'Bu özet yalnızca kullanıcının uygulamaya girdiği kayıtlardan oluşturulmuştur; tıbbi değerlendirme veya tedavi önerisi değildir.',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }

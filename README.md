@@ -84,6 +84,13 @@ Gereksinimler: JDK 17 + Android SDK (`platforms;android-36`, `build-tools;36.0.0
 `ndk;27.1.12297006`). Release, prebuild'in debug keystore'u ile imzalanır; bu APK
 Play Store'a yüklemek için değil, doğrudan cihaza kurmak içindir.
 
+> **arm64 (aarch64) host notu:** Android SDK'nın `cmake`, `ninja`, NDK `clang`,
+> `aapt2`, `aidl` ve `zipalign` ikilileri yalnızca x86_64 dağıtılır. `build-apk.sh`,
+> bu makinede `scripts/setup-x86_64-emulation.sh` ile qemu-x86_64 köprüsünü kurar
+> (amd64 libc/libstdc++/libxml2 sysroot'u + sarmalayıcılar). İlk çalıştırmada
+> amd64 paketleri indirilir; `npm ci` veya SDK güncellemesinden sonra betiği
+> yeniden çalıştırmak yeterlidir.
+
 Gerçek kullanıcı dağıtımı için:
 
 ```bash

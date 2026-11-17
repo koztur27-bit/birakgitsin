@@ -1,3 +1,4 @@
+import { useTheme } from '../context/ThemeContext';
 import React, { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,13 +7,15 @@ import { Stepper } from '../components/Stepper';
 import { useApp } from '../context/AppContext';
 import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
 import { formatCountdown, nextWindowInfo } from '../lib/calculations';
-import { colors, fontSizes, radius, shadows, spacing } from '../theme';
+import { fontSizes, radius, shadows, spacing } from '../theme';
 
 const PRESETS_MIN = [5, 10, 30, 60];
 const RING_SIZE = 240;
 const INNER_SIZE = RING_SIZE - 14;
 
 export function TimerScreen() {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { data, timer, setTimerDuration, startTimer, pauseTimer, resumeTimer, resetTimer, dismissTimer, extendTimer } =
     useApp();
@@ -161,7 +164,7 @@ export function TimerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   title: {

@@ -3,6 +3,8 @@ export type SmokeWindow = {
   end: string;
 };
 
+export type CessationAid = 'none' | 'gum' | 'patch' | 'pill';
+
 export type Plan = {
   startDate: string;
   baselinePerDay: number;
@@ -11,6 +13,9 @@ export type Plan = {
   cigarettesPerPack: number;
   currency: string;
   windows: SmokeWindow[];
+  /** Son 7 günün uyumuna göre hedefi otomatik ayarlar. Eski planlarda yoksa açık kabul edilir. */
+  adaptive?: boolean;
+  cessationAid?: CessationAid;
 };
 
 export type DayRecord = {
@@ -28,11 +33,21 @@ export type CravingRecord = {
   trigger?: string;
 };
 
+export type NrtKind = 'gum' | 'patch' | 'pill';
+
+export type NrtLog = {
+  timestamp: string;
+  kind: NrtKind;
+  amount: number;
+};
+
 export type AppData = {
   plan: Plan | null;
   logs: DayRecord[];
   cravings: CravingRecord[];
   badges: string[];
+  nrtLogs?: NrtLog[];
+  // ... rest unchanged
   isPremium: boolean;
   showLockScreen: boolean;
 };

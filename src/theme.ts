@@ -1,4 +1,6 @@
-export const colors = {
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+export const lightColors = {
   primary: '#2563EB',
   primaryDark: '#1D4ED8',
   primaryDarker: '#1E3A8A',
@@ -16,6 +18,33 @@ export const colors = {
   white: '#FFFFFF',
   black: '#000000',
 };
+
+export const darkColors = {
+  primary: '#60A5FA',
+  primaryDark: '#3B82F6',
+  primaryDarker: '#1E3A8A',
+  primarySoft: '#1E293B',
+  accent: '#FBBF24',
+  accentSoft: '#3B2F1A',
+  danger: '#F87171',
+  dangerSoft: '#3B1F24',
+  success: '#4ADE80',
+  bg: '#0B1220',
+  card: '#111A2E',
+  text: '#E2E8F0',
+  textMuted: '#94A3B8',
+  border: '#1F2A44',
+  white: '#FFFFFF',
+  black: '#000000',
+};
+
+export const colors = lightColors;
+
+export function resolveColors(mode: ThemeMode, system: 'light' | 'dark'): typeof lightColors {
+  if (mode === 'dark') return darkColors;
+  if (mode === 'light') return lightColors;
+  return system === 'dark' ? darkColors : lightColors;
+}
 
 export const spacing = {
   xs: 4,

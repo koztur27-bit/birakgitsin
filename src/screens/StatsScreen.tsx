@@ -1,5 +1,6 @@
+import { useTheme } from '../context/ThemeContext';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { Card } from '../components/Card';
@@ -14,9 +15,12 @@ import {
   cravingHours,
   dailyGoal,
   daysSinceStart,
+  doctorSummary,
   elapsedDays,
+  formatDayShort,
   formatDuration,
   formatMoney,
+  formatMoneyShort,
   formatUntil,
   getLog,
   milestones,
@@ -24,8 +28,10 @@ import {
   topTriggerCounts,
   totalMoneySaved,
   totalSmoked,
+  todayKey,
+  weeklyReport,
 } from '../lib/calculations';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { fontSizes, radius, spacing } from '../theme';
 
 const MONTHS = [
   'Ocak',
@@ -43,6 +49,8 @@ const MONTHS = [
 ];
 
 export function StatsScreen() {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { data } = useApp();
   const plan = data.plan;
@@ -59,13 +67,13 @@ export function StatsScreen() {
   const avoided = cigarettesAvoided(plan, data.logs);
   const smoked = totalSmoked(data.logs);
   const list = milestones();
-  const todayRecord = getLog(data.logs, new Date().toISOString().slice(0, 10));
+  const todayRecord = getLog(data.logs, todayKey());
 
   const monthPrefix = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
   const monthLogs = data.logs.filter((l) => l.date.startsWith(monthPrefix));
   const monthSmoked = monthLogs.reduce((s, l) => s + l.smoked, 0);
-  const monthOK = monthLogs.filter((l) => l.smoked <= dailyGoal(plan, l.date)).length;
-  const monthOver = monthLogs.filter((l) => l.smoked > dailyGoal(plan, l.date)).length;
+  const monthOK = monthLogs.filter((l) => l.smoked <= dailyGoal(plan, l.date, data.logs)).length;
+  const monthOver = monthLogs.filter((l) => l.smoked > dailyGoal(plan, l.date, data.logs)).length;
   const officialDaysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
   const badges = data.badges ?? [];
   const badgesWon = badges.length;
@@ -81,11 +89,112 @@ export function StatsScreen() {
   const triggers = topTriggerCounts(data.cravings, 4);
   const hourHist = cravingHours(data.cravings);
   const avgIntensity = averageIntensity(data.cravings);
+  const report = weeklyReport(plan, data.logs, data.cravings);
+
+  const shareWeekly = async () => {
+    try {
+      await Share.share({
+        title: 'Bırak Gitsin — haftalık rapor',
+        message: [
+          `Bırak Gitsin · ${report.startKey} – ${report.endKey}`,
+          `${report.headline}: ${report.metDays}/${report.loggedDays} gün hedefi tuttun.`,
+          `Ortalama ${report.averageSmoked.toFixed(1)} sigara/gün (hedef ${report.averageGoal.toFixed(1)}).`,
+          report.change !== null
+            ? `Geçen haftaya göre günde ${Math.abs(report.change).toFixed(1)} sigara ${
+                report.change <= 0 ? 'daha az' : 'daha fazla'
+              }.`
+            : null,
+          `Tasarruf: ${formatMoney(report.saved, plan.currency)}.`,
+          report.cravings
+            ? `Krizlerde ${report.resisted}/${report.cravings} kez dayandın (%${report.resistedRate}).`
+            : null,
+          report.topTrigger ? `En sık tetikleyici: ${report.topTrigger}.` : null,
+          '',
+          'Bırak Gitsin ile sigarayı azaltıyorum.',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      });
+    } catch {
+      Alert.alert('Paylaşılamadı', 'Şu anda paylaşım ekranı açılamadı.');
+    }
+  };
+
+  const shareDoctor = async () => {
+    try {
+      await Share.share({
+        title: 'Bırak Gitsin — doktor/eczacı özeti',
+        message: doctorSummary(plan, data.logs, data.cravings),
+      });
+    } catch {
+      Alert.alert('Paylaşılamadı', 'Şu anda paylaşım ekranı açılamadı.');
+    }
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>İstatistikler</Text>
+
+        <Card style={styles.coachCard}>
+          <View style={styles.coachHead}>
+            <View style={styles.coachHeadText}>
+              <Text style={styles.cardLabel}>Haftalık koç raporu</Text>
+              <Text style={styles.coachHeadline}>{report.headline}</Text>
+            </View>
+            <View style={styles.coachBadge}>
+              <Text style={styles.coachBadgeValue}>
+                {report.loggedDays ? `${report.metDays}/${report.loggedDays}` : '—'}
+              </Text>
+              <Text style={styles.coachBadgeLabel}>hedef</Text>
+            </View>
+          </View>
+
+          <View style={styles.coachMetrics}>
+            <View style={styles.coachMetric}>
+              <Text style={styles.coachMetricValue}>
+                {report.loggedDays ? report.averageSmoked.toFixed(1) : '—'}
+              </Text>
+              <Text style={styles.coachMetricLabel}>sigara/gün</Text>
+            </View>
+            <View style={styles.coachMetric}>
+              <Text style={styles.coachMetricValue}>
+                {report.cravings ? `${report.resisted}/${report.cravings}` : '—'}
+              </Text>
+              <Text style={styles.coachMetricLabel}>krizde dayandın</Text>
+            </View>
+            <View style={styles.coachMetric}>
+              <Text style={styles.coachMetricValue}>
+                {formatMoneyShort(report.saved, plan.currency)}
+              </Text>
+              <Text style={styles.coachMetricLabel}>bu hafta tasarruf</Text>
+            </View>
+          </View>
+
+          <Text style={styles.coachSuggestion}>{report.suggestion}</Text>
+
+          {report.bestDay && report.hardestDay ? (
+            <Text style={styles.coachMeta}>
+              En iyi gün {formatDayShort(report.bestDay.date)} ({report.bestDay.smoked}) · en zor
+              gün {formatDayShort(report.hardestDay.date)} ({report.hardestDay.smoked})
+            </Text>
+          ) : null}
+
+          <View style={styles.shareRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={shareWeekly}
+              style={[styles.shareBtn, styles.shareBtnPrimary]}
+            >
+              <Text style={[styles.shareBtnText, styles.shareBtnTextPrimary]}>
+                Raporu paylaş
+              </Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" onPress={shareDoctor} style={styles.shareBtn}>
+              <Text style={styles.shareBtnText}>Doktor özeti</Text>
+            </Pressable>
+          </View>
+        </Card>
 
         <View style={styles.grid}>
           <Card style={styles.gridCard}>
@@ -293,7 +402,8 @@ export function StatsScreen() {
 
         {todayRecord.smoked > 0 ? (
           <Text style={styles.tip}>
-            Bugün {todayRecord.smoked} sigara içtin. Hedefin {dailyGoal(plan, new Date().toISOString().slice(0, 10))}.
+            Bugün {todayRecord.smoked} sigara içtin. Hedefin{' '}
+            {dailyGoal(plan, todayKey(), data.logs)}.
             İstersen ana sayfadan gün içi kayıtlarını güncelleyebilirsin.
           </Text>
         ) : null}
@@ -302,7 +412,7 @@ export function StatsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   title: {
@@ -312,6 +422,70 @@ const styles = StyleSheet.create({
   },
   grid: { flexDirection: 'row', gap: spacing.md },
   gridCard: { flex: 1 },
+  coachCard: { borderWidth: 1, borderColor: colors.primarySoft },
+  coachHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  coachHeadText: { flex: 1 },
+  coachHeadline: {
+    fontSize: fontSizes.lg,
+    fontWeight: '800',
+    color: colors.primaryDark,
+    marginTop: 2,
+  },
+  coachBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coachBadgeValue: { fontSize: fontSizes.md, fontWeight: '800', color: colors.primaryDark },
+  coachBadgeLabel: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 1 },
+  coachMetrics: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  coachMetric: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    alignItems: 'center',
+  },
+  coachMetricValue: {
+    fontSize: fontSizes.md,
+    fontWeight: '800',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  coachMetricLabel: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  coachSuggestion: {
+    fontSize: fontSizes.sm,
+    color: colors.text,
+    lineHeight: 20,
+    marginTop: spacing.md,
+  },
+  coachMeta: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  shareRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  shareBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+  },
+  shareBtnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
+  shareBtnText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+  shareBtnTextPrimary: { color: colors.white },
   cardLabel: {
     fontSize: fontSizes.sm,
     color: colors.textMuted,

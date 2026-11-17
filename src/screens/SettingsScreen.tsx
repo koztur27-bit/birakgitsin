@@ -1,3 +1,4 @@
+import { useTheme } from '../context/ThemeContext';
 import * as Clipboard from 'expo-clipboard';
 import React, { useState } from 'react';
 import {
@@ -5,6 +6,7 @@ import {
   Linking,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -15,27 +17,33 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { useApp } from '../context/AppContext';
-import { dailyGoal, formatMoney } from '../lib/calculations';
+import { dailyGoal, formatMoney, todayKey } from '../lib/calculations';
 import { useInstallPrompt } from '../lib/install';
 import { reloadApp } from '../lib/reload';
 import { playAlarmFor } from '../lib/alarm';
 import { debugLockStatus } from '../lib/statusNotification';
 import { downloadAndInstallUpdate } from '../lib/updater';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { pinHomeShortcut } from '../lib/shortcut';
+import { pinHomeWidget } from '../lib/pinWidget';
+import { fontSizes, radius, spacing } from '../theme';
 
 type SettingsScreenProps = {
   onEditPlan: () => void;
 };
 
 export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
+  const { colors, mode, setMode } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const {
     data,
     resetAll,
     setPremium,
+    setPlan,
     setShowLockScreen,
     logCigarette,
     undoCigarette,
+    logNrt,
     restoreData,
     exportedJson,
   } = useApp();
@@ -43,11 +51,18 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [backupText, setBackupText] = useState('');
   const [mapOpen, setMapOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [shortcutStatus, setShortcutStatus] = useState('');
+  const [widgetStatus, setWidgetStatus] = useState('');
   const { available: canInstall, install, isWeb } = useInstallPrompt();
 
   if (!plan) return null;
 
-  const goal = dailyGoal(plan, new Date().toISOString().slice(0, 10));
+  const goal = dailyGoal(plan, todayKey(), data.logs);
+  const nrtToday = (data.nrtLogs ?? []).filter((l) => l.timestamp.slice(0, 10) === todayKey());
+  const nrtCounts = {
+    gum: nrtToday.filter((l) => l.kind === 'gum').reduce((s, l) => s + l.amount, 0),
+    patch: nrtToday.filter((l) => l.kind === 'patch').reduce((s, l) => s + l.amount, 0),
+  };
 
   const doUpdate = async () => {
     if (isWeb) {
@@ -107,6 +122,16 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
     }
   };
 
+  const doBackupShare = async () => {
+    try {
+      await Share.share({
+        title: 'Bırak Gitsin yedeği',
+        message: exportedJson(),
+      });
+    } catch {
+      Alert.alert('Paylaşılamadı', 'Yedek şu anda paylaşılamadı.');
+    }
+  };
   const doRestore = async () => {
     const text = backupText.trim() || (await Clipboard.getStringAsync().catch(() => ''));
     if (!text) {
@@ -132,6 +157,30 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Ayarlar</Text>
 
+        <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
+          <Text style={styles.cardLabel}>Widget'i ana ekrana sabitle</Text>
+          <Text style={styles.planSub}>
+            MIUI widget menüsünü atlayıp widget'ı doğrudan ana ekrana ekler. Butona basınca
+            sistem penceresi açılır; "Ana ekrana ekle" de.
+          </Text>
+          <View style={styles.inlineRow}>
+            <Pressable
+              style={[styles.smallBtn, styles.smallBtnFill]}
+              onPress={() => {
+                Alert.alert('Widget boyutu seç', 'Hangi boyutta widget eklemek istersin?', [
+                  { text: '1×2', onPress: async () => { const ok = await pinHomeWidget('1x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
+                  { text: '2×2', onPress: async () => { const ok = await pinHomeWidget('2x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
+                  { text: '2×3', onPress: async () => { const ok = await pinHomeWidget('2x3'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
+                  { text: 'İptal', style: 'cancel' },
+                ]);
+              }}
+            >
+              <Text style={styles.smallBtnText}>Widget sabitle</Text>
+            </Pressable>
+          </View>
+          {widgetStatus ? <Text style={styles.planSub}>{widgetStatus}</Text> : null}
+        </Card>
+
         <Card>
           <Text style={styles.cardLabel}>Ekran Haritası</Text>
           <Text style={styles.planSub}>
@@ -141,6 +190,24 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Pressable style={styles.rowBtn} onPress={() => setMapOpen(true)}>
             <Text style={styles.rowBtnText}>Haritayı Aç</Text>
           </Pressable>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>Görünüm</Text>
+          <Text style={styles.planSub}>Gece veya gündüz temasını seç.</Text>
+          <View style={styles.inlineRow}>
+            {(['system', 'light', 'dark'] as const).map((m) => (
+              <Pressable
+                key={m}
+                style={[styles.smallBtn, mode === m && styles.smallBtnFill]}
+                onPress={() => setMode(m)}
+              >
+                <Text style={[styles.smallBtnText, mode === m && styles.smallBtnTextActive]}>
+                  {m === 'system' ? 'Sistem' : m === 'light' ? 'Gündüz' : 'Gece'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </Card>
 
         <Card>
@@ -206,6 +273,20 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
                 {plan.windows.map((w) => `${w.start}–${w.end}`).join(', ')}
               </Text>
             ) : null}
+          </View>
+          <View style={styles.adaptiveRow}>
+            <View style={styles.adaptiveInfo}>
+              <Text style={styles.cardLabel}>Uyarlanabilir plan</Text>
+              <Text style={styles.planSub}>
+                Son 7 günün uyumuna göre hedefi otomatik ayarlar. Zorlandığında hızı düşürür.
+              </Text>
+            </View>
+            <Switch
+              value={plan.adaptive !== false}
+              onValueChange={(value) => setPlan({ ...plan, adaptive: value })}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.white}
+            />
           </View>
           <Pressable style={styles.rowBtn} onPress={onEditPlan}>
             <Text style={styles.rowBtnText}>Stratejini Düzenle</Text>
@@ -273,6 +354,9 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doBackup}>
               <Text style={styles.smallBtnText}>Yedeği panoya kopyala</Text>
             </Pressable>
+            <Pressable style={styles.smallBtn} onPress={doBackupShare}>
+              <Text style={styles.smallBtnText}>Paylaş / dosyaya kaydet</Text>
+            </Pressable>
           </View>
           <TextInput
             style={styles.backupInput}
@@ -288,6 +372,50 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
               <Text style={styles.smallBtnText}>Yapıştırılan veriyi geri yükle</Text>
             </Pressable>
           </View>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>Ana ekrana kısayol</Text>
+          <Text style={styles.planSub}>
+            Uygulamayı tek dokunuşla açan bir ikonu ana ekrana ekler. Widget yerine
+            kullanılabilir.
+          </Text>
+          <View style={styles.inlineRow}>
+            <Pressable
+              style={[styles.smallBtn, styles.smallBtnFill]}
+              onPress={async () => {
+                const ok = await pinHomeShortcut();
+                setShortcutStatus(ok ? 'Kısayol eklendi.' : 'Bu cihaz kısayol eklemeyi desteklemiyor.');
+              }}
+            >
+              <Text style={styles.smallBtnText}>Kısayol ekle</Text>
+            </Pressable>
+          </View>
+          {shortcutStatus ? <Text style={styles.planSub}>{shortcutStatus}</Text> : null}
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>NRT / ilaç günlüğü</Text>
+          <Text style={styles.planSub}>
+            Nikotin sakızı, bant veya ilaç dozunu kaydet. Bu kayıt tıbbi öneri değildir;
+            doktorunun planına göre kullan.
+          </Text>
+          {plan.cessationAid && plan.cessationAid !== 'none' ? (
+            <Text style={styles.planSub}>
+              Onboarding tercihin: {plan.cessationAid === 'gum' ? 'sakız' : 'bant'}
+            </Text>
+          ) : null}
+          <View style={styles.inlineRow}>
+            <Pressable style={styles.smallBtn} onPress={() => logNrt('gum')}>
+              <Text style={styles.smallBtnText}>Sakız +1</Text>
+            </Pressable>
+            <Pressable style={styles.smallBtn} onPress={() => logNrt('patch')}>
+              <Text style={styles.smallBtnText}>Bant +1</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.planSub}>
+            Bugün: sakız {nrtCounts.gum}, bant {nrtCounts.patch}
+          </Text>
         </Card>
 
         <Card>
@@ -321,7 +449,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   title: {
@@ -397,6 +525,16 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
   },
+  adaptiveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  adaptiveInfo: { flex: 1 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   switchInfo: { flex: 1 },
 });

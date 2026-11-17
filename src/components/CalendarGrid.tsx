@@ -1,8 +1,9 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Plan } from '../types';
 import { dailyGoal, getLog } from '../lib/calculations';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { fontSizes, radius, spacing } from '../theme';
 
 type Props = {
   plan: Plan;
@@ -14,13 +15,15 @@ type Props = {
 const WEEKDAYS = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
 function dayStatus(plan: Plan, logs: Props['logs'], key: string): 'none' | 'ok' | 'over' {
-  const goal = dailyGoal(plan, key);
+  const goal = dailyGoal(plan, key, logs);
   const rec = getLog(logs, key);
   if (rec.smoked === 0) return 'none';
   return rec.smoked <= goal ? 'ok' : 'over';
 }
 
 export function CalendarGrid({ plan, logs, year, month }: Props) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const first = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const lead = (first.getDay() + 6) % 7;
@@ -91,7 +94,7 @@ export function CalendarGrid({ plan, logs, year, month }: Props) {
 
 const sizes = { cell: 42 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   weekRow: { flexDirection: 'row', marginBottom: spacing.xs },
   weekLabel: {
     flex: 1,

@@ -1,3 +1,4 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useApp } from '../context/AppContext';
@@ -11,7 +12,7 @@ import {
   riskiestHours,
   todayKey,
 } from '../lib/calculations';
-import { colors, fontSizes, radius, shadows, spacing } from '../theme';
+import { fontSizes, radius, shadows, spacing } from '../theme';
 
 type StatusPopupProps = {
   visible: boolean;
@@ -28,12 +29,14 @@ function formatMinutes(min: number): string {
 }
 
 export function StatusPopup({ visible, onClose }: StatusPopupProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const { data, timer } = useApp();
   const plan = data.plan;
 
   const today = todayKey();
   const rec = plan ? getLog(data.logs, today) : null;
-  const goal = plan ? dailyGoal(plan, today) : 0;
+  const goal = plan ? dailyGoal(plan, today, data.logs) : 0;
   const left = rec ? Math.max(0, goal - rec.smoked) : 0;
   const next = plan ? nextWindowInfo(plan) : null;
 
@@ -111,7 +114,7 @@ export function StatusPopup({ visible, onClose }: StatusPopupProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',

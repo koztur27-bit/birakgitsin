@@ -1,13 +1,16 @@
+import { useTheme } from '../context/ThemeContext';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { DayStat } from '../types';
-import { colors, fontSizes, radius, spacing } from '../theme';
+import { fontSizes, radius, spacing } from '../theme';
 
 type WeekChartProps = {
   stats: DayStat[];
 };
 
 export function WeekChart({ stats }: WeekChartProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const maxVal = Math.max(1, ...stats.flatMap((s) => [s.goal, s.smoked]));
   const dayLabels = stats.map((s) => {
     const [, mStr, dStr] = s.date.split('-');
@@ -54,7 +57,7 @@ export function WeekChart({ stats }: WeekChartProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   chart: { marginTop: spacing.md },
   barsRow: {
     flexDirection: 'row',

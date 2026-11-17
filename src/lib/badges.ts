@@ -1,5 +1,5 @@
 import { AppData } from '../types';
-import { cigarettesAvoided, daysSinceStart, goalStreak, todayKey } from './calculations';
+import { cigarettesAvoided, dailyGoal, daysSinceStart, goalStreak, todayKey } from './calculations';
 
 export type BadgeDef = {
   id: string;
@@ -130,8 +130,7 @@ const defMap = new Map(badgeDefs().map((b) => [b.id, b]));
 
 function dailyGoalFor(data: AppData, dateKey: string): number {
   if (!data.plan) return 0;
-  const week = Math.floor(Math.max(0, daysSinceStart(data.plan, dateKey)) / 7);
-  return Math.max(0, data.plan.baselinePerDay - week * data.plan.weeklyReduction);
+  return dailyGoal(data.plan, dateKey, data.logs);
 }
 
 export function badgeById(id: string): BadgeDef | undefined {

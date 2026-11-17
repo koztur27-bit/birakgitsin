@@ -1,3 +1,4 @@
+import { useTheme } from '../context/ThemeContext';
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,10 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { Stepper } from '../components/Stepper';
 import { WindowEditor } from '../components/WindowEditor';
-import { colors, currencySymbols, fontSizes, radius, spacing } from '../theme';
-import { Plan, SmokeWindow } from '../types';
+import { currencySymbols, fontSizes, radius, spacing } from '../theme';
+import { CessationAid, Plan, SmokeWindow } from '../types';
 
-const STEPS = 7;
+const STEPS = 5;
 
 const defaultWindows: SmokeWindow[] = [
   { start: '08:00', end: '09:00' },
@@ -30,6 +31,7 @@ type Draft = {
   currency: string;
   useWindows: boolean;
   windows: SmokeWindow[];
+  cessationAid: CessationAid;
 };
 
 const defaultDraft: Draft = {
@@ -40,6 +42,7 @@ const defaultDraft: Draft = {
   currency: '₺',
   useWindows: true,
   windows: defaultWindows,
+  cessationAid: 'none',
 };
 
 type OnboardingProps = {
@@ -49,6 +52,8 @@ type OnboardingProps = {
 };
 
 export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(() =>
@@ -62,6 +67,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
           useWindows: (initial.windows?.length ?? 0) > 0,
           windows:
             initial.windows?.length > 0 ? initial.windows : defaultWindows,
+          cessationAid: initial.cessationAid ?? 'none',
         }
       : defaultDraft,
   );
@@ -78,12 +84,10 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
       cigarettesPerPack: draft.cigarettesPerPack,
       currency: draft.currency,
       windows: draft.useWindows ? draft.windows : [],
+      adaptive: initial?.adaptive ?? true,
+      cessationAid: draft.cessationAid,
     });
   };
-
-  const ropo = draft.weeklyReduction > 0
-    ? Math.max(0, draft.baselinePerDay - draft.weeklyReduction)
-    : draft.baselinePerDay;
 
   return (
     <KeyboardAvoidingView
@@ -125,47 +129,40 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
 
         {step === 1 && (
           <StepperScreen
-            title="Şu anda günde kaç sigara içiyorsun?"
-            child={
-              <Stepper
-                label="Günlük sigara"
-                value={draft.baselinePerDay}
-                onChange={(v) => set('baselinePerDay', v)}
-                min={1}
-                max={60}
-                suffix="adet"
-                hint="Azaltma planı bu sayıdan başlar."
-              />
-            }
-          />
-        )}
-
-        {step === 2 && (
-          <StepperScreen
-            title="Haftada kaç sigara azaltmak istersin?"
+            title="Sigara tempon ve azaltma hızın"
             child={
               <>
+                <Stepper
+                  label="Günlük sigara"
+                  value={draft.baselinePerDay}
+                  onChange={(v) => set('baselinePerDay', v)}
+                  min={1}
+                  max={60}
+                  suffix="adet"
+                  hint="Azaltma planı bu sayıdan başlar."
+                />
                 <Stepper
                   label="Haftalık azalış"
                   value={draft.weeklyReduction}
                   onChange={(v) => set('weeklyReduction', v)}
-                  min={1}
+                  min={0}
                   max={draft.baselinePerDay}
                   suffix="adet/gün"
-                  hint="Her hafta günlük hedefin bu kadar düşer."
+                  hint="Her hafta günlük hedefin bu kadar düşer. 0 = sabit tempo."
                 />
                 <Text style={styles.preview}>
                   1. hafta hedefin: {draft.baselinePerDay} adet
                 </Text>
                 <Text style={styles.preview}>
-                  2. hafta hedefin: {Math.max(0, ropo)} adet
+                  2. hafta hedefin:{' '}
+                  {Math.max(0, draft.baselinePerDay - draft.weeklyReduction)} adet
                 </Text>
               </>
             }
           />
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <StepperScreen
             title="Sigara sana neye mal oluyor?"
             child={
@@ -187,39 +184,33 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                   max={40}
                   suffix="adet"
                 />
+                <Text style={styles.paragraph}>Para birimi</Text>
+                <View style={styles.currencyRow}>
+                  {currencySymbols.map((c) => (
+                    <Pressable
+                      key={c}
+                      onPress={() => set('currency', c)}
+                      style={[styles.currencyBtn, draft.currency === c && styles.currencyBtnActive]}
+                    >
+                      <Text
+                        style={[
+                          styles.currencyText,
+                          draft.currency === c && styles.currencyTextActive,
+                        ]}
+                      >
+                        {c}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
               </>
             }
           />
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <Card>
-            <Text style={styles.title}>Para birimi</Text>
-            <Text style={styles.paragraph}>Tasarruf hesabında hangi birimi kullanalım?</Text>
-            <View style={styles.currencyRow}>
-              {currencySymbols.map((c) => (
-                <Pressable
-                  key={c}
-                  onPress={() => set('currency', c)}
-                  style={[styles.currencyBtn, draft.currency === c && styles.currencyBtnActive]}
-                >
-                  <Text
-                    style={[
-                      styles.currencyText,
-                      draft.currency === c && styles.currencyTextActive,
-                    ]}
-                  >
-                    {c}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </Card>
-        )}
-
-        {step === 5 && (
-          <Card>
-            <Text style={styles.title}>İzinli pencereler</Text>
+            <Text style={styles.title}>İzinli pencereler ve özet</Text>
             <Text style={styles.paragraph}>
               Sigara içmeyi planladığın saat aralıklarını belirle. Bugünkü hedefin bu
               pencerelere dağıtılır.
@@ -233,28 +224,56 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                 }}
               />
             </View>
+            <View style={{ marginTop: spacing.md }}>
+              <SummaryRow label="Başlangıç" value={`günde ${draft.baselinePerDay} sigara`} />
+              <SummaryRow label="Azaltma" value={`haftada ${draft.weeklyReduction} sigara`} />
+              <SummaryRow
+                label="1 paket"
+                value={`${draft.packPrice} ${draft.currency} / ${draft.cigarettesPerPack} adet`}
+              />
+              <SummaryRow
+                label="Tek sigara"
+                value={`${Number((draft.packPrice / draft.cigarettesPerPack).toFixed(2))} ${draft.currency}`}
+              />
+              <Text style={[styles.paragraph, { marginTop: spacing.md }]}>
+                Plan başladığında bugünkü günlük hedefin {draft.baselinePerDay} sigara olacak.
+                Uyarlanabilir plan açık; son haftanın uyumuna göre tempo kendini ayarlar.
+              </Text>
+            </View>
           </Card>
         )}
-
-        {step === 6 && (
+        {step === 4 && (
           <Card>
-            <Text style={styles.title}>Özet</Text>
-            <SummaryRow label="Başlangıç" value={`günde ${draft.baselinePerDay} sigara`} />
-            <SummaryRow
-              label="Azaltma"
-              value={`haftada ${draft.weeklyReduction} sigara`}
-            />
-            <SummaryRow
-              label="1 paket"
-              value={`${draft.packPrice} ${draft.currency} / ${draft.cigarettesPerPack} adet`}
-            />
-            <SummaryRow
-              label="Tek sigara"
-              value={`${Number((draft.packPrice / draft.cigarettesPerPack).toFixed(2))} ${draft.currency}`}
-            />
-            <Text style={[styles.paragraph, { marginTop: spacing.md }]}>
-              Plan başladığında bugünkü günlük hedefin {draft.baselinePerDay} sigara olacak.
+            <Text style={styles.title}>Hangi yöntemle ilerlemek istersin?</Text>
+            <Text style={styles.paragraph}>
+              Planını seçtiğin yönteme göre şekillendireceğiz. İstediğin zaman
+              Ayarlar’dan değiştirebilirsin.
             </Text>
+            <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+              {[
+                { key: 'none', label: 'Sadece azaltarak bırak' },
+                { key: 'gum', label: 'Nikotin sakızı ile' },
+                { key: 'patch', label: 'Nikotin bandı ile' },
+              ].map((opt) => (
+                <Pressable
+                  key={opt.key}
+                  style={[
+                    styles.currencyBtn,
+                    draft.cessationAid === opt.key && styles.currencyBtnActive,
+                  ]}
+                  onPress={() => set('cessationAid', opt.key as CessationAid)}
+                >
+                  <Text
+                    style={[
+                      styles.currencyText,
+                      draft.cessationAid === opt.key && styles.currencyTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </Card>
         )}
       </ScrollView>
@@ -279,6 +298,8 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
 }
 
 function StepperScreen({ title, child }: { title: string; child: React.ReactNode }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return (
     <Card>
       <Text style={styles.title}>{title}</Text>
@@ -288,6 +309,8 @@ function StepperScreen({ title, child }: { title: string; child: React.ReactNode
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.summaryRow}>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -296,7 +319,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: spacing.lg, marginBottom: spacing.md },
   brand: {
