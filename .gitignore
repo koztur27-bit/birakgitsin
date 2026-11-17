@@ -47,3 +47,14 @@ birakgitsin.apk
 # Gradle derleme ciktilari (ice icerecekler)
 **/build/
 **/.gradle/
+
+# Imza/gizli dosyalar (GitHub icin haric)
+*.keystore
+*.jks
+*.p12
+*.p8
+*.mobileprovision
+key.properties
+keystore.properties
+*signing*.properties
+*password*.properties
