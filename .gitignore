@@ -43,3 +43,7 @@ yarn-error.*
 # yerel derleme ciktilari
 birakgitsin.apk
 *.apk
+
+# Gradle derleme ciktilari (ice icerecekler)
+**/build/
+**/.gradle/
