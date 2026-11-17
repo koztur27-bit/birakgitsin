@@ -1,0 +1,95 @@
+# Evrensel APK derleme sablonu (GitHub Actions)
+# Yeni projelerde .github/workflows/build.yml olarak kopyalanir.
+# Tetikleme: push (master/main/v*), tag veya manuel workflow_dispatch.
+# Azami sure 10 dakika (global timeout 600 kurali).
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Node 22 (Expo / React Native)
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Flutter (varsa)
+        if: hashFiles('pubspec.yaml') != ''
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install JS dependencies
+        if: hashFiles('package.json') != ''
+        run: npm ci
+
+      - name: Flutter pub get
+        if: hashFiles('pubspec.yaml') != ''
+        run: flutter pub get
+
+      - name: Expo prebuild (android/ yoksa)
+        if: hashFiles('package.json') != '' && hashFiles('android/gradlew') == ''
+        run: CI=1 npx expo prebuild --platform android --clean --no-install
+
+      - name: aapt2 ayari (build-tools 36 varsa)
+        if: hashFiles('android/**') != ''
+        run: |
+          mkdir -p android
+          touch android/gradle.properties
+          AAPT2="${ANDROID_HOME:-$HOME/Android/Sdk}/build-tools/36.0.0/aapt2"
+          if [ -x "$AAPT2" ]; then
+            grep -q '^android.aapt2FromMavenOverride=' android/gradle.properties || \
+              echo "android.aapt2FromMavenOverride=$AAPT2" >> android/gradle.properties
+          fi
+
+      - name: Flutter release APK
+        if: hashFiles('pubspec.yaml') != ''
+        run: flutter build apk --release
+
+      - name: Gradle release APK (Android / React Native)
+        if: hashFiles('pubspec.yaml') == '' && hashFiles('android/gradlew') != ''
+        run: |
+          chmod +x android/gradlew
+          cd android && ./gradlew :app:assembleRelease --no-daemon
+
+      - name: APK'yi topla
+        id: apk
+        shell: bash
+        run: |
+          APK="$(find . -type f \( -name 'app-release.apk' -o -name '*-release.apk' \) -print -quit 2>/dev/null)"
+          if [ -z "$APK" ]; then
+            APK="$(find . -type f -name '*.apk' -print -quit 2>/dev/null)"
+          fi
+          if [ -z "$APK" ]; then
+            echo "HATA: APK uretilmedi."
+            exit 1
+          fi
+          cp "$APK" ./app-release.apk
+          ls -lh ./app-release.apk
+          echo "path=./app-release.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30
