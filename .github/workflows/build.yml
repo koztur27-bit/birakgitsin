@@ -1,7 +1,7 @@
 # Evrensel APK derleme sablonu (GitHub Actions)
 # Yeni projelerde .github/workflows/build.yml olarak kopyalanir.
 # Tetikleme: push (master/main/v*), tag veya manuel workflow_dispatch.
-# Azami sure 10 dakika (global timeout 600 kurali).
+# Azami sure 25 dakika (proje bazli kota korumasi).
 name: Build APK
 
 on:
@@ -9,6 +9,9 @@ on:
   push:
     branches: [master, main]
     tags: ['v*']
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -86,10 +89,22 @@ jobs:
           ls -lh ./app-release.apk
           echo "path=./app-release.apk" >> "$GITHUB_OUTPUT"
 
-      - name: Upload APK artifact
+      - name: Upload APK artifact (1 gun)
         uses: actions/upload-artifact@v4
         with:
           name: apk
           path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 1
+
+      - name: APK'yi apk-latest Release olarak yayinla
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: "APK - son surum"
+          body: "Guncel APK (her derlemede uzerine yazilir)."
+          files: ${{ steps.apk.outputs.path }}
+          overwrite_files: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
