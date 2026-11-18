@@ -12,6 +12,5 @@
     android:enabled="true"
     android:exported="true"
     android:label="Bırak Gitsin (4x2)"
-    android:description="Sigarayı bırakma sayacı"
     android:icon="@mipmap/ic_launcher"
     android:widgetCategory="home_screen" />
