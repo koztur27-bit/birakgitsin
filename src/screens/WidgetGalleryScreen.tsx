@@ -190,8 +190,8 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
           />
 
           <Text style={styles.footnote}>
-            Widget&apos;lar telefonun ana ekranında canlı güncellenir. İstersen ayarlardan
-            “Widget&apos;i ana ekrana sabitle” ile 1×2 ve 2×3 boyutlarını da ekleyebilirsin.
+            Widget&apos;lar telefonun ana ekranında canlı güncellenir. Aynı ekrandan dilediğin
+            zaman yeniden ekleyebilir, istediğin kadar widget kullanabilirsin.
           </Text>
         </ScrollView>
       </View>
