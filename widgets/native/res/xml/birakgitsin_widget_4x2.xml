@@ -6,10 +6,12 @@
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/birakgitsin_widget_4x2"
+    android:previewLayout="@layout/birakgitsin_widget_4x2"
+    android:previewImage="@drawable/birakgitsin_preview_4x2"
     android:resizeMode="none"
     android:enabled="true"
     android:exported="true"
     android:label="Bırak Gitsin (4x2)"
+    android:description="Sigarayı bırakma sayacı"
     android:icon="@mipmap/ic_launcher"
-    android:previewImage="@drawable/widget_preview_4x2"
     android:widgetCategory="home_screen" />
