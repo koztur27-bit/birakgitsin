@@ -89,14 +89,6 @@ jobs:
           ls -lh ./app-release.apk
           echo "path=./app-release.apk" >> "$GITHUB_OUTPUT"
 
-      - name: Upload APK artifact (1 gun)
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: ${{ steps.apk.outputs.path }}
-          if-no-files-found: error
-          retention-days: 1
-
       - name: APK'yi apk-latest Release olarak yayinla
         uses: softprops/action-gh-release@v2
         with:
@@ -108,3 +100,12 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK artifact (1 gun, kota dolarsa atlanir)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+          retention-days: 1
