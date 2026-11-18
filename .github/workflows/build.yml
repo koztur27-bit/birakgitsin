@@ -68,7 +68,7 @@ jobs:
         if: hashFiles('pubspec.yaml') == '' && hashFiles('android/gradlew') != ''
         run: |
           chmod +x android/gradlew
-          cd android && ./gradlew :app:assembleRelease --no-daemon
+          cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
       - name: APK'yi topla
         id: apk
