@@ -1,7 +1,6 @@
 package com.birakgitsin.app
 
 import android.content.Context
-import android.content.Intent
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -31,8 +30,7 @@ class BirakGitsinWidgetDataModule(reactContext: ReactApplicationContext) : React
             .putString("savingsText", savingsText)
             .apply()
 
-        val intent = Intent("com.birakgitsin.app.WIDGET_UPDATE")
-        intent.setPackage(context.packageName)
-        context.sendBroadcast(intent)
+        // Standart disi bir broadcast yerine widget'lari dogrudan guncelle.
+        BirakGitsinWidget.renderAll(context)
     }
 }

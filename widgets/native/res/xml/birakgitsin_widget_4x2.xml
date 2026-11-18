@@ -14,6 +14,7 @@
     android:resizeMode="horizontal|vertical"
     android:enabled="true"
     android:widgetCategory="home_screen"
+    android:widgetFeatures="configuration_optional"
     android:description="@string/widget_description"
     android:label="Bırak Gitsin (4x2)"
     android:icon="@drawable/widget_icon" />

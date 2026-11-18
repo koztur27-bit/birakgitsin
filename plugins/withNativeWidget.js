@@ -34,9 +34,7 @@ function canonicalReceiver(r) {
     'intent-filter': [
       {
         action: [{ $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' } }],
-        category: [{ $: { 'android:name': 'android.intent.category.DEFAULT' } }],
       },
-      { action: [{ $: { 'android:name': 'com.birakgitsin.app.WIDGET_UPDATE' } }] },
     ],
     'meta-data': [
       {

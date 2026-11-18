@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ScreenMapModal } from '../components/ScreenMapModal';
+import { WidgetGalleryScreen } from './WidgetGalleryScreen';
 import { useApp } from '../context/AppContext';
 import { dailyGoal, formatMoney, todayKey } from '../lib/calculations';
 import { useInstallPrompt } from '../lib/install';
@@ -24,7 +25,6 @@ import { playAlarmFor } from '../lib/alarm';
 import { debugLockStatus } from '../lib/statusNotification';
 import { downloadAndInstallUpdate } from '../lib/updater';
 import { pinHomeShortcut } from '../lib/shortcut';
-import { pinHomeWidget } from '../lib/pinWidget';
 import { fontSizes, radius, spacing } from '../theme';
 
 type SettingsScreenProps = {
@@ -52,7 +52,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [mapOpen, setMapOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [shortcutStatus, setShortcutStatus] = useState('');
-  const [widgetStatus, setWidgetStatus] = useState('');
+  const [widgetsOpen, setWidgetsOpen] = useState(false);
   const { available: canInstall, install, isWeb } = useInstallPrompt();
 
   if (!plan) return null;
@@ -158,28 +158,14 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Text style={styles.title}>Ayarlar</Text>
 
         <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
-          <Text style={styles.cardLabel}>Widget&apos;i ana ekrana sabitle</Text>
+          <Text style={styles.cardLabel}>Ana Ekran Widget&apos;ları</Text>
           <Text style={styles.planSub}>
-            MIUI widget menüsünü atlayıp widget&apos;ı doğrudan ana ekrana ekler. Butona basınca
-            sistem penceresi açılır; &quot;Ana ekrana ekle&quot; de.
+            MIUI widget menüsüne girmeden ekle. 4×2 ve 2×2 kartların canlı önizlemesini gör,
+            tek dokunuşla ana ekranına yerleştir.
           </Text>
-          <View style={styles.inlineRow}>
-            <Pressable
-              style={[styles.smallBtn, styles.smallBtnFill]}
-              onPress={() => {
-                Alert.alert('Widget boyutu seç', 'Hangi boyutta widget eklemek istersin?', [
-                  { text: '4×2', onPress: async () => { const ok = await pinHomeWidget('4x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
-                  { text: '1×2', onPress: async () => { const ok = await pinHomeWidget('1x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
-                  { text: '2×2', onPress: async () => { const ok = await pinHomeWidget('2x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
-                  { text: '2×3', onPress: async () => { const ok = await pinHomeWidget('2x3'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
-                  { text: 'İptal', style: 'cancel' },
-                ]);
-              }}
-            >
-              <Text style={styles.smallBtnText}>Widget sabitle</Text>
-            </Pressable>
-          </View>
-          {widgetStatus ? <Text style={styles.planSub}>{widgetStatus}</Text> : null}
+          <Pressable style={styles.rowBtn} onPress={() => setWidgetsOpen(true)}>
+            <Text style={styles.rowBtnText}>Widget Galerisini Aç</Text>
+          </Pressable>
         </Card>
 
         <Card>
@@ -442,10 +428,11 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.0.1</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.0.6</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
+      <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
     </View>
   );
 }
