@@ -23,6 +23,7 @@ class BirakGitsinPinWidgetModule(reactContext: ReactApplicationContext) : ReactC
         val providerClass = when (size) {
             "1x2" -> BirakGitsinWidget1x2::class.java
             "2x3" -> BirakGitsinWidget2x3::class.java
+            "4x2" -> BirakGitsinWidget4x2::class.java
             else -> BirakGitsinWidget2x2::class.java
         }
         val provider = ComponentName(context, providerClass)

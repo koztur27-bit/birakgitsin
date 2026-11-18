@@ -34,7 +34,6 @@ const withNativeWidget = (config) => {
             'android:exported': 'true',
             'android:label': r.label,
             'android:icon': '@mipmap/ic_launcher',
-            'android:permission': 'android.permission.BIND_APPWIDGET',
           },
           'intent-filter': [
             { action: [{ $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' } }] },

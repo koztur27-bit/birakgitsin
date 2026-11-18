@@ -168,6 +168,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
               style={[styles.smallBtn, styles.smallBtnFill]}
               onPress={() => {
                 Alert.alert('Widget boyutu seç', 'Hangi boyutta widget eklemek istersin?', [
+                  { text: '4×2', onPress: async () => { const ok = await pinHomeWidget('4x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
                   { text: '1×2', onPress: async () => { const ok = await pinHomeWidget('1x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
                   { text: '2×2', onPress: async () => { const ok = await pinHomeWidget('2x2'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
                   { text: '2×3', onPress: async () => { const ok = await pinHomeWidget('2x3'); setWidgetStatus(ok ? 'Widget sabitlendi.' : 'Bu cihaz widget sabitlemeyi desteklemiyor.'); } },
