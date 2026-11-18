@@ -28,6 +28,7 @@ import {
   daysSinceStart,
   elapsedDays,
   formatMoney,
+  formatMoneyShort,
   formatDuration,
   formatUntil,
   milestones,
@@ -85,6 +86,31 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     noteTimer.current = setTimeout(() => setSmokeNote(null), 2600);
   };
 
+  useEffect(() => {
+    if (!plan) return;
+    const key = todayKey();
+    const todayRecord = getLog(data.logs, key);
+    const todayGoal = dailyGoal(plan, key, data.logs);
+    const savedTotal = totalMoneySaved(plan, data.logs);
+    const currentStreak = goalStreak(plan, data.logs);
+    const upcoming = nextWindowInfo(plan);
+    const upcomingStr = upcoming ? fromMin((nowMin() + upcoming.minutes) % 1440) : '--:--';
+    const elapsedMs = elapsedDays(plan) * 24 * 60 * 60 * 1000;
+    const quitDays = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
+    const quitHours = Math.floor((elapsedMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const quitText = `${quitDays} gün ${String(quitHours).padStart(2, '0')} saat`;
+    const savingsText = formatMoneyShort(savedTotal, plan.currency);
+    updateWidgetData(
+      todayRecord.smoked,
+      todayGoal,
+      savedTotal,
+      currentStreak,
+      upcomingStr,
+      quitText,
+      savingsText,
+    );
+  }, [data, plan]);
+
   if (!plan) return null;
 
   const today = todayKey();
@@ -113,9 +139,6 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const avoided = cigarettesAvoided(plan, data.logs);
   const streak = goalStreak(plan, data.logs);
 
-  useEffect(() => {
-    updateWidgetData(record.smoked, goal, savedTotal, streak, nextWindowStr);
-  }, [record.smoked, goal, savedTotal, streak, nextWindowStr]);
   const days = daysSinceStart(plan, today);
 
   const elapsed = elapsedDays(plan);

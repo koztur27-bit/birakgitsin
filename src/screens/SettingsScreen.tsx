@@ -158,10 +158,10 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Text style={styles.title}>Ayarlar</Text>
 
         <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
-          <Text style={styles.cardLabel}>Widget'i ana ekrana sabitle</Text>
+          <Text style={styles.cardLabel}>Widget&apos;i ana ekrana sabitle</Text>
           <Text style={styles.planSub}>
-            MIUI widget menüsünü atlayıp widget'ı doğrudan ana ekrana ekler. Butona basınca
-            sistem penceresi açılır; "Ana ekrana ekle" de.
+            MIUI widget menüsünü atlayıp widget&apos;ı doğrudan ana ekrana ekler. Butona basınca
+            sistem penceresi açılır; &quot;Ana ekrana ekle&quot; de.
           </Text>
           <View style={styles.inlineRow}>
             <Pressable

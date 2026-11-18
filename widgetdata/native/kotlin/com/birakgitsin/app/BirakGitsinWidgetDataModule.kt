@@ -10,7 +10,15 @@ class BirakGitsinWidgetDataModule(reactContext: ReactApplicationContext) : React
     override fun getName(): String = "BirakGitsinWidgetData"
 
     @ReactMethod
-    fun updateWidgetData(smoked: Int, goal: Int, saved: Double, streak: Int, nextWindow: String) {
+    fun updateWidgetData(
+        smoked: Int,
+        goal: Int,
+        saved: Double,
+        streak: Int,
+        nextWindow: String,
+        quitText: String,
+        savingsText: String
+    ) {
         val context = reactApplicationContext
         val prefs = context.getSharedPreferences("BirakGitsinWidget", Context.MODE_PRIVATE)
         prefs.edit()
@@ -19,6 +27,8 @@ class BirakGitsinWidgetDataModule(reactContext: ReactApplicationContext) : React
             .putFloat("savedTotal", saved.toFloat())
             .putInt("streak", streak)
             .putString("nextWindow", nextWindow)
+            .putString("quitText", quitText)
+            .putString("savingsText", savingsText)
             .apply()
 
         val intent = Intent("com.birakgitsin.app.WIDGET_UPDATE")

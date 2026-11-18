@@ -17,6 +17,7 @@ const receivers = [
   { name: '.BirakGitsinWidget1x2', info: '@xml/birakgitsin_widget_1x2', label: 'Bırak Gitsin 1x2' },
   { name: '.BirakGitsinWidget2x2', info: '@xml/birakgitsin_widget_2x2', label: 'Bırak Gitsin 2x2' },
   { name: '.BirakGitsinWidget2x3', info: '@xml/birakgitsin_widget_2x3', label: 'Bırak Gitsin 2x3' },
+  { name: '.BirakGitsinWidget4x2', info: '@xml/birakgitsin_widget_4x2', label: 'Bırak Gitsin 4x2' },
 ];
 
 const withNativeWidget = (config) => {
