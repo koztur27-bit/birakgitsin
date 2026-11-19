@@ -43,11 +43,21 @@
             android:ellipsize="end" />
     </LinearLayout>
 
+    <ImageView
+        android:id="@+id/widget_refresh"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginLeft="6dp"
+        android:src="@drawable/ic_widget_refresh"
+        android:tint="#93C5FD"
+        android:contentDescription="Yenile"
+        android:padding="1dp" />
+
     <TextView
         android:id="@+id/widget_open"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="8dp"
+        android:layout_marginLeft="4dp"
         android:text="Aç →"
         android:textColor="#FFFFFF"
         android:textSize="10sp"

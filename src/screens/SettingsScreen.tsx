@@ -25,6 +25,7 @@ import { playAlarmFor } from '../lib/alarm';
 import { debugLockStatus } from '../lib/statusNotification';
 import { downloadAndInstallUpdate } from '../lib/updater';
 import { pinHomeShortcut } from '../lib/shortcut';
+import { syncWidgetsAndCheckUpdate } from '../lib/syncUpdate';
 import { fontSizes, radius, spacing } from '../theme';
 
 type SettingsScreenProps = {
@@ -53,6 +54,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [updating, setUpdating] = useState(false);
   const [shortcutStatus, setShortcutStatus] = useState('');
   const [widgetsOpen, setWidgetsOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const { available: canInstall, install, isWeb } = useInstallPrompt();
 
   if (!plan) return null;
@@ -62,6 +64,16 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const nrtCounts = {
     gum: nrtToday.filter((l) => l.kind === 'gum').reduce((s, l) => s + l.amount, 0),
     patch: nrtToday.filter((l) => l.kind === 'patch').reduce((s, l) => s + l.amount, 0),
+  };
+
+  const handleSyncAndUpdate = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      await syncWidgetsAndCheckUpdate();
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const doUpdate = async () => {
@@ -165,6 +177,23 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </Text>
           <Pressable style={styles.rowBtn} onPress={() => setWidgetsOpen(true)}>
             <Text style={styles.rowBtnText}>Widget Galerisini Aç</Text>
+          </Pressable>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>Güncelle / Senkronize Et</Text>
+          <Text style={styles.planSub}>
+            Tüm ana ekran widget&apos;larını zorla yeniler ve GitHub üzerinden yeni
+            uygulama sürümü olup olmadığını kontrol eder.
+          </Text>
+          <Pressable
+            style={[styles.rowBtn, { backgroundColor: colors.primary }]}
+            onPress={handleSyncAndUpdate}
+            disabled={syncing}
+          >
+            <Text style={[styles.rowBtnText, { color: colors.white }]}>
+              {syncing ? 'Güncelleniyor…' : 'Güncelle / Senkronize Et'}
+            </Text>
           </Pressable>
         </Card>
 
@@ -428,7 +457,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.0.8</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.0.9</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />

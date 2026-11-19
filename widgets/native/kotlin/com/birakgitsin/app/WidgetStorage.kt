@@ -22,6 +22,7 @@ import java.util.Locale
 object WidgetStorage {
     private const val DATA_KEY = "@birakgitsin/data/v1"
     private const val MS_DAY = 24L * 60L * 60L * 1000L
+    private const val MS_HOUR = 60L * 60L * 1000L
 
     private data class StorageSpec(val database: String, val table: String)
 
@@ -33,6 +34,11 @@ object WidgetStorage {
     )
 
     private val LEGACY_PREFS = listOf("RKStorage", "AsyncStorage")
+
+    data class WidgetData(
+        val quitText: String,
+        val savingsText: String,
+    )
 
     /** AsyncStorage'da saklanan ham uygulama verisi (JSON). */
     fun readRawData(context: Context): String? {
@@ -89,86 +95,140 @@ object WidgetStorage {
         return null
     }
 
+    /** Plan + günlük kayıtlardan sayaç ve tasarrufu yeniden hesaplar. */
+    fun readWidgetData(context: Context): WidgetData? {
+        val raw = readRawData(context) ?: return null
+        return try {
+            val root = JSONObject(raw)
+            val plan = root.optJSONObject("plan") ?: return null
+            val startDate = plan.optString("startDate", "")
+            if (startDate.isBlank()) return null
+            val quitText = computeQuitText(startDate) ?: return null
+            val savingsText = computeSavingsText(plan, root) ?: return null
+            WidgetData(quitText, savingsText)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Plan başlangıcından bugüne geçen süre (gün/saat) - JS elapsedDays ile uyumlu.
+     * Format: "X gün HH saat"
+     */
+    fun readQuitText(context: Context): String? {
+        val raw = readRawData(context) ?: return null
+        return try {
+            val root = JSONObject(raw)
+            val plan = root.optJSONObject("plan") ?: return null
+            val startDate = plan.optString("startDate", "")
+            if (startDate.isBlank()) return null
+            computeQuitText(startDate)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     /**
      * Plan + günlük kayıtlardan toplam tasarrufu hesaplar.
      *
      * Uygulamanın `avoidedCigarettesTotal()` / `totalMoneySaved()` fonksiyonuyla
      * aynı formül kullanılır: başlangıçtan bugüne kadar geçen süre için günlük
      * hedef, o gün için kayıt varsa içilen adet düşülür. Kayıt olmayan günler
-     * "hiç sigara içilmedi" kabul edilir; böylece planı yeni girilmiş bir
-     * kullanıcı da 0 ₺ yerine gerçek birikimini görür.
+     * "hiç sigara içilmedi" kabul edilir.
      */
     fun readSavingsText(context: Context): String? {
         val raw = readRawData(context) ?: return null
         return try {
             val root = JSONObject(raw)
             val plan = root.optJSONObject("plan") ?: return null
-            val packPrice = plan.optDouble("packPrice", 0.0)
-            val cigarettesPerPack = plan.optDouble("cigarettesPerPack", 0.0)
-            val baseline = plan.optDouble("baselinePerDay", 0.0)
-            val startDate = plan.optString("startDate", "")
-            if (packPrice <= 0.0 || cigarettesPerPack <= 0.0 || baseline <= 0.0 || startDate.isBlank()) {
-                return null
-            }
-            val currency = plan.optString("currency", "₺").ifBlank { "₺" }
-
-            val parts = startDate.split("-").mapNotNull { it.toIntOrNull() }
-            if (parts.size != 3) return null
-            val calendar = Calendar.getInstance()
-            calendar.isLenient = false
-            calendar.set(parts[0], parts[1] - 1, parts[2], 0, 0, 0)
-            val startMidnight = calendar.timeInMillis
-
-            val now = Calendar.getInstance()
-            val today = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            val todayMidnight = today.timeInMillis
-            val wholeDays = maxOf(
-                0,
-                Math.round((todayMidnight - startMidnight).toDouble() / MS_DAY).toInt(),
-            )
-            val dayFraction = maxOf(
-                0.0,
-                minOf(1.0, (now.timeInMillis - todayMidnight).toDouble() / MS_DAY),
-            )
-
-            val smokedByDate = HashMap<String, Double>()
-            val logs = root.optJSONArray("logs")
-            if (logs != null) {
-                for (i in 0 until logs.length()) {
-                    val log = logs.optJSONObject(i) ?: continue
-                    val date = log.optString("date", "")
-                    if (date.isNotBlank()) {
-                        smokedByDate[date] = log.optDouble("smoked", 0.0)
-                    }
-                }
-            }
-
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            var avoided = 0.0
-            val day = Calendar.getInstance().apply { timeInMillis = startMidnight }
-            for (i in 0 until wholeDays) {
-                val key = dateFormat.format(day.time)
-                val smoked = smokedByDate[key] ?: 0.0
-                avoided += maxOf(0.0, baseline - smoked)
-                day.add(Calendar.DAY_OF_MONTH, 1)
-            }
-
-            val todayKey = dateFormat.format(today.time)
-            val todaySmoked = smokedByDate[todayKey] ?: 0.0
-            avoided += maxOf(0.0, baseline * dayFraction - todaySmoked)
-
-            val total = avoided * (packPrice / cigarettesPerPack)
-            val formatter = NumberFormat.getNumberInstance(Locale("tr", "TR"))
-            formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = 0
-            "${formatter.format(total)} $currency".trim()
+            computeSavingsText(plan, root)
         } catch (_: Exception) {
             null
         }
+    }
+
+    private fun parseStartMidnight(startDate: String): Long? {
+        val parts = startDate.split("-").mapNotNull { it.toIntOrNull() }
+        if (parts.size != 3) return null
+        return try {
+            val calendar = Calendar.getInstance().apply {
+                isLenient = false
+                set(parts[0], parts[1] - 1, parts[2], 0, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            calendar.timeInMillis
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun computeQuitText(startDate: String): String? {
+        val startMidnight = parseStartMidnight(startDate) ?: return null
+        val now = System.currentTimeMillis()
+        val elapsedMs = maxOf(0L, now - startMidnight)
+        val days = (elapsedMs / MS_DAY).toInt()
+        val hours = ((elapsedMs % MS_DAY) / MS_HOUR).toInt()
+        return "$days gün ${String.format(Locale.US, "%02d", hours)} saat"
+    }
+
+    private fun computeSavingsText(plan: JSONObject, root: JSONObject): String? {
+        val packPrice = plan.optDouble("packPrice", 0.0)
+        val cigarettesPerPack = plan.optDouble("cigarettesPerPack", 0.0)
+        val baseline = plan.optDouble("baselinePerDay", 0.0)
+        val startDate = plan.optString("startDate", "")
+        if (packPrice <= 0.0 || cigarettesPerPack <= 0.0 || baseline <= 0.0 || startDate.isBlank()) {
+            return null
+        }
+        val currency = plan.optString("currency", "₺").ifBlank { "₺" }
+        val startMidnight = parseStartMidnight(startDate) ?: return null
+
+        val nowCal = Calendar.getInstance()
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val todayMidnight = today.timeInMillis
+        val wholeDays = maxOf(
+            0,
+            Math.round((todayMidnight - startMidnight).toDouble() / MS_DAY).toInt(),
+        )
+        val dayFraction = maxOf(
+            0.0,
+            minOf(1.0, (nowCal.timeInMillis - todayMidnight).toDouble() / MS_DAY),
+        )
+
+        val smokedByDate = HashMap<String, Double>()
+        val logs = root.optJSONArray("logs")
+        if (logs != null) {
+            for (i in 0 until logs.length()) {
+                val log = logs.optJSONObject(i) ?: continue
+                val date = log.optString("date", "")
+                if (date.isNotBlank()) {
+                    smokedByDate[date] = log.optDouble("smoked", 0.0)
+                }
+            }
+        }
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        var avoided = 0.0
+        val day = Calendar.getInstance().apply { timeInMillis = startMidnight }
+        for (i in 0 until wholeDays) {
+            val key = dateFormat.format(day.time)
+            val smoked = smokedByDate[key] ?: 0.0
+            avoided += maxOf(0.0, baseline - smoked)
+            day.add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        val todayKey = dateFormat.format(today.time)
+        val todaySmoked = smokedByDate[todayKey] ?: 0.0
+        avoided += maxOf(0.0, baseline * dayFraction - todaySmoked)
+
+        val total = avoided * (packPrice / cigarettesPerPack)
+        val formatter = NumberFormat.getNumberInstance(Locale("tr", "TR"))
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 0
+        return "${formatter.format(total)} $currency".trim()
     }
 }

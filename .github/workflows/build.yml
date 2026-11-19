@@ -89,12 +89,25 @@ jobs:
           ls -lh ./app-release.apk
           echo "path=./app-release.apk" >> "$GITHUB_OUTPUT"
 
+      - name: Surum bilgisini al
+        id: ver
+        shell: bash
+        run: |
+          V=""
+          if [ -f pubspec.yaml ]; then
+            V=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d+ -f1)
+          elif [ -f package.json ]; then
+            V=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Surum: $V"
+
       - name: APK'yi apk-latest Release olarak yayinla
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
-          name: "APK - son surum"
-          body: "Guncel APK (her derlemede uzerine yazilir)."
+          name: ${{ steps.ver.outputs.version != '' && format('APK - son surum (v{0})', steps.ver.outputs.version) || 'APK - son surum' }}
+          body: ${{ steps.ver.outputs.version != '' && format('Guncel APK v{0} (her derlemede uzerine yazilir).', steps.ver.outputs.version) || 'Guncel APK (her derlemede uzerine yazilir).' }}
           files: ${{ steps.apk.outputs.path }}
           overwrite_files: true
           make_latest: true

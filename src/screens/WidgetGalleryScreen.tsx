@@ -27,6 +27,7 @@ import {
   openWidgetPermissionSettings,
   requestPinHomeWidget,
 } from '../lib/pinWidget';
+import { syncWidgetsAndCheckUpdate } from '../lib/syncUpdate';
 import { fontSizes, radius, shadows, spacing } from '../theme';
 
 type WidgetSize = '4x2' | '2x2';
@@ -54,6 +55,7 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
   const [canPin, setCanPin] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<WidgetSize | null>(null);
   const [pinned, setPinned] = useState<WidgetSize | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -83,6 +85,16 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
     // `tick` yalnızca canlı değerleri yeniden hesaplamak için kullanılır.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, data.logs, tick]);
+
+  const handleSyncAndUpdate = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      await syncWidgetsAndCheckUpdate();
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const showPermissionHelp = (title: string, message: string) => {
     Alert.alert(title, message, [
@@ -154,6 +166,27 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
                 penceresi açılır; onayladığında widget doğrudan ana ekranına yerleşir.
               </Text>
             </View>
+          </View>
+
+          <View style={styles.syncCard}>
+            <Text style={styles.syncTitle}>Güncelle / Senkronize Et</Text>
+            <Text style={styles.syncText}>
+              Tüm ana ekran widget&apos;larını zorla yeniler ve GitHub üzerinden yeni
+              uygulama sürümü olup olmadığını kontrol eder.
+            </Text>
+            <Pressable
+              style={[styles.syncBtn, syncing && styles.addBtnBusy]}
+              onPress={handleSyncAndUpdate}
+              disabled={syncing}
+              accessibilityRole="button"
+              accessibilityLabel="Güncelle ve senkronize et"
+            >
+              {syncing ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.syncBtnText}>Güncelle / Senkronize Et</Text>
+              )}
+            </Pressable>
           </View>
 
           {canPin === false ? (
@@ -453,6 +486,31 @@ const createStyles = (colors: any) =>
       color: colors.success,
       textAlign: 'center',
     },
+    syncCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.md,
+      gap: spacing.sm,
+      ...shadows.card,
+    },
+    syncTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
+    syncText: {
+      fontSize: fontSizes.sm,
+      lineHeight: fontSizes.md + 4,
+      color: colors.textMuted,
+    },
+    syncBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      marginTop: spacing.xs,
+    },
+    syncBtnText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
     footnote: {
       fontSize: fontSizes.xs,
       lineHeight: fontSizes.md + 2,
