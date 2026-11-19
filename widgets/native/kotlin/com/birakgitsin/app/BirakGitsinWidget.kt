@@ -38,7 +38,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
     companion object {
         const val ACTION_REFRESH = "com.birakgitsin.app.ACTION_REFRESH_WIDGET"
 
-        fun specs() = listOf(
+        internal fun specs() = listOf(
             WidgetSpec(BirakGitsinWidget1x2::class.java, R.layout.birakgitsin_widget_1x2, false, false, 101),
             WidgetSpec(BirakGitsinWidget2x2::class.java, R.layout.birakgitsin_widget_2x2, true, true, 102),
             WidgetSpec(BirakGitsinWidget2x3::class.java, R.layout.birakgitsin_widget_2x3, true, true, 103),
