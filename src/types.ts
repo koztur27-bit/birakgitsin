@@ -41,18 +41,24 @@ export type NrtLog = {
   amount: number;
 };
 
+export type SavingsGoal = {
+  title: string;
+  target: number;
+};
+
 export type AppData = {
   plan: Plan | null;
   logs: DayRecord[];
   cravings: CravingRecord[];
   badges: string[];
   nrtLogs?: NrtLog[];
+  savingsGoal?: SavingsGoal | null;
   // ... rest unchanged
   isPremium: boolean;
   showLockScreen: boolean;
 };
 
-export type TabKey = 'home' | 'craving' | 'timer' | 'stats' | 'settings';
+export type TabKey = 'home' | 'craving' | 'timer' | 'stats' | 'health' | 'settings';
 
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'done';
 

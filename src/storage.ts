@@ -8,6 +8,7 @@ const defaultData: AppData = {
   logs: [],
   cravings: [],
   badges: [],
+  savingsGoal: null,
   isPremium: false,
   showLockScreen: true,
 };

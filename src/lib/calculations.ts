@@ -381,6 +381,74 @@ export function milestones(): Milestone[] {
   ];
 }
 
+export type HealthMetric = {
+  key: 'pulse' | 'carbonMonoxide' | 'tasteSmell' | 'lungs';
+  label: string;
+  emoji: string;
+  percent: number;
+  targetLabel: string;
+  detail: string;
+};
+
+/**
+ * Bırakma süresine göre dört temel sağlık kazanımının tahmini ilerlemesi.
+ * Tıbbi ölçüm değil; uygulamanın mevcut kilometre taşlarıyla aynı zaman
+ * çizelgesini kullanan motive edici bir göstergedir.
+ */
+export function healthRecovery(plan: Plan, now: number = Date.now()): HealthMetric[] {
+  const elapsed = elapsedDays(plan, now);
+  const defs = [
+    {
+      key: 'pulse' as const,
+      label: 'Nabız',
+      emoji: '💓',
+      days: 20 / 1440,
+      targetLabel: '20 dakika',
+      detail: 'Nabzın ve tansiyonun normale dönmeye başlar.',
+      done: 'Nabzın normale dönme yolculuğunu tamamladı.',
+    },
+    {
+      key: 'carbonMonoxide' as const,
+      label: 'Karbonmonoksit',
+      emoji: '🩸',
+      days: 0.5,
+      targetLabel: '12 saat',
+      detail: 'Kanındaki karbonmonoksit seviyesi normale düşer.',
+      done: 'Kanındaki karbonmonoksit seviyesi normale döndü.',
+    },
+    {
+      key: 'tasteSmell' as const,
+      label: 'Tat / Koku',
+      emoji: '👃',
+      days: 2,
+      targetLabel: '2 gün',
+      detail: 'Tat ve koku duyuların belirgin şekilde keskinleşir.',
+      done: 'Tat ve koku duyuların belirgin şekilde keskinleşti.',
+    },
+    {
+      key: 'lungs' as const,
+      label: 'Akciğer',
+      emoji: '🫁',
+      days: 3,
+      targetLabel: '3 gün',
+      detail: 'Akciğerlerindeki nikotin temizlenir, nefesin rahatlar.',
+      done: 'Akciğerlerindeki nikotin temizlenme sürecini tamamladın.',
+    },
+  ];
+
+  return defs.map((d) => {
+    const percent = Math.max(0, Math.min(100, Math.round((elapsed / d.days) * 100)));
+    return {
+      key: d.key,
+      label: d.label,
+      emoji: d.emoji,
+      percent,
+      targetLabel: d.targetLabel,
+      detail: percent >= 100 ? d.done : d.detail,
+    };
+  });
+}
+
 export function formatMoney(amount: number, currency: string): string {
   return `${amount.toLocaleString('tr-TR', {
     minimumFractionDigits: 2,

@@ -11,6 +11,7 @@ const TABS: TabDef[] = [
   { key: 'craving', label: 'Kriz' },
   { key: 'timer', label: 'Sayaç' },
   { key: 'stats', label: 'İstatistik' },
+  { key: 'health', label: 'Sağlık' },
   { key: 'settings', label: 'Ayarlar' },
 ];
 

@@ -12,7 +12,15 @@ import {
   publishLockStatus,
   registerNotificationCategories,
 } from '../lib/statusNotification';
-import { AppData, DayRecord, NrtKind, Plan, TimerState, TimerStatus } from '../types';
+import {
+  AppData,
+  DayRecord,
+  NrtKind,
+  Plan,
+  SavingsGoal,
+  TimerState,
+  TimerStatus,
+} from '../types';
 import { clearData, loadData, persistData } from '../storage';
 
 if (Platform.OS !== 'web') {
@@ -44,6 +52,7 @@ type AppContextValue = {
   undoCigarette: (opts?: LogOptions) => void;
   logCraving: (resisted: boolean, meta?: { intensity?: number; trigger?: string }) => void;
   logNrt: (kind: NrtKind, amount?: number) => void;
+  setSavingsGoal: (goal: SavingsGoal | null) => void;
   resetAll: () => void;
   setPremium: (value: boolean) => void;
   setShowLockScreen: (value: boolean) => void;
@@ -76,6 +85,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     logs: [],
     cravings: [],
     badges: [],
+    savingsGoal: null,
     isPremium: false,
     showLockScreen: true,
   });
@@ -485,6 +495,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       nrtLogs: [...(data.nrtLogs ?? []), { timestamp: new Date().toISOString(), kind, amount }],
     });
 
+  const setSavingsGoal = (goal: SavingsGoal | null) => persist({ ...data, savingsGoal: goal });
+
   const resetAll = () => {
     clearData();
     clearLockStatus();
@@ -493,6 +505,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       logs: [],
       cravings: [],
       badges: [],
+      savingsGoal: null,
       isPremium: false,
       showLockScreen: true,
     });
@@ -509,6 +522,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       cravings: Array.isArray(incoming.cravings) ? incoming.cravings : [],
       badges: Array.isArray(incoming.badges) ? incoming.badges : [],
       nrtLogs: Array.isArray(incoming.nrtLogs) ? incoming.nrtLogs : [],
+      savingsGoal:
+        incoming.savingsGoal && typeof incoming.savingsGoal.title === 'string'
+          ? {
+              title: incoming.savingsGoal.title,
+              target: Number(incoming.savingsGoal.target) || 0,
+            }
+          : null,
       isPremium: !!incoming.isPremium,
       showLockScreen: incoming.showLockScreen !== false,
     };
@@ -542,6 +562,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     undoCigarette,
     logCraving,
     logNrt,
+    setSavingsGoal,
     resetAll,
     setPremium,
     setShowLockScreen,

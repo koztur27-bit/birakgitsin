@@ -56,14 +56,19 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
 
   useEffect(() => {
     if (!visible) return;
-    setPinned(null);
     canPinHomeWidget().then(setCanPin).catch(() => setCanPin(false));
     const timer = setInterval(() => setTick((value) => value + 1), 30000);
     return () => clearInterval(timer);
   }, [visible]);
 
+  const handleClose = () => {
+    setPinned(null);
+    onClose();
+  };
+
   const live = useMemo<LiveValues>(() => {
     if (!plan) return { quitText: '0 gün 00 saat', savingsText: '0 ₺', nextWindow: '--:--' };
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     const elapsedMs = elapsedDays(plan, now) * 24 * 60 * 60 * 1000;
     const days = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
@@ -74,6 +79,8 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
       savingsText: formatMoneyShort(totalMoneySaved(plan, data.logs), plan.currency),
       nextWindow: upcoming ? fromMin((nowMin(new Date(now)) + upcoming.minutes) % 1440) : '--:--',
     };
+    // `tick` yalnızca canlı değerleri yeniden hesaplamak için kullanılır.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, data.logs, tick]);
 
   const showPermissionHelp = (title: string, message: string) => {
@@ -118,7 +125,7 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={[styles.root, { paddingTop: insets.top + spacing.sm }]}>
         <View style={styles.header}>
@@ -126,7 +133,7 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
             <Text style={styles.title}>Ana Ekran Widget&apos;ları</Text>
             <Text style={styles.subtitle}>Canlı önizleme · tek dokunuşla ekle</Text>
           </View>
-          <Pressable style={styles.closeBtn} onPress={onClose} accessibilityRole="button">
+          <Pressable style={styles.closeBtn} onPress={handleClose} accessibilityRole="button">
             <Text style={styles.closeText}>Kapat</Text>
           </Pressable>
         </View>

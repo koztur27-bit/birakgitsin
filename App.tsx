@@ -13,6 +13,7 @@ import { TabBar } from './src/components/TabBar';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { CravingScreen } from './src/screens/CravingScreen';
+import { HealthScreen } from './src/screens/HealthScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { Onboarding } from './src/screens/Onboarding';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -101,6 +102,9 @@ function Root() {
         </View>
         <View style={[styles.page, tab !== 'stats' && styles.hidden]}>
           <StatsScreen />
+        </View>
+        <View style={[styles.page, tab !== 'health' && styles.hidden]}>
+          <HealthScreen />
         </View>
         <View style={[styles.page, tab !== 'settings' && styles.hidden]}>
           <SettingsScreen onEditPlan={() => setEditing(true)} />

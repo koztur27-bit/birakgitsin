@@ -2,13 +2,23 @@ import { useTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { CigaretteIcon } from '../components/CigaretteIcon';
 import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { ScreenMapModal } from '../components/ScreenMapModal';
+import { SosBreathingModal } from '../components/SosBreathingModal';
 import { StatusPopup } from '../components/StatusPopup';
 import { useApp } from '../context/AppContext';
 import { updateWidgetData } from '../lib/widgetData';
@@ -59,6 +69,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     resumeTimer,
     resetTimer,
     dismissTimer,
+    setSavingsGoal,
   } = useApp();
   const plan = data.plan;
   const [smokeNote, setSmokeNote] = useState<string | null>(null);
@@ -67,6 +78,23 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const [mapNumbers, setMapNumbers] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
+  const [goalEditing, setGoalEditing] = useState(false);
+  const [goalTitle, setGoalTitle] = useState(data.savingsGoal?.title ?? '');
+  const [goalTarget, setGoalTarget] = useState(
+    data.savingsGoal ? String(data.savingsGoal.target) : '',
+  );
+
+  const saveGoal = () => {
+    const title = goalTitle.trim();
+    const target = Number(goalTarget.replace(',', '.'));
+    if (!title || !Number.isFinite(target) || target <= 0) {
+      Alert.alert('Tasarruf hedefi', 'Ürün adı ve geçerli bir hedef tutarı gir.');
+      return;
+    }
+    setSavingsGoal({ title, target });
+    setGoalEditing(false);
+  };
 
   const doUpdate = async () => {
     if (Platform.OS === 'web') {
@@ -138,6 +166,14 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const savedTotal = totalMoneySaved(plan, data.logs);
   const avoided = cigarettesAvoided(plan, data.logs);
   const streak = goalStreak(plan, data.logs);
+  const savingsGoal = data.savingsGoal;
+  const goalProgress =
+    savingsGoal && savingsGoal.target > 0
+      ? Math.min(1, Math.max(0, savedTotal / savingsGoal.target))
+      : 0;
+  const goalRemaining = savingsGoal
+    ? Math.max(0, savingsGoal.target - savedTotal)
+    : 0;
 
   const days = daysSinceStart(plan, today);
 
@@ -213,6 +249,21 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         <Pressable style={styles.refreshBar} onPress={reloadApp}>
           {mapNumbers ? <MapBadge code="2" /> : null}
           <Text style={styles.refreshBarText}>↻  Sayfayı yenile</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Kriz Geldi, nefes egzersizini başlat"
+          style={({ pressed }) => [styles.sosBtn, pressed && styles.pressed]}
+          onPress={() => setSosOpen(true)}
+        >
+          {mapNumbers ? <MapBadge code="10" style={styles.sosBadge} /> : null}
+          <Text style={styles.sosEmoji}>🆘</Text>
+          <View style={styles.sosText}>
+            <Text style={styles.sosTitle}>Kriz Geldi (SOS)</Text>
+            <Text style={styles.sosSub}>60 saniyelik nefes egzersizi · tetikleyici seç</Text>
+          </View>
+          <Text style={styles.sosArrow}>›</Text>
         </Pressable>
 
         <LinearGradient
@@ -405,6 +456,95 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           </Card>
         </View>
 
+        <Card style={styles.goalCard}>
+          <View style={styles.cardTitleRow}>
+            {mapNumbers ? <MapBadge code="11" /> : null}
+            <Text style={styles.cardLabel}>Tasarruf Hedefi</Text>
+          </View>
+
+          {!savingsGoal || goalEditing ? (
+            <View style={styles.goalForm}>
+              <Text style={styles.goalHint}>
+                Biriken paranla almak istediğin şeyi yaz; ilerlemeni buradan takip et.
+              </Text>
+              <TextInput
+                style={styles.goalInput}
+                placeholder="Örn. Yeni kulaklık"
+                placeholderTextColor={colors.textMuted}
+                value={goalTitle}
+                onChangeText={setGoalTitle}
+                maxLength={60}
+              />
+              <TextInput
+                style={styles.goalInput}
+                placeholder={`Hedef tutar (${plan.currency})`}
+                placeholderTextColor={colors.textMuted}
+                value={goalTarget}
+                onChangeText={setGoalTarget}
+                keyboardType="decimal-pad"
+                maxLength={12}
+              />
+              <View style={styles.goalFormActions}>
+                {savingsGoal ? (
+                  <Pressable style={styles.goalGhostBtn} onPress={() => setGoalEditing(false)}>
+                    <Text style={styles.goalGhostText}>Vazgeç</Text>
+                  </Pressable>
+                ) : null}
+                <Pressable style={styles.goalSaveBtn} onPress={saveGoal}>
+                  <Text style={styles.goalSaveText}>Hedefi Kaydet</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.goalBody}>
+              <View style={styles.goalHead}>
+                <View style={styles.goalHeadText}>
+                  <Text style={styles.goalTitle}>{savingsGoal.title}</Text>
+                  <Text style={styles.goalTargetText}>
+                    Hedef: {formatMoney(savingsGoal.target, plan.currency)}
+                  </Text>
+                </View>
+                <Text style={styles.goalPercent}>%{Math.round(goalProgress * 100)}</Text>
+              </View>
+              <ProgressBar
+                progress={goalProgress}
+                color={goalProgress >= 1 ? colors.success : colors.accent}
+                height={10}
+              />
+              <Text style={styles.goalStatus}>
+                {goalProgress >= 1
+                  ? `Hedefe ulaştın! ${formatMoney(savingsGoal.target, plan.currency)} biriktirdin. 🎉`
+                  : `Kalan: ${formatMoney(goalRemaining, plan.currency)} · Biriktirdin: ${formatMoney(
+                      savedTotal,
+                      plan.currency,
+                    )}`}
+              </Text>
+              <View style={styles.goalFormActions}>
+                <Pressable
+                  style={styles.goalGhostBtn}
+                  onPress={() => {
+                    setSavingsGoal(null);
+                    setGoalTitle('');
+                    setGoalTarget('');
+                  }}
+                >
+                  <Text style={styles.goalGhostText}>Hedefi kaldır</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.goalGhostBtn}
+                  onPress={() => {
+                    setGoalTitle(savingsGoal.title);
+                    setGoalTarget(String(savingsGoal.target));
+                    setGoalEditing(true);
+                  }}
+                >
+                  <Text style={styles.goalGhostText}>Düzenle</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </Card>
+
         {plan.windows.length > 0 ? (
           <Card>
             <View style={styles.mapRow}>
@@ -509,6 +649,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       />
 
       <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
+      <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
     </View>
   );
 }
@@ -837,4 +978,58 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '700',
     color: '#8a5a00',
   },
+  sosBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  sosBadge: { alignSelf: 'flex-start' },
+  sosEmoji: { fontSize: 26 },
+  sosText: { flex: 1, gap: 2 },
+  sosTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.danger },
+  sosSub: { fontSize: fontSizes.xs, color: colors.textMuted },
+  sosArrow: { fontSize: fontSizes.xl, color: colors.danger },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  goalCard: { gap: spacing.sm },
+  goalForm: { gap: spacing.sm, marginTop: spacing.xs },
+  goalHint: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18 },
+  goalInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: colors.text,
+    fontSize: fontSizes.sm,
+  },
+  goalFormActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
+  goalGhostBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  goalGhostText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+  goalSaveBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  goalSaveText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
+  goalBody: { gap: spacing.sm, marginTop: spacing.xs },
+  goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  goalHeadText: { flex: 1, gap: 2 },
+  goalTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+  goalTargetText: { fontSize: fontSizes.sm, color: colors.textMuted },
+  goalPercent: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.primaryDark },
+  goalStatus: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
 });
