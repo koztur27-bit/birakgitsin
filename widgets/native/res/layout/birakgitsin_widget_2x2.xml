@@ -60,8 +60,12 @@
         android:gravity="center_vertical"
         android:text="0 gün 00 sa"
         android:textColor="#FFFFFF"
-        android:textSize="23sp"
+        android:textSize="18sp"
         android:textStyle="bold"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="14sp"
+        android:autoSizeMaxTextSize="24sp"
+        android:autoSizeStepGranularity="1sp"
         android:singleLine="true"
         android:ellipsize="end" />
 

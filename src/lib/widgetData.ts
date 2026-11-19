@@ -26,3 +26,13 @@ export function updateWidgetData(
     // ignore
   }
 }
+
+/** Uygulama açılırken / arka plana geçerken widget'ları zorla yeniler. */
+export function refreshWidgets() {
+  if (Platform.OS !== 'android' || !BirakGitsinWidgetData) return;
+  try {
+    BirakGitsinWidgetData.forceRefresh();
+  } catch {
+    // ignore
+  }
+}

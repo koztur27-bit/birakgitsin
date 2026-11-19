@@ -215,8 +215,44 @@ export function totalSmoked(logs: DayRecord[]): number {
   return logs.reduce((sum, l) => sum + l.smoked, 0);
 }
 
+/**
+ * Başlangıç tarihinden bugüne kadar içilmeyen sigara sayısı.
+ * Kayıt olmayan günler "hiç sigara içilmedi" kabul edilir; böylece planı yeni
+ * girilmiş kullanıcılar da 0 yerine gerçek birikimini görür.
+ * Widget'taki WidgetStorage.readSavingsText() ile aynı formüldür.
+ */
+export function avoidedCigarettesTotal(
+  plan: Plan,
+  logs: DayRecord[],
+  now: number = Date.now(),
+): number {
+  const start = parseKey(plan.startDate);
+  const current = new Date(now);
+  const todayMidnight = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+  const wholeDays = Math.max(
+    0,
+    Math.round((todayMidnight.getTime() - start.getTime()) / MS_DAY),
+  );
+  const dayFraction = Math.max(
+    0,
+    Math.min(1, (now - todayMidnight.getTime()) / MS_DAY),
+  );
+  const smokedByDate = new Map(logs.map((l) => [l.date, l.smoked]));
+
+  let avoided = 0;
+  for (let i = 0; i < wholeDays; i++) {
+    const key = dayKey(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+    avoided += Math.max(0, plan.baselinePerDay - (smokedByDate.get(key) ?? 0));
+  }
+  avoided += Math.max(
+    0,
+    plan.baselinePerDay * dayFraction - (smokedByDate.get(dayKey(todayMidnight)) ?? 0),
+  );
+  return avoided;
+}
+
 export function cigarettesAvoided(plan: Plan, logs: DayRecord[]): number {
-  return logs.reduce((sum, l) => sum + avoidedOnDay(plan, l), 0);
+  return avoidedCigarettesTotal(plan, logs);
 }
 
 export function avoidedOnDay(plan: Plan, record: DayRecord): number {
@@ -228,7 +264,7 @@ export function moneySavedOnDay(plan: Plan, record: DayRecord): number {
 }
 
 export function totalMoneySaved(plan: Plan, logs: DayRecord[]): number {
-  return logs.reduce((sum, l) => sum + moneySavedOnDay(plan, l), 0);
+  return avoidedCigarettesTotal(plan, logs) * pricePerCigarette(plan);
 }
 
 export function lastNDays(n: number, endKey = todayKey()): string[] {

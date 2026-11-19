@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { Component, useState } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +20,7 @@ import { Onboarding } from './src/screens/Onboarding';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { StatsScreen } from './src/screens/StatsScreen';
 import { TimerScreen } from './src/screens/TimerScreen';
+import { refreshWidgets } from './src/lib/widgetData';
 import { colors, fontSizes, radius, spacing } from './src/theme';
 import { TabKey } from './src/types';
 
@@ -66,6 +68,15 @@ function Root() {
   const { data, ready, setPlan } = useApp();
   const [tab, setTab] = useState<TabKey>('home');
   const [editing, setEditing] = useState(false);
+
+  // Uygulama açılırken ve arka plana geçerken widget'ları zorla yenile.
+  useEffect(() => {
+    refreshWidgets();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' || state === 'background') refreshWidgets();
+    });
+    return () => subscription.remove();
+  }, []);
 
   if (!ready) {
     return (

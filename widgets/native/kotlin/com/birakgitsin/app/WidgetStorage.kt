@@ -1,33 +1,43 @@
 package com.birakgitsin.app
 
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import org.json.JSONObject
 import java.io.File
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
 /**
- * Widget, uygulama verisiniAsyncStorage'ın gerçek depolama alanından okur.
+ * Widget, uygulama verisini AsyncStorage'ın gerçek depolama alanından okur.
  *
- * @react-native-async-storage/async-storage Android'de veriyi SharedPreferences
- * yerine `RKStorage` SQLite veritabanındaki `catalystLocalStorage` tablosunda
- * tutar. Bu yüzden "Tasarruf: 0 ₺" sorunu, JS'ten gelen hazır metne güvenmek
- * yerine plan ve log kayıtlarının doğrudan okunup yeniden hesaplanmasıyla
- * kesin olarak çözülür.
+ * @react-native-async-storage/async-storage Android'de veriyi iki farklı şemada
+ * tutabilir:
+ *  - eski: `RKStorage` veritabanı / `catalystLocalStorage` tablosu
+ *  - yeni: `AsyncStorage` veritabanı / `Storage` tablosu
+ * Bu yüzden her iki (veritabanı, tablo) çifti denenir.
  */
 object WidgetStorage {
     private const val DATA_KEY = "@birakgitsin/data/v1"
-    private const val TABLE = "catalystLocalStorage"
-    private const val KEY_COLUMN = "key"
-    private const val VALUE_COLUMN = "value"
-    private val DATABASE_NAMES = listOf("RKStorage", "AsyncStorage")
+    private const val MS_DAY = 24L * 60L * 60L * 1000L
+
+    private data class StorageSpec(val database: String, val table: String)
+
+    private val STORAGES = listOf(
+        StorageSpec("RKStorage", "catalystLocalStorage"),
+        StorageSpec("AsyncStorage", "Storage"),
+        StorageSpec("AsyncStorage", "catalystLocalStorage"),
+        StorageSpec("RKStorage", "Storage"),
+    )
+
     private val LEGACY_PREFS = listOf("RKStorage", "AsyncStorage")
 
     /** AsyncStorage'da saklanan ham uygulama verisi (JSON). */
     fun readRawData(context: Context): String? {
-        for (name in DATABASE_NAMES) {
-            val path = context.getDatabasePath(name).absolutePath
+        for (spec in STORAGES) {
+            val path = context.getDatabasePath(spec.database).absolutePath
             if (!File(path).exists()) continue
 
             var db: SQLiteDatabase? = null
@@ -35,10 +45,14 @@ object WidgetStorage {
                 // Widget ile uygulama aynı UID altında çalışır; READWRITE kullanmak
                 // WAL dosyasındaki son yazımların da görünmesini sağlar.
                 db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READWRITE)
-                val cursor = db.query(
-                    TABLE,
-                    arrayOf(VALUE_COLUMN),
-                    "$KEY_COLUMN=?",
+                val columns = db.rawQuery("PRAGMA table_info(`${spec.table}`)", null)
+                val exists = columns.use { it.moveToFirst() }
+                if (!exists) continue
+
+                val cursor: Cursor = db.query(
+                    spec.table,
+                    arrayOf("value"),
+                    "`key`=?",
                     arrayOf(DATA_KEY),
                     null,
                     null,
@@ -76,8 +90,13 @@ object WidgetStorage {
     }
 
     /**
-     * Paket fiyatı, paketteki sigara sayısı ve günlük kayıtlardan toplam tasarrufu
-     * hesaplar. Uygulamanın `totalMoneySaved()` fonksiyonuyla aynı formül.
+     * Plan + günlük kayıtlardan toplam tasarrufu hesaplar.
+     *
+     * Uygulamanın `avoidedCigarettesTotal()` / `totalMoneySaved()` fonksiyonuyla
+     * aynı formül kullanılır: başlangıçtan bugüne kadar geçen süre için günlük
+     * hedef, o gün için kayıt varsa içilen adet düşülür. Kayıt olmayan günler
+     * "hiç sigara içilmedi" kabul edilir; böylece planı yeni girilmiş bir
+     * kullanıcı da 0 ₺ yerine gerçek birikimini görür.
      */
     fun readSavingsText(context: Context): String? {
         val raw = readRawData(context) ?: return null
@@ -87,20 +106,63 @@ object WidgetStorage {
             val packPrice = plan.optDouble("packPrice", 0.0)
             val cigarettesPerPack = plan.optDouble("cigarettesPerPack", 0.0)
             val baseline = plan.optDouble("baselinePerDay", 0.0)
-            if (packPrice <= 0.0 || cigarettesPerPack <= 0.0 || baseline <= 0.0) return null
-
+            val startDate = plan.optString("startDate", "")
+            if (packPrice <= 0.0 || cigarettesPerPack <= 0.0 || baseline <= 0.0 || startDate.isBlank()) {
+                return null
+            }
             val currency = plan.optString("currency", "₺").ifBlank { "₺" }
-            var avoidedCigarettes = 0.0
+
+            val parts = startDate.split("-").mapNotNull { it.toIntOrNull() }
+            if (parts.size != 3) return null
+            val calendar = Calendar.getInstance()
+            calendar.isLenient = false
+            calendar.set(parts[0], parts[1] - 1, parts[2], 0, 0, 0)
+            val startMidnight = calendar.timeInMillis
+
+            val now = Calendar.getInstance()
+            val today = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val todayMidnight = today.timeInMillis
+            val wholeDays = maxOf(
+                0,
+                Math.round((todayMidnight - startMidnight).toDouble() / MS_DAY).toInt(),
+            )
+            val dayFraction = maxOf(
+                0.0,
+                minOf(1.0, (now.timeInMillis - todayMidnight).toDouble() / MS_DAY),
+            )
+
+            val smokedByDate = HashMap<String, Double>()
             val logs = root.optJSONArray("logs")
             if (logs != null) {
                 for (i in 0 until logs.length()) {
                     val log = logs.optJSONObject(i) ?: continue
-                    val smoked = log.optDouble("smoked", 0.0)
-                    avoidedCigarettes += maxOf(0.0, baseline - smoked)
+                    val date = log.optString("date", "")
+                    if (date.isNotBlank()) {
+                        smokedByDate[date] = log.optDouble("smoked", 0.0)
+                    }
                 }
             }
-            val total = avoidedCigarettes * (packPrice / cigarettesPerPack)
 
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            var avoided = 0.0
+            val day = Calendar.getInstance().apply { timeInMillis = startMidnight }
+            for (i in 0 until wholeDays) {
+                val key = dateFormat.format(day.time)
+                val smoked = smokedByDate[key] ?: 0.0
+                avoided += maxOf(0.0, baseline - smoked)
+                day.add(Calendar.DAY_OF_MONTH, 1)
+            }
+
+            val todayKey = dateFormat.format(today.time)
+            val todaySmoked = smokedByDate[todayKey] ?: 0.0
+            avoided += maxOf(0.0, baseline * dayFraction - todaySmoked)
+
+            val total = avoided * (packPrice / cigarettesPerPack)
             val formatter = NumberFormat.getNumberInstance(Locale("tr", "TR"))
             formatter.minimumFractionDigits = 0
             formatter.maximumFractionDigits = 0
