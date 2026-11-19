@@ -5,6 +5,7 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
+import { BubblePopGame } from '../components/BubblePopGame';
 import { useApp } from '../context/AppContext';
 import { triggerAction } from '../lib/coach';
 import { fontSizes, radius, spacing } from '../theme';
@@ -21,7 +22,7 @@ const TOOLS: { key: Tool; label: string }[] = [
   { key: 'breath', label: 'Nefes' },
   { key: 'urge', label: 'Sayaç' },
   { key: 'ground', label: 'Toprak' },
-  { key: 'game', label: 'Oyun' },
+  { key: 'game', label: 'Baloncuk' },
 ];
 
 type Tool = 'breath' | 'urge' | 'ground' | 'game';
@@ -47,7 +48,6 @@ const GROUND = [
 ];
 
 const URGES_SECONDS = 180;
-const GAME_SECONDS = 20;
 
 export function CravingScreen() {
   const { colors } = useTheme();
@@ -67,11 +67,6 @@ export function CravingScreen() {
 
   const [groundStep, setGroundStep] = useState(0);
 
-  const [gameLeft, setGameLeft] = useState(GAME_SECONDS);
-  const [taps, setTaps] = useState(0);
-  const [gameRunning, setGameRunning] = useState(false);
-  const [bestTaps, setBestTaps] = useState(0);
-
   const [trigger, setTrigger] = useState<string | null>(null);
   const [intensity, setIntensity] = useState<number | null>(null);
   const [logged, setLogged] = useState<string | null>(null);
@@ -81,8 +76,6 @@ export function CravingScreen() {
   const breathTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const secondsRef = useRef(PHASES[0].seconds);
-  const tapsRef = useRef(0);
-  const gameLeftRef = useRef(GAME_SECONDS);
 
   const stopBreath = () => {
     if (breathTimer.current) clearInterval(breathTimer.current);
@@ -146,36 +139,14 @@ export function CravingScreen() {
     return () => clearInterval(t);
   }, [urgeRunning]);
 
-  useEffect(() => {
-    if (!gameRunning) return;
-    const t = setInterval(() => {
-      const left = gameLeftRef.current - 1;
-      if (left > 0) {
-        gameLeftRef.current = left;
-        setGameLeft(left);
-        return;
-      }
-      clearInterval(t);
-      gameLeftRef.current = 0;
-      setGameLeft(0);
-      setBestTaps((b) => Math.max(b, tapsRef.current));
-      setGameRunning(false);
-    }, 1000);
-    return () => clearInterval(t);
-  }, [gameRunning]);
+
 
   const startUrge = () => {
     setUrgeLeft(URGES_SECONDS);
     setUrgeRunning(true);
   };
 
-  const startGame = () => {
-    tapsRef.current = 0;
-    gameLeftRef.current = GAME_SECONDS;
-    setTaps(0);
-    setGameLeft(GAME_SECONDS);
-    setGameRunning(true);
-  };
+
 
   const record = (resisted: boolean) => {
     logCraving(resisted, {
@@ -343,34 +314,7 @@ export function CravingScreen() {
 
         {tool === 'game' ? (
           <Card style={styles.breathCard}>
-            <Text style={styles.toolTitle}>Oyalanma Oyunu</Text>
-            <Text style={styles.toolHint}>
-              {GAME_SECONDS} saniye boyunca daireye dokun. Amaç: aklını istekten uzaklaştırmak.
-            </Text>
-            <Text style={styles.gameTime}>{gameLeft} sn</Text>
-            <Pressable
-              style={({ pressed }) => [styles.gamePad, pressed && styles.gamePadPressed]}
-              disabled={!gameRunning}
-              onPress={() => {
-                tapsRef.current += 1;
-                setTaps(tapsRef.current);
-                Haptics.selectionAsync().catch(() => {});
-              }}
-            >
-              <Text style={styles.gameTaps}>{taps}</Text>
-              <Text style={styles.gamePadLabel}>{gameRunning ? 'DOKUN!' : 'Başlamak için aşağıdaki buton'}</Text>
-            </Pressable>
-            {gameRunning ? null : gameLeft === 0 ? (
-              <Text style={styles.urgeDone}>Süper! {taps} dokunuş. Rekorun: {bestTaps}.</Text>
-            ) : null}
-            {!gameRunning ? (
-              <Pressable
-                style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-                onPress={startGame}
-              >
-                <Text style={styles.primaryBtnText}>Oyunu Başlat</Text>
-              </Pressable>
-            ) : null}
+            <BubblePopGame durationSec={60} />
           </Card>
         ) : null}
 
@@ -648,27 +592,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     lineHeight: fontSizes.xl + 2,
   },
   twoBtns: { flexDirection: 'row', gap: spacing.sm, width: '100%', marginTop: spacing.md },
-  gameTime: {
-    fontSize: fontSizes.xl,
-    fontWeight: '800',
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-  },
-  gamePad: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: colors.primarySoft,
-    borderWidth: 3,
-    borderColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-    gap: 2,
-  },
-  gamePadPressed: { transform: [{ scale: 0.96 }], backgroundColor: colors.accentSoft },
-  gameTaps: { fontSize: fontSizes.huge, fontWeight: '800', color: colors.primaryDark },
-  gamePadLabel: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.textMuted },
   formLabel: {
     fontSize: fontSizes.sm,
     fontWeight: '700',

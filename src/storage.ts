@@ -9,6 +9,7 @@ const defaultData: AppData = {
   cravings: [],
   badges: [],
   savingsGoal: null,
+  crisisReminders: [],
   isPremium: false,
   showLockScreen: true,
 };

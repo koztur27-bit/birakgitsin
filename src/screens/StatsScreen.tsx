@@ -1,9 +1,10 @@
 import { useTheme } from '../context/ThemeContext';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { Card } from '../components/Card';
+import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { WeekChart } from '../components/WeekChart';
 import { useApp } from '../context/AppContext';
@@ -54,6 +55,10 @@ export function StatsScreen() {
   const insets = useSafeAreaInsets();
   const { data } = useApp();
   const plan = data.plan;
+  const shareCardRef = useRef<SuccessShareCardHandle>(null);
+  const shareSuccess = async () => {
+    await shareCardRef.current?.share();
+  };
   const now = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
   const cursor = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
@@ -134,7 +139,12 @@ export function StatsScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>İstatistikler</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>İstatistikler</Text>
+          <Pressable style={styles.shareSuccessBtn} onPress={shareSuccess}>
+            <Text style={styles.shareSuccessBtnText}>Başarımı Paylaş</Text>
+          </Pressable>
+        </View>
 
         <Card style={styles.coachCard}>
           <View style={styles.coachHead}>
@@ -408,6 +418,12 @@ export function StatsScreen() {
           </Text>
         ) : null}
       </ScrollView>
+      <SuccessShareCard
+        ref={shareCardRef}
+        durationText={`${Math.floor(elapsedDays(plan) * 24 / 24)} gün ${Math.floor(elapsedDays(plan) * 24) % 24} saat`}
+        avoidedTotal={avoided}
+        savedText={formatMoney(saved, plan.currency)}
+      />
     </View>
   );
 }
@@ -415,10 +431,29 @@ export function StatsScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '800',
     color: colors.text,
+  },
+  shareSuccessBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.round,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  shareSuccessBtnText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '800',
+    color: colors.primaryDark,
   },
   grid: { flexDirection: 'row', gap: spacing.md },
   gridCard: { flex: 1 },

@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Linking, Platform, Vibration } from 'react-native';
 import { badgeById, evaluateBadges } from '../lib/badges';
-import { formatCountdown, getLog, todayKey } from '../lib/calculations';
+import { cigarettesAvoided, formatCountdown, formatMoney, getLog, todayKey, totalMoneySaved } from '../lib/calculations';
 import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
 import {
   celebrate,
@@ -14,6 +14,7 @@ import {
 } from '../lib/statusNotification';
 import {
   AppData,
+  CrisisReminder,
   DayRecord,
   NrtKind,
   Plan,
@@ -49,10 +50,12 @@ type AppContextValue = {
   ready: boolean;
   setPlan: (plan: Plan) => void;
   logCigarette: (opts?: LogOptions) => void;
+  logSlip: (opts?: LogOptions) => { avoided: number };
   undoCigarette: (opts?: LogOptions) => void;
   logCraving: (resisted: boolean, meta?: { intensity?: number; trigger?: string }) => void;
   logNrt: (kind: NrtKind, amount?: number) => void;
   setSavingsGoal: (goal: SavingsGoal | null) => void;
+  setCrisisReminders: (reminders: CrisisReminder[]) => Promise<void>;
   resetAll: () => void;
   setPremium: (value: boolean) => void;
   setShowLockScreen: (value: boolean) => void;
@@ -78,6 +81,83 @@ const BOOT_GRACE_MS = 30000;
 // Uygulama (JS paketi) açılış anı: render sırasında Date.now() çağırmamak için
 // modül yüklenirken bir kez hesaplanır.
 const BOOT_AT = Date.now();
+
+const CRISIS_CHANNEL = 'birakgitsin-crisis';
+
+async function ensureCrisisChannel() {
+  if (Platform.OS !== 'android') return;
+  try {
+    await Notifications.setNotificationChannelAsync(CRISIS_CHANNEL, {
+      name: 'Kriz hatırlatıcıları',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: null,
+      vibrationPattern: [0, 120],
+    });
+  } catch {
+    // ignore
+  }
+}
+
+function crisisBody(data: AppData): string {
+  const plan = data.plan;
+  if (!plan) return 'Derin bir nefes al. Bu anı da atlatabilirsin — sen güçlüsün.';
+  const saved = totalMoneySaved(plan, data.logs);
+  const avoided = cigarettesAvoided(plan, data.logs);
+  const currency = plan.currency || '₺';
+  const savedText = formatMoney(saved, currency);
+  const goal = data.savingsGoal;
+  if (goal && goal.target > 0) {
+    const remaining = Math.max(0, goal.target - saved);
+    if (remaining <= 0) {
+      return `Harikasın! ${savedText} biriktirdin ve hedefin "${goal.title}" için hazırsın. Bu krizi de atlat.`;
+    }
+    return `Şu ana kadar ${savedText} biriktirdin, "${goal.title}" hedefine ${formatMoney(remaining, currency)} kaldı. ${avoided} sigara içmedin — devam!`;
+  }
+  return `Şu ana kadar ${savedText} biriktirdin ve ${avoided} sigara içmedin. Bu anı da atlatabilirsin.`;
+}
+
+async function syncCrisisReminderSchedules(reminders: CrisisReminder[] | undefined, data: AppData) {
+  if (Platform.OS === 'web') return;
+  const list = (reminders ?? []).filter((r) => r && r.enabled);
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      scheduled
+        .filter((n) => (n.identifier || '').startsWith('crisis-'))
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+    );
+  } catch {
+    // ignore
+  }
+  if (!list.length) return;
+  await ensureCrisisChannel();
+  const body = crisisBody(data);
+  for (const r of list) {
+    const m = /^([0-9]{1,2}):([0-9]{2})$/.exec(r.time || '');
+    if (!m) continue;
+    const hour = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+    const minute = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+    const title = r.label ? `${r.label} · Kriz anı hatırlatıcısı` : 'Kriz anı hatırlatıcısı';
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `crisis-${r.id}`,
+        content: {
+          title,
+          body,
+          sound: false,
+          ...(Platform.OS === 'android' ? { channelId: CRISIS_CHANNEL } : {}),
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour,
+          minute,
+        },
+      });
+    } catch {
+      // ignore individual schedule failures
+    }
+  }
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AppData>({
@@ -464,6 +544,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Şefkatli "kaçamak" kaydı: +1 sigara işler, tasarruf/ilerleme sıfırlanmaz;
+  // sert alarm/sayaç yeniden başlatma yok, yalnızca nazik geri bildirim.
+  const logSlip = (opts?: LogOptions): { avoided: number } => {
+    const next = withBadges(
+      mutateLog(opts?.dateKey ?? todayKey(), 1, opts?.windowIndex === undefined ? null : opts.windowIndex),
+      true,
+    );
+    persist(next);
+    if (Platform.OS === 'web') {
+      try {
+        (globalThis as any).navigator?.vibrate?.(40);
+      } catch {
+        // ignore
+      }
+    } else {
+      try {
+        Vibration.vibrate(40);
+      } catch {
+        // ignore
+      }
+    }
+    const avoided = next.plan ? cigarettesAvoided(next.plan, next.logs) : 0;
+    return { avoided };
+  };
+
   const undoCigarette = (opts?: LogOptions) =>
     persist(mutateLog(opts?.dateKey ?? todayKey(), -1, opts?.windowIndex === undefined ? null : opts.windowIndex));
 
@@ -495,17 +600,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       nrtLogs: [...(data.nrtLogs ?? []), { timestamp: new Date().toISOString(), kind, amount }],
     });
 
-  const setSavingsGoal = (goal: SavingsGoal | null) => persist({ ...data, savingsGoal: goal });
+  const setSavingsGoal = (goal: SavingsGoal | null) => {
+    const next = { ...data, savingsGoal: goal };
+    persist(next);
+    syncCrisisReminderSchedules(next.crisisReminders, next).catch(() => {});
+  };
+
+  const setCrisisReminders = async (reminders: CrisisReminder[]) => {
+    const next = { ...data, crisisReminders: reminders };
+    persist(next);
+    await syncCrisisReminderSchedules(reminders, next);
+  };
 
   const resetAll = () => {
     clearData();
     clearLockStatus();
+    if (Platform.OS !== 'web') {
+      Notifications.getAllScheduledNotificationsAsync()
+        .then((all) =>
+          Promise.all(
+            all
+              .filter((n) => (n.identifier || '').startsWith('crisis-'))
+              .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+          ),
+        )
+        .catch(() => {});
+    }
     setData({
       plan: null,
       logs: [],
       cravings: [],
       badges: [],
       savingsGoal: null,
+      crisisReminders: [],
       isPremium: false,
       showLockScreen: true,
     });
@@ -529,6 +656,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               target: Number(incoming.savingsGoal.target) || 0,
             }
           : null,
+      crisisReminders: Array.isArray(incoming.crisisReminders)
+        ? incoming.crisisReminders
+            .filter((r: any) => r && typeof r.time === 'string')
+            .map((r: any, i: number) => ({
+              id: typeof r.id === 'string' ? r.id : `cr-${Date.now()}-${i}`,
+              time: r.time,
+              label: typeof r.label === 'string' ? r.label : '',
+              enabled: r.enabled !== false,
+            }))
+        : [],
       isPremium: !!incoming.isPremium,
       showLockScreen: incoming.showLockScreen !== false,
     };
@@ -536,13 +673,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS !== 'web') {
       Notifications.getAllScheduledNotificationsAsync()
         .then((all) =>
-          all.forEach((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+          Promise.all(
+            all
+              .filter((n) => !(n.identifier || '').startsWith('crisis-'))
+              .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+          ),
         )
+        .then(() => syncCrisisReminderSchedules(clean.crisisReminders, clean))
         .catch(() => {});
     }
   };
 
   const exportedJson = () => JSON.stringify(data, null, 2);
+
+  // Uygulama hazır olduğunda ve veriler değiştikçe kriz hatırlatıcılarını
+  // (güncel tasarruf/hedef metniyle) yeniden planla.
+  useEffect(() => {
+    if (!ready) return;
+    syncCrisisReminderSchedules(data.crisisReminders, data).catch(() => {});
+  }, [ready, data]);
 
   // Bildirim aksiyonları en güncel handler'ları kullansın diye render sonrası
   // (effect içinde) güncellenir; render sırasında ref yazılmaz.
@@ -559,10 +708,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ready,
     setPlan,
     logCigarette,
+    logSlip,
     undoCigarette,
     logCraving,
     logNrt,
     setSavingsGoal,
+    setCrisisReminders,
     resetAll,
     setPremium,
     setShowLockScreen,

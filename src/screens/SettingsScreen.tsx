@@ -1,9 +1,11 @@
 import { useTheme } from '../context/ThemeContext';
 import * as Clipboard from 'expo-clipboard';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   Alert,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -18,6 +20,7 @@ import { Card } from '../components/Card';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { WidgetGalleryScreen } from './WidgetGalleryScreen';
 import { useApp } from '../context/AppContext';
+import { CrisisReminder } from '../types';
 import { dailyGoal, formatMoney, todayKey } from '../lib/calculations';
 import { useInstallPrompt } from '../lib/install';
 import { reloadApp } from '../lib/reload';
@@ -47,6 +50,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
     logNrt,
     restoreData,
     exportedJson,
+    setCrisisReminders,
   } = useApp();
   const plan = data.plan;
   const [backupText, setBackupText] = useState('');
@@ -55,6 +59,54 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [shortcutStatus, setShortcutStatus] = useState('');
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+
+  const defaultCrisis = useMemo<CrisisReminder[]>(
+    () => [
+      { id: 'crisis-1', time: '09:00', label: 'Kahve molası', enabled: false },
+      { id: 'crisis-2', time: '13:00', label: 'Yemek sonrası', enabled: false },
+      { id: 'crisis-3', time: '18:30', label: 'İş çıkışı', enabled: false },
+    ],
+    [],
+  );
+  const crisisReminders: CrisisReminder[] = useMemo(() => {
+    const existing = Array.isArray(data.crisisReminders) ? data.crisisReminders : [];
+    const byId = new Map(existing.map((r) => [r.id, r]));
+    return defaultCrisis.map((d) => byId.get(d.id) || d);
+  }, [data.crisisReminders, defaultCrisis]);
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+
+  const parseTime = (t: string) => {
+    const m = /^([0-9]{1,2}):([0-9]{2})$/.exec(t || '');
+    const d = new Date();
+    d.setSeconds(0, 0);
+    d.setHours(m ? Math.min(23, parseInt(m[1], 10)) : 9);
+    d.setMinutes(m ? Math.min(59, parseInt(m[2], 10)) : 0);
+    return d;
+  };
+  const fmtTime = (d: Date) =>
+    `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+  const updateCrisis = async (id: string, patch: Partial<CrisisReminder>) => {
+    const next = crisisReminders.map((r) => (r.id === id ? { ...r, ...patch } : r));
+    const enabledCount = next.filter((r) => r.enabled).length;
+    if (enabledCount > 3) {
+      Alert.alert('Kriz bildirimleri', 'En fazla 3 kriz saati seçebilirsin.');
+      return;
+    }
+    try {
+      await setCrisisReminders(next);
+    } catch (e: any) {
+      Alert.alert('Kriz bildirimleri', e?.message || 'Bildirimler ayarlanamadı.');
+    }
+  };
+
+  const onPickTime = async (event: DateTimePickerEvent, date?: Date) => {
+    const id = pickerFor;
+    if (Platform.OS !== 'ios') setPickerFor(null);
+    if (!id || event.type === 'dismissed' || !date) return;
+    await updateCrisis(id, { time: fmtTime(date) });
+    if (Platform.OS === 'ios') setPickerFor(null);
+  };
   const { available: canInstall, install, isWeb } = useInstallPrompt();
 
   if (!plan) return null;
@@ -435,6 +487,47 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         </Card>
 
         <Card>
+          <Text style={styles.cardLabel}>Akıllı Kriz Bildirimleri</Text>
+          <Text style={styles.planSub}>
+            Gün içinde zorlandığın 1–3 saati seç. Seçtiğin saatlerde biriken paranı ve hedefini
+            hatırlatan, yargılamayan kısa motivasyon bildirimleri gönderilir.
+          </Text>
+          <View style={styles.crisisList}>
+            {crisisReminders.map((r) => (
+              <View key={r.id} style={styles.crisisRow}>
+                <View style={styles.crisisInfo}>
+                  <Text style={styles.crisisLabel}>{r.label || 'Hatırlatıcı'}</Text>
+                  <Pressable
+                    style={styles.timeBtn}
+                    onPress={() => setPickerFor(r.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${r.label} saatini seç`}
+                  >
+                    <Text style={styles.timeBtnText}>{r.time}</Text>
+                  </Pressable>
+                </View>
+                <Switch
+                  value={!!r.enabled}
+                  onValueChange={(v) => updateCrisis(r.id, { enabled: v })}
+                  trackColor={{ false: colors.border, true: colors.primarySoft }}
+                  thumbColor={r.enabled ? colors.primary : colors.textMuted}
+                />
+              </View>
+            ))}
+          </View>
+          {pickerFor ? (
+            <DateTimePicker
+              value={parseTime(crisisReminders.find((x) => x.id === pickerFor)?.time || '09:00')}
+              mode="time"
+              is24Hour
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={onPickTime}
+            />
+          ) : null}
+          <Text style={styles.planSub}>En fazla 3 saat seçebilirsin. Bildirim izni gerekebilir.</Text>
+        </Card>
+
+        <Card>
           <Text style={styles.cardLabel}>Bırak Gitsin Premium</Text>
           <Text style={styles.planSub}>
             Yakında: ana ekran widget’ı (tek dokunuşla kayıt), reklamsız deneyim,
@@ -457,7 +550,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.0.9</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.1.0</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
@@ -554,4 +647,25 @@ const createStyles = (colors: any) => StyleSheet.create({
   adaptiveInfo: { flex: 1 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   switchInfo: { flex: 1 },
+  crisisList: { marginTop: spacing.md, gap: spacing.sm },
+  crisisRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  crisisInfo: { flex: 1, gap: 4 },
+  crisisLabel: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.text },
+  timeBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  timeBtnText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.primaryDark },
 });

@@ -19,6 +19,7 @@ import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { SosBreathingModal } from '../components/SosBreathingModal';
+import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
 import { StatusPopup } from '../components/StatusPopup';
 import { useApp } from '../context/AppContext';
 import { updateWidgetData } from '../lib/widgetData';
@@ -62,6 +63,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const {
     data,
     logCigarette,
+    logSlip,
     undoCigarette,
     timer,
     startTimer,
@@ -96,6 +98,11 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     setGoalEditing(false);
   };
 
+  const shareCardRef = useRef<SuccessShareCardHandle>(null);
+  const shareSuccess = async () => {
+    await shareCardRef.current?.share();
+  };
+
   const doUpdate = async () => {
     if (Platform.OS === 'web') {
       reloadApp();
@@ -112,6 +119,17 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     setSmokeNote(text);
     if (noteTimer.current) clearTimeout(noteTimer.current);
     noteTimer.current = setTimeout(() => setSmokeNote(null), 2600);
+  };
+
+  const handleSlip = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    const { avoided } = logSlip({ windowIndex });
+    const msg = `Sorun değil, şu ana kadar içmediğin ${avoided} sigara hâlâ senin büyük başarın. Kaldığımız yerden devam ediyoruz!`;
+    if (Platform.OS === 'web') {
+      (globalThis as any).alert?.(msg);
+    } else {
+      Alert.alert('1 Dal İçtim', msg);
+    }
   };
 
   useEffect(() => {
@@ -244,6 +262,9 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           >
             <Text style={styles.reloadChipText}>{updating ? 'İndiriliyor…' : 'Güncelle'}</Text>
           </Pressable>
+          <Pressable style={styles.reloadChip} onPress={shareSuccess} hitSlop={8}>
+            <Text style={styles.reloadChipText}>Paylaş</Text>
+          </Pressable>
         </View>
 
         <Pressable style={styles.refreshBar} onPress={reloadApp}>
@@ -261,7 +282,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           <Text style={styles.sosEmoji}>🆘</Text>
           <View style={styles.sosText}>
             <Text style={styles.sosTitle}>Kriz Geldi (SOS)</Text>
-            <Text style={styles.sosSub}>60 saniyelik nefes egzersizi · tetikleyici seç</Text>
+            <Text style={styles.sosSub}>60 sn nefes egzersizi veya baloncuk oyunu</Text>
           </View>
           <Text style={styles.sosArrow}>›</Text>
         </Pressable>
@@ -372,6 +393,15 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               <Text style={styles.undoText}>Geri al</Text>
             </Pressable>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="1 dal içtim, kaçamak oldu"
+            style={({ pressed }) => [styles.slipBtn, pressed && styles.pressed]}
+            onPress={handleSlip}
+          >
+            <Text style={styles.slipBtnText}>1 Dal İçtim (Kaçamak Oldu)</Text>
+            <Text style={styles.slipBtnSub}>Serini sıfırlamaz, şefkatle devam et</Text>
+          </Pressable>
         </LinearGradient>
 
         <Card style={styles.timerCard}>
@@ -650,6 +680,12 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
 
       <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
       <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
+      <SuccessShareCard
+        ref={shareCardRef}
+        durationText={`${Math.floor(elapsedDays(plan) * 24 / 24)} gün ${Math.floor(elapsedDays(plan) * 24) % 24} saat`}
+        avoidedTotal={avoided}
+        savedText={formatMoney(savedTotal, plan.currency)}
+      />
     </View>
   );
 }
@@ -885,6 +921,25 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   undoDisabled: { opacity: 0.4 },
   undoText: { fontSize: fontSizes.md, fontWeight: '700', color: colors.white },
+  slipBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+  },
+  slipBtnText: {
+    fontSize: fontSizes.md,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  slipBtnSub: {
+    fontSize: fontSizes.xs,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   cardsRow: {
     flexDirection: 'row',

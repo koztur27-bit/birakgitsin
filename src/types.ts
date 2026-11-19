@@ -46,6 +46,13 @@ export type SavingsGoal = {
   target: number;
 };
 
+export type CrisisReminder = {
+  id: string;
+  time: string; // HH:mm
+  label: string;
+  enabled: boolean;
+};
+
 export type AppData = {
   plan: Plan | null;
   logs: DayRecord[];
@@ -53,7 +60,7 @@ export type AppData = {
   badges: string[];
   nrtLogs?: NrtLog[];
   savingsGoal?: SavingsGoal | null;
-  // ... rest unchanged
+  crisisReminders?: CrisisReminder[];
   isPremium: boolean;
   showLockScreen: boolean;
 };

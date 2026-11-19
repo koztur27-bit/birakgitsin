@@ -15,20 +15,22 @@ import {
 import { useApp } from '../context/AppContext';
 import { formatCountdown } from '../lib/calculations';
 import { fontSizes, radius, shadows, spacing } from '../theme';
+import { BubblePopGame } from './BubblePopGame';
 
 const TRIGGERS = ['Kahve', 'Stres', 'Yemek', 'Sosyal'];
 const DURATION = 60;
 const INHALE_MS = 4000;
 const EXHALE_MS = 6000;
 
-type Phase = 'idle' | 'running' | 'done';
+type BreathPhase = 'idle' | 'running' | 'done';
+type SosMode = 'breath' | 'game';
 
 type SosBreathingModalProps = {
   visible: boolean;
   onClose: () => void;
 };
 
-/** Kriz anında açılan 60 saniyelik nefes egzersizi + tetikleyici kaydı. */
+/** Kriz anında açılan SOS ekranı: nefes egzersizi veya 60 sn baloncuk patlatma oyunu. */
 export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -54,10 +56,13 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
     [breath],
   );
 
+  const [mode, setMode] = useState<SosMode>('breath');
   const [trigger, setTrigger] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<BreathPhase>('idle');
   const [remaining, setRemaining] = useState(DURATION);
   const [breathLabel, setBreathLabel] = useState('Nefes al');
+  const [gameDone, setGameDone] = useState(false);
+  const [gameScore, setGameScore] = useState(0);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -86,36 +91,40 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
     if (!visible) stopFx();
   }, [visible, stopFx]);
 
-  const reset = useCallback(() => {
+  const resetAll = useCallback(() => {
     stopFx();
+    setMode('breath');
     setPhase('idle');
     setRemaining(DURATION);
     setBreathLabel('Nefes al');
     setTrigger(null);
+    setGameDone(false);
+    setGameScore(0);
     loggedRef.current = false;
     breath.setValue(0);
   }, [breath, stopFx]);
 
   const handleClose = useCallback(() => {
-    reset();
+    resetAll();
     onClose();
-  }, [onClose, reset]);
+  }, [onClose, resetAll]);
 
-  const finish = useCallback(() => {
-    if (loggedRef.current) {
-      setPhase('done');
-      return;
-    }
+  const logResistedOnce = useCallback(() => {
+    if (loggedRef.current) return;
     loggedRef.current = true;
+    logCraving(true, { trigger: triggerRef.current ?? undefined });
+  }, [logCraving]);
+
+  const finishBreath = useCallback(() => {
     stopFx();
     breath.setValue(0);
     setRemaining(0);
     setPhase('done');
-    logCraving(true, { trigger: triggerRef.current ?? undefined });
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, [breath, logCraving, stopFx]);
+    logResistedOnce();
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  }, [breath, logResistedOnce, stopFx]);
 
-  const start = useCallback(() => {
+  const startBreath = useCallback(() => {
     if (runningRef.current) return;
     loggedRef.current = false;
     setPhase('running');
@@ -146,9 +155,30 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
       const elapsedMs = DURATION * 1000 - left * 1000;
       const nextLabel = elapsedMs % (INHALE_MS + EXHALE_MS) >= INHALE_MS ? 'Nefes ver' : 'Nefes al';
       setBreathLabel((prev) => (prev === nextLabel ? prev : nextLabel));
-      if (left <= 0) finish();
+      if (left <= 0) finishBreath();
     }, 250);
-  }, [breath, finish]);
+  }, [breath, finishBreath]);
+
+  const onGameComplete = useCallback(
+    (score: number) => {
+      setGameDone(true);
+      setGameScore(score);
+      logResistedOnce();
+    },
+    [logResistedOnce],
+  );
+
+  const switchMode = (next: SosMode) => {
+    if (next === mode) return;
+    stopFx();
+    setPhase('idle');
+    setRemaining(DURATION);
+    setBreathLabel('Nefes al');
+    breath.setValue(0);
+    setGameDone(false);
+    setGameScore(0);
+    setMode(next);
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
@@ -158,9 +188,32 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
             <Text style={styles.eyebrow}>KRİZ GELDİ</Text>
             <Text style={styles.title}>Dur, nefes al, devam et</Text>
             <Text style={styles.subtitle}>
-              Tetikleyiciyi seç ve 60 saniyelik nefes egzersizini tamamla. Krizi atlattığında
-              kaydedilir.
+              Tetikleyicini seç ve 60 saniyelik nefes egzersizi ya da dikkat dağıtıcı mini oyunla bu
+              anı atlat.
             </Text>
+
+            <View style={styles.modeRow}>
+              <Pressable
+                accessibilityRole="button"
+                style={[styles.modeBtn, mode === 'breath' && styles.modeBtnActive]}
+                onPress={() => switchMode('breath')}
+                disabled={phase === 'running'}
+              >
+                <Text style={[styles.modeText, mode === 'breath' && styles.modeTextActive]}>
+                  Nefes Egzersizi
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                style={[styles.modeBtn, mode === 'game' && styles.modeBtnActive]}
+                onPress={() => switchMode('game')}
+                disabled={phase === 'running'}
+              >
+                <Text style={[styles.modeText, mode === 'game' && styles.modeTextActive]}>
+                  Baloncuk Patlatma (60 sn)
+                </Text>
+              </Pressable>
+            </View>
 
             <Text style={styles.sectionLabel}>Tetikleyici (isteğe bağlı)</Text>
             <View style={styles.chipWrap}>
@@ -185,73 +238,98 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
               })}
             </View>
 
-            {phase === 'idle' ? (
-              <View style={styles.idleBox}>
-                <Text style={styles.idleEmoji}>🫁</Text>
-                <Text style={styles.idleText}>
-                  4 saniye nefes al, 6 saniye nefes ver. Toplam 60 saniye.
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-                  onPress={start}
-                >
-                  <Text style={styles.primaryBtnText}>60 Saniyeyi Başlat</Text>
-                </Pressable>
-              </View>
-            ) : null}
+            {mode === 'breath' ? (
+              <>
+                {phase === 'idle' ? (
+                  <View style={styles.idleBox}>
+                    <Text style={styles.idleEmoji}>🫁</Text>
+                    <Text style={styles.idleText}>
+                      4 saniye nefes al, 6 saniye nefes ver. Toplam 60 saniye.
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
+                      onPress={startBreath}
+                    >
+                      <Text style={styles.primaryBtnText}>60 Saniyeyi Başlat</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
 
-            {phase === 'running' ? (
-              <View style={styles.breathArea}>
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    styles.halo,
-                    { opacity: haloOpacity, transform: [{ scale }] },
-                  ]}
+                {phase === 'running' ? (
+                  <View style={styles.breathArea}>
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[styles.halo, { opacity: haloOpacity, transform: [{ scale }] }]}
+                    />
+                    <Animated.View style={[styles.circle, { transform: [{ scale }] }]}>
+                      <Text style={styles.breathLabel}>{breathLabel}</Text>
+                      <Text style={styles.breathCount}>{formatCountdown(remaining)}</Text>
+                    </Animated.View>
+                    <Text style={styles.breathHint}>
+                      Dairenin büyümesiyle nefes al, küçülmesiyle ver.
+                    </Text>
+                    <View style={styles.runningActions}>
+                      <Pressable
+                        accessibilityRole="button"
+                        style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
+                        onPress={handleClose}
+                      >
+                        <Text style={styles.ghostBtnText}>Vazgeç</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
+                        onPress={finishBreath}
+                      >
+                        <Text style={styles.primaryBtnText}>Dayandım</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : null}
+
+                {phase === 'done' ? (
+                  <View style={styles.doneBox}>
+                    <Text style={styles.doneEmoji}>🎉</Text>
+                    <Text style={styles.doneTitle}>Krizi atlattın!</Text>
+                    <Text style={styles.doneText}>
+                      Bu istek dayanma olarak kaydedildi. İstersen tetikleyiciyi değiştirip tekrar
+                      deneyebilirsin.
+                    </Text>
+                    {trigger ? <Text style={styles.doneTrigger}>Tetikleyici: {trigger}</Text> : null}
+                    <Pressable
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
+                      onPress={handleClose}
+                    >
+                      <Text style={styles.primaryBtnText}>Kapat</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </>
+            ) : (
+              <View style={styles.gameWrap}>
+                <BubblePopGame
+                  durationSec={60}
+                  active={visible && mode === 'game'}
+                  onComplete={onGameComplete}
                 />
-                <Animated.View style={[styles.circle, { transform: [{ scale }] }]}>
-                  <Text style={styles.breathLabel}>{breathLabel}</Text>
-                  <Text style={styles.breathCount}>{formatCountdown(remaining)}</Text>
-                </Animated.View>
-                <Text style={styles.breathHint}>Dairenin büyümesiyle nefes al, küçülmesiyle ver.</Text>
-                <View style={styles.runningActions}>
-                  <Pressable
-                    accessibilityRole="button"
-                    style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
-                    onPress={handleClose}
-                  >
-                    <Text style={styles.ghostBtnText}>Vazgeç</Text>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-                    onPress={finish}
-                  >
-                    <Text style={styles.primaryBtnText}>Dayandım</Text>
-                  </Pressable>
-                </View>
+                {gameDone ? (
+                  <View style={styles.gameDoneNote}>
+                    <Text style={styles.gameDoneText}>
+                      Krizi atlattığın kaydedildi. Puanın: {gameScore}
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
+                      onPress={handleClose}
+                    >
+                      <Text style={styles.ghostBtnText}>Kapat</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
-            ) : null}
-
-            {phase === 'done' ? (
-              <View style={styles.doneBox}>
-                <Text style={styles.doneEmoji}>🎉</Text>
-                <Text style={styles.doneTitle}>Krizi atlattın!</Text>
-                <Text style={styles.doneText}>
-                  Bu istek dayanma olarak kaydedildi. İstersen tetikleyiciyi değiştirip tekrar
-                  deneyebilirsin.
-                </Text>
-                {trigger ? <Text style={styles.doneTrigger}>Tetikleyici: {trigger}</Text> : null}
-                <Pressable
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-                  onPress={handleClose}
-                >
-                  <Text style={styles.primaryBtnText}>Kapat</Text>
-                </Pressable>
-              </View>
-            ) : null}
+            )}
           </ScrollView>
         </View>
       </View>
@@ -259,141 +337,177 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(3,8,20,0.72)',
-    justifyContent: 'center',
-    padding: spacing.md,
-  },
-  sheet: {
-    backgroundColor: colors.card,
-    borderRadius: radius.xl,
-    maxHeight: '90%',
-    ...shadows.card,
-  },
-  content: { padding: spacing.lg, gap: spacing.sm },
-  eyebrow: {
-    fontSize: fontSizes.xs,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    color: colors.danger,
-  },
-  title: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-  subtitle: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    lineHeight: 20,
-  },
-  sectionLabel: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    fontWeight: '700',
-    marginTop: spacing.sm,
-  },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.round,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
-  chipTextActive: { color: colors.white },
-  idleBox: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginTop: spacing.sm,
-  },
-  idleEmoji: { fontSize: 42 },
-  idleText: {
-    fontSize: fontSizes.sm,
-    color: colors.text,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  primaryBtn: {
-    backgroundColor: colors.danger,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    minWidth: 190,
-  },
-  primaryBtnText: { color: colors.white, fontSize: fontSizes.md, fontWeight: '800' },
-  ghostBtn: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  ghostBtnText: { color: colors.textMuted, fontSize: fontSizes.md, fontWeight: '700' },
-  breathArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 300,
-    marginTop: spacing.md,
-  },
-  halo: {
-    position: 'absolute',
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-    backgroundColor: colors.primary,
-  },
-  circle: {
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    backgroundColor: colors.primaryDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.white,
-  },
-  breathLabel: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.white },
-  breathCount: {
-    fontSize: fontSizes.xxl,
-    fontWeight: '800',
-    color: colors.white,
-    fontVariant: ['tabular-nums'],
-    marginTop: spacing.xs,
-  },
-  breathHint: {
-    fontSize: fontSizes.xs,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-  },
-  runningActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  doneBox: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginTop: spacing.sm,
-  },
-  doneEmoji: { fontSize: 44 },
-  doneTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-  doneText: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  doneTrigger: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(3,8,20,0.72)',
+      justifyContent: 'center',
+      padding: spacing.md,
+    },
+    sheet: {
+      backgroundColor: colors.card,
+      borderRadius: radius.xl,
+      maxHeight: '92%',
+      ...shadows.card,
+    },
+    content: { padding: spacing.lg, gap: spacing.sm },
+    eyebrow: {
+      fontSize: fontSizes.xs,
+      fontWeight: '800',
+      letterSpacing: 1.2,
+      color: colors.danger,
+    },
+    title: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+    subtitle: {
+      fontSize: fontSizes.sm,
+      color: colors.textMuted,
+      lineHeight: 20,
+    },
+    modeRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    modeBtn: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+      alignItems: 'center',
+    },
+    modeBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    modeText: {
+      fontSize: fontSizes.xs,
+      fontWeight: '800',
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    modeTextActive: { color: colors.white },
+    sectionLabel: {
+      fontSize: fontSizes.sm,
+      color: colors.textMuted,
+      fontWeight: '700',
+      marginTop: spacing.sm,
+    },
+    chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    chip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.round,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+    chipTextActive: { color: colors.white },
+    idleBox: {
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.primarySoft,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginTop: spacing.sm,
+    },
+    idleEmoji: { fontSize: 42 },
+    idleText: {
+      fontSize: fontSizes.sm,
+      color: colors.text,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    primaryBtn: {
+      backgroundColor: colors.danger,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      minWidth: 190,
+    },
+    primaryBtnText: { color: colors.white, fontSize: fontSizes.md, fontWeight: '800' },
+    ghostBtn: {
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+    },
+    ghostBtnText: { color: colors.textMuted, fontSize: fontSizes.md, fontWeight: '700' },
+    breathArea: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 300,
+      marginTop: spacing.md,
+    },
+    halo: {
+      position: 'absolute',
+      width: 230,
+      height: 230,
+      borderRadius: 115,
+      backgroundColor: colors.primary,
+    },
+    circle: {
+      width: 210,
+      height: 210,
+      borderRadius: 105,
+      backgroundColor: colors.primaryDark,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 3,
+      borderColor: colors.white,
+    },
+    breathLabel: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.white },
+    breathCount: {
+      fontSize: fontSizes.xxl,
+      fontWeight: '800',
+      color: colors.white,
+      fontVariant: ['tabular-nums'],
+      marginTop: spacing.xs,
+    },
+    breathHint: {
+      fontSize: fontSizes.xs,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: spacing.lg,
+    },
+    runningActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    doneBox: {
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.primarySoft,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginTop: spacing.sm,
+    },
+    doneEmoji: { fontSize: 44 },
+    doneTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+    doneText: {
+      fontSize: fontSizes.sm,
+      color: colors.textMuted,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    doneTrigger: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark },
+    gameWrap: { marginTop: spacing.sm },
+    gameDoneNote: {
+      marginTop: spacing.sm,
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    gameDoneText: {
+      fontSize: fontSizes.sm,
+      fontWeight: '700',
+      color: colors.success,
+      textAlign: 'center',
+    },
+    pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  });
