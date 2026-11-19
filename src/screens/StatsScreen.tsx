@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { Card } from '../components/Card';
+import { SavingsSimulator } from '../components/SavingsSimulator';
 import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { WeekChart } from '../components/WeekChart';
@@ -220,6 +221,8 @@ export function StatsScreen() {
             </Text>
           </Card>
         </View>
+
+        <SavingsSimulator plan={plan} logs={data.logs} />
 
         <Card>
           <Text style={styles.cardLabel}>Son 7 gün</Text>

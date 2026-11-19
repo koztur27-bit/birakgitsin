@@ -32,6 +32,7 @@ type Draft = {
   useWindows: boolean;
   windows: SmokeWindow[];
   cessationAid: CessationAid;
+  heavySmokerMode: boolean;
 };
 
 const defaultDraft: Draft = {
@@ -43,7 +44,12 @@ const defaultDraft: Draft = {
   useWindows: true,
   windows: defaultWindows,
   cessationAid: 'none',
+  heavySmokerMode: false,
 };
+
+function gentleReduction(baselinePerDay: number): number {
+  return baselinePerDay >= 30 ? 1 : 2;
+}
 
 type OnboardingProps = {
   initial?: Plan;
@@ -68,6 +74,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
           windows:
             initial.windows?.length > 0 ? initial.windows : defaultWindows,
           cessationAid: initial.cessationAid ?? 'none',
+          heavySmokerMode: initial.heavySmokerMode ?? false,
         }
       : defaultDraft,
   );
@@ -86,6 +93,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
       windows: draft.useWindows ? draft.windows : [],
       adaptive: initial?.adaptive ?? true,
       cessationAid: draft.cessationAid,
+      heavySmokerMode: draft.heavySmokerMode,
     });
   };
 
@@ -135,12 +143,74 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                 <Stepper
                   label="Günlük sigara"
                   value={draft.baselinePerDay}
-                  onChange={(v) => set('baselinePerDay', v)}
+                  onChange={(v) => {
+                    setDraft((d) => {
+                      const baselinePerDay = v;
+                      const suggested = gentleReduction(baselinePerDay);
+                      const weeklyReduction =
+                        d.heavySmokerMode && baselinePerDay >= 20
+                          ? Math.min(d.weeklyReduction, suggested)
+                          : d.weeklyReduction;
+                      return { ...d, baselinePerDay, weeklyReduction };
+                    });
+                  }}
                   min={1}
                   max={60}
                   suffix="adet"
                   hint="Azaltma planı bu sayıdan başlar."
                 />
+
+                <Pressable
+                  style={[styles.modeToggle, draft.heavySmokerMode && styles.modeToggleActive]}
+                  onPress={() => {
+                    setDraft((d) => {
+                      const next = !d.heavySmokerMode;
+                      const suggested = gentleReduction(d.baselinePerDay);
+                      return {
+                        ...d,
+                        heavySmokerMode: next,
+                        weeklyReduction:
+                          next && d.baselinePerDay >= 20
+                            ? Math.min(d.weeklyReduction, suggested)
+                            : d.weeklyReduction,
+                      };
+                    });
+                  }}
+                >
+                  <View style={styles.modeToggleTextWrap}>
+                    <Text
+                      style={[
+                        styles.modeToggleTitle,
+                        draft.heavySmokerMode && styles.modeToggleTitleActive,
+                      ]}
+                    >
+                      Ağır Tiryaki Modu {draft.heavySmokerMode ? 'Açık' : 'Kapalı'}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.modeToggleHint,
+                        draft.heavySmokerMode && styles.modeToggleHintActive,
+                      ]}
+                    >
+                      Günlük 20+ sigarada daha kademeli azaltma ve yargılamayan destek için önerilir.
+                    </Text>
+                  </View>
+                  <View style={[styles.modeBadge, draft.heavySmokerMode && styles.modeBadgeActive]}>
+                    <Text style={styles.modeBadgeText}>{draft.heavySmokerMode ? '✓' : '+'}</Text>
+                  </View>
+                </Pressable>
+                {draft.heavySmokerMode ? (
+                  <Text style={styles.heavyNote}>
+                    Önerilen tempo: haftada en fazla {gentleReduction(draft.baselinePerDay)} sigara azaltma.
+                    Hedefine tam uyamasan da ilerliyorsun; plan seni zorlamak için değil desteklemek için var.
+                  </Text>
+                ) : draft.baselinePerDay >= 20 ? (
+                  <Text style={styles.heavyNote}>
+                    Günlük {draft.baselinePerDay} sigara için Ağır Tiryaki Modu’nu açarsan daha gerçekçi,
+                    kademeli bir plan ve ek destek alırsın.
+                  </Text>
+                ) : null}
+
                 <Stepper
                   label="Haftalık azalış"
                   value={draft.weeklyReduction}
@@ -148,7 +218,11 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                   min={0}
                   max={draft.baselinePerDay}
                   suffix="adet/gün"
-                  hint="Her hafta günlük hedefin bu kadar düşer. 0 = sabit tempo."
+                  hint={
+                    draft.heavySmokerMode
+                      ? 'Ağır modda daha yumuşak azaltma önerilir (genelde haftada 1–2).'
+                      : 'Her hafta günlük hedefin bu kadar düşer. 0 = sabit tempo.'
+                  }
                 />
                 <Text style={styles.preview}>
                   1. hafta hedefin: {draft.baselinePerDay} adet
@@ -228,6 +302,10 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
               <SummaryRow label="Başlangıç" value={`günde ${draft.baselinePerDay} sigara`} />
               <SummaryRow label="Azaltma" value={`haftada ${draft.weeklyReduction} sigara`} />
               <SummaryRow
+                label="Mod"
+                value={draft.heavySmokerMode ? 'Ağır Tiryaki (kademeli)' : 'Standart'}
+              />
+              <SummaryRow
                 label="1 paket"
                 value={`${draft.packPrice} ${draft.currency} / ${draft.cigarettesPerPack} adet`}
               />
@@ -237,7 +315,9 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
               />
               <Text style={[styles.paragraph, { marginTop: spacing.md }]}>
                 Plan başladığında bugünkü günlük hedefin {draft.baselinePerDay} sigara olacak.
-                Uyarlanabilir plan açık; son haftanın uyumuna göre tempo kendini ayarlar.
+                {draft.heavySmokerMode
+                  ? ' Ağır Tiryaki Modu açık: tempo daha kademeli ilerler ve zorlandığında yargılamayan destek sunulur.'
+                  : ' Uyarlanabilir plan açık; son haftanın uyumuna göre tempo kendini ayarlar.'}
               </Text>
             </View>
           </Card>
@@ -431,4 +511,51 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   nextBtnWide: { flex: 1 },
   nextText: { fontSize: fontSizes.md, color: colors.white, fontWeight: '700' },
+  modeToggle: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  modeToggleActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  modeToggleTextWrap: { flex: 1, gap: 4 },
+  modeToggleTitle: {
+    fontSize: fontSizes.sm,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  modeToggleTitleActive: { color: colors.primaryDark },
+  modeToggleHint: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+  modeToggleHintActive: { color: colors.text },
+  modeBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.border,
+  },
+  modeBadgeActive: { backgroundColor: colors.primary },
+  modeBadgeText: { color: colors.white, fontWeight: '800', fontSize: fontSizes.md },
+  heavyNote: {
+    marginTop: spacing.sm,
+    fontSize: fontSizes.xs,
+    color: colors.primaryDark,
+    lineHeight: 18,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+  },
 });

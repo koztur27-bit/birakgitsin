@@ -16,6 +16,8 @@ export type Plan = {
   /** Son 7 günün uyumuna göre hedefi otomatik ayarlar. Eski planlarda yoksa açık kabul edilir. */
   adaptive?: boolean;
   cessationAid?: CessationAid;
+  /** Ağır tiryaki modu: yüksek baz tüketimde daha kademeli/gerçekçi azaltma ve ek destek. */
+  heavySmokerMode?: boolean;
 };
 
 export type DayRecord = {

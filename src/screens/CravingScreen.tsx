@@ -54,6 +54,8 @@ export function CravingScreen() {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { data, logCraving } = useApp();
+  const plan = data.plan;
+  const heavyMode = !!plan?.heavySmokerMode && (plan?.baselinePerDay ?? 0) >= 20;
 
   const [tool, setTool] = useState<Tool>('breath');
 
@@ -179,6 +181,17 @@ export function CravingScreen() {
           Canın sigara çektiğinde buraya gel. İstek ortalama 3–5 dakika sürer; bu araçlarla
           tepe noktasını geç.
         </Text>
+
+        {heavyMode ? (
+          <Card style={styles.heavySupportCard}>
+            <Text style={styles.heavySupportTitle}>Ağır Tiryaki Modu · Destek</Text>
+            <Text style={styles.heavySupportText}>
+              İstek güçlü olabilir ve bu çok normal. Şu an yapman gereken tek şey bu dalgayı
+              atlatmak: nefes, sayaç, topraklama veya baloncuk oyunundan birini dene. Hedefe tam
+              uymasan bile devam etmek büyük başarıdır.
+            </Text>
+          </Card>
+        ) : null}
 
         <View style={styles.toolRow}>
           {TOOLS.map((t) => {
@@ -662,6 +675,14 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   smokeBtnText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
   pressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
+  heavySupportCard: {
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  heavySupportTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
+  heavySupportText: { fontSize: fontSizes.sm, color: colors.text, lineHeight: 20 },
   statsTitle: {
     fontSize: fontSizes.md,
     fontWeight: '700',

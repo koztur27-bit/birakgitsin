@@ -5,6 +5,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import {
   Alert,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ScreenMapModal } from '../components/ScreenMapModal';
+import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { WidgetGalleryScreen } from './WidgetGalleryScreen';
 import { useApp } from '../context/AppContext';
 import { CrisisReminder } from '../types';
@@ -59,6 +61,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [shortcutStatus, setShortcutStatus] = useState('');
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const defaultCrisis = useMemo<CrisisReminder[]>(
     () => [
@@ -335,6 +338,9 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             <Text style={styles.planSub}>
               Bugünkü hedef: {goal} sigara · 1 paket size {formatMoney(plan.packPrice, plan.currency)}
             </Text>
+            {plan.heavySmokerMode ? (
+              <Text style={styles.planSub}>Mod: Ağır Tiryaki (kademeli destek)</Text>
+            ) : null}
             {plan.windows.length > 0 ? (
               <Text style={styles.planSub}>
                 İzinli pencereler:{' '}
@@ -352,6 +358,21 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             <Switch
               value={plan.adaptive !== false}
               onValueChange={(value) => setPlan({ ...plan, adaptive: value })}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.white}
+            />
+          </View>
+          <View style={styles.adaptiveRow}>
+            <View style={styles.adaptiveInfo}>
+              <Text style={styles.cardLabel}>Ağır Tiryaki Modu</Text>
+              <Text style={styles.planSub}>
+                Günlük 20+ sigara için daha kademeli/gerçekçi hedefler, yargılamayan yönlendirme ve
+                daha görünür kriz desteği sunar.
+              </Text>
+            </View>
+            <Switch
+              value={!!plan.heavySmokerMode}
+              onValueChange={(value) => setPlan({ ...plan, heavySmokerMode: value })}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={colors.white}
             />
@@ -463,6 +484,19 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         </Card>
 
         <Card>
+          <Text style={styles.cardLabel}>Yoksunluk Belirtisi Rehberi</Text>
+          <Text style={styles.planSub}>
+            Bırakma sonrası ilk saatlerden aylara uzanan yaygın belirtileri ve pratik baş etme
+            önerilerini gör. Bilgilendiricidir; tıbbi tavsiye yerine geçmez.
+          </Text>
+          <View style={styles.inlineRow}>
+            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={() => setGuideOpen(true)}>
+              <Text style={styles.smallBtnText}>Rehberi Gör</Text>
+            </Pressable>
+          </View>
+        </Card>
+
+        <Card>
           <Text style={styles.cardLabel}>NRT / ilaç günlüğü</Text>
           <Text style={styles.planSub}>
             Nikotin sakızı, bant veya ilaç dozunu kaydet. Bu kayıt tıbbi öneri değildir;
@@ -550,11 +584,24 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.1.0</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.2.0</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
       <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
+      <Modal visible={guideOpen} animationType="slide" onRequestClose={() => setGuideOpen(false)}>
+        <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
+          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.title}>Yoksunluk Rehberi</Text>
+              <Pressable style={styles.smallBtn} onPress={() => setGuideOpen(false)}>
+                <Text style={styles.smallBtnText}>Kapat</Text>
+              </Pressable>
+            </View>
+            <WithdrawalGuide />
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -566,6 +613,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: fontSizes.xl,
     fontWeight: '800',
     color: colors.text,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   cardLabel: {
     fontSize: fontSizes.sm,

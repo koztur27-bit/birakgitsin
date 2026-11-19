@@ -157,6 +157,7 @@ function planGoalSignature(plan: Plan): string {
     plan.baselinePerDay,
     plan.weeklyReduction,
     plan.adaptive === false ? 0 : 1,
+    plan.heavySmokerMode ? 1 : 0,
   ].join('|');
 }
 
@@ -180,10 +181,17 @@ function goalsUpTo(plan: Plan, logs: DayRecord[], week: number): number[] {
     const average =
       logged > 0 ? weekLogs.reduce((sum, l) => sum + l.smoked, 0) / logged : 0;
 
+    const heavy = !!plan.heavySmokerMode && plan.baselinePerDay >= 20;
     let reduction = Math.max(0, plan.weeklyReduction);
+    if (heavy) {
+      // Ağır tiryaki: hedef daha kademeli düşsün, ani zorlayıcı adımlar olmasın.
+      const gentleCap = plan.baselinePerDay >= 30 ? 1 : 2;
+      reduction = Math.min(reduction, gentleCap);
+    }
     if (plan.adaptive !== false && logged >= 4 && plan.weeklyReduction > 0) {
       if (average <= previous * 0.85) {
-        reduction += 1; // rahat tutuyor: biraz hızlan
+        // Rahat gidiyorsa hafif hızlan; ağır modda yine kademeli kal.
+        reduction = heavy ? Math.min(reduction + 1, gentleCapForHeavy(plan)) : reduction + 1;
       } else if (average > previous * 1.15) {
         reduction = Math.max(0, reduction - 1); // zorlanıyor: koru
       }
@@ -191,6 +199,10 @@ function goalsUpTo(plan: Plan, logs: DayRecord[], week: number): number[] {
     goals.push(Math.max(0, previous - reduction));
   }
   return goals;
+}
+
+function gentleCapForHeavy(plan: Plan): number {
+  return plan.baselinePerDay >= 30 ? 1 : 2;
 }
 
 export function dailyGoal(plan: Plan, dateKey: string, logs: DayRecord[] = []): number {

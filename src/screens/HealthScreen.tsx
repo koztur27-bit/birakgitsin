@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
+import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { useApp } from '../context/AppContext';
 import {
   elapsedDays,
@@ -111,6 +112,11 @@ export function HealthScreen() {
             gösterir. Tıbbi bir ölçüm veya tanı değildir.
           </Text>
         </View>
+
+        <View style={styles.sectionTitleRow}>
+          <Text style={styles.sectionTitle}>Yoksunluk Belirtisi Rehberi</Text>
+        </View>
+        <WithdrawalGuide />
       </ScrollView>
     </View>
   );

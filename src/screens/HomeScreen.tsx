@@ -17,6 +17,7 @@ import { Card } from '../components/Card';
 import { CigaretteIcon } from '../components/CigaretteIcon';
 import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
+import { SavingsSimulator } from '../components/SavingsSimulator';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { SosBreathingModal } from '../components/SosBreathingModal';
 import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
@@ -206,6 +207,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     month: 'long',
   });
 
+  const heavyMode = !!plan.heavySmokerMode && plan.baselinePerDay >= 20;
   const heroStatus =
     plan.windows.length > 0 && activeWindow >= 0
       ? `${plan.windows[activeWindow].start}–${plan.windows[activeWindow].end} penceresindesin · Kalan hak: ${
@@ -214,8 +216,12 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       : plan.windows.length > 0
         ? `Pencere dışındasın · Sıradaki penceren: ${nextWindowStr}`
         : underGoal
-          ? `Kalan hakkın: ${remaining} sigara. Hedefinin altındasın, devam!`
-          : 'Bugün hedefi aştın. Sorun değil, yarın yeniden başla.';
+          ? heavyMode
+            ? `Kalan hakkın: ${remaining} sigara. Kademeli ilerliyorsun; her içmediğin sigara değerli.`
+            : `Kalan hakkın: ${remaining} sigara. Hedefinin altındasın, devam!`
+          : heavyMode
+            ? 'Bugün hedefin üstüne çıktın, bu çok normal. Önemli olan pes etmemek; küçük adımlar da ilerlemedir. Yarın yeniden deneyebilirsin.'
+            : 'Bugün hedefi aştın. Sorun değil, yarın yeniden başla.';
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
@@ -286,6 +292,29 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           </View>
           <Text style={styles.sosArrow}>›</Text>
         </Pressable>
+
+        {heavyMode ? (
+          <Card style={styles.heavyCard}>
+            <Text style={styles.heavyTitle}>Ağır Tiryaki Desteği</Text>
+            <Text style={styles.heavyText}>
+              Kademeli azaltma senin için daha gerçekçi. Hedefi kaçırdığın günler yargı değil,
+              öğrenme fırsatıdır; önemli olan yönün ileri olması.
+            </Text>
+            <View style={styles.heavyTips}>
+              <Text style={styles.heavyTip}>• İstek dalgası 3–5 dk sürer: nefes, su veya 60 sn baloncuk oyunu dene.</Text>
+              <Text style={styles.heavyTip}>• Tetikleyici anlar (kahve, yemek sonrası) için kriz bildirimlerini ve SOS’u hazır tut.</Text>
+              <Text style={styles.heavyTip}>• “1 dal içtim” seçeneği serini bozmaz; kaldığın yerden şefkatle devam edebilirsin.</Text>
+            </View>
+            <View style={styles.heavyActions}>
+              <Pressable style={styles.heavyActionBtn} onPress={onOpenCraving}>
+                <Text style={styles.heavyActionText}>Kriz Araçlarını Aç</Text>
+              </Pressable>
+              <Pressable style={styles.heavyActionBtnGhost} onPress={() => setSosOpen(true)}>
+                <Text style={styles.heavyActionTextGhost}>Nefes / Oyun</Text>
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
 
         <LinearGradient
           colors={[colors.primary, colors.primaryDarker]}
@@ -574,6 +603,8 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             </View>
           )}
         </Card>
+
+        <SavingsSimulator plan={plan} logs={data.logs} />
 
         {plan.windows.length > 0 ? (
           <Card>
@@ -1087,4 +1118,33 @@ const createStyles = (colors: any) => StyleSheet.create({
   goalTargetText: { fontSize: fontSizes.sm, color: colors.textMuted },
   goalPercent: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.primaryDark },
   goalStatus: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
+  heavyCard: {
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  heavyTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.primaryDark },
+  heavyText: { fontSize: fontSizes.sm, color: colors.text, lineHeight: 20 },
+  heavyTips: { gap: 4 },
+  heavyTip: { fontSize: fontSizes.sm, color: colors.text, lineHeight: 20 },
+  heavyActions: { flexDirection: 'row', gap: spacing.sm, marginTop: 2 },
+  heavyActionBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  heavyActionText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
+  heavyActionBtnGhost: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+  },
+  heavyActionTextGhost: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
 });
