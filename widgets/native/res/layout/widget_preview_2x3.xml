@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="#0B0F14"
+    android:background="@drawable/widget_card_bg"
     android:padding="14dp">
 
     <TextView

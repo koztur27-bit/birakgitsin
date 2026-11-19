@@ -48,7 +48,10 @@ open class BirakGitsinWidget : AppWidgetProvider() {
         ) {
             val prefs = context.getSharedPreferences("BirakGitsinWidget", Context.MODE_PRIVATE)
             val quitText = prefs.getString("quitText", "0 gün 00 saat") ?: "0 gün 00 saat"
-            val savingsText = prefs.getString("savingsText", "0 ₺") ?: "0 ₺"
+            val fallbackSavings = prefs.getString("savingsText", "0 ₺") ?: "0 ₺"
+            // AsyncStorage veritabanındaki gerçek plan/log kayıtlarından hesapla.
+            // Okunamazsa JS'ten gelen son değeri kullan.
+            val savingsText = WidgetStorage.readSavingsText(context) ?: fallbackSavings
             val nextWindow = prefs.getString("nextWindow", "--:--") ?: "--:--"
 
             val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)

@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -246,7 +247,10 @@ function WidgetPreview({
         </View>
       </View>
 
-      <View
+      <LinearGradient
+        colors={['#0B1220', '#111A2E', '#1E293B']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={[
           styles.surface,
           { width: surfaceWidth, height: surfaceHeight, padding: 14 * scale },
@@ -259,7 +263,12 @@ function WidgetPreview({
           </View>
         </View>
 
-        <View style={[styles.accentLine, { marginTop: 7 * scale }]} />
+        <LinearGradient
+          colors={['#60A5FA', '#34D399']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.accentLine, { marginTop: 7 * scale }]}
+        />
 
         <View style={styles.surfaceCenter}>
           <View style={styles.liveRow}>
@@ -289,7 +298,7 @@ function WidgetPreview({
             Sıradaki pencere {live.nextWindow}
           </Text>
         </View>
-      </View>
+      </LinearGradient>
 
       <Pressable
         style={[styles.addBtn, busy && styles.addBtnBusy]}

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:background="#0B0F14"
+    android:background="@drawable/widget_card_bg"
     android:paddingLeft="12dp"
     android:paddingRight="12dp"
     android:paddingTop="6dp"

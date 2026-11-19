@@ -19,6 +19,8 @@ class BirakGitsinWidgetDataModule(reactContext: ReactApplicationContext) : React
         savingsText: String
     ) {
         val context = reactApplicationContext
+        // JS hesabını da AsyncStorage'dan okunan gerçek değerle doğrula.
+        val resolvedSavings = WidgetStorage.readSavingsText(context) ?: savingsText
         val prefs = context.getSharedPreferences("BirakGitsinWidget", Context.MODE_PRIVATE)
         prefs.edit()
             .putInt("todaySmoked", smoked)
@@ -27,7 +29,7 @@ class BirakGitsinWidgetDataModule(reactContext: ReactApplicationContext) : React
             .putInt("streak", streak)
             .putString("nextWindow", nextWindow)
             .putString("quitText", quitText)
-            .putString("savingsText", savingsText)
+            .putString("savingsText", resolvedSavings)
             .apply()
 
         // Standart disi bir broadcast yerine widget'lari dogrudan guncelle.
