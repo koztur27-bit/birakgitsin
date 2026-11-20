@@ -13,7 +13,6 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '../components/Card';
 import { CoachChatModal } from '../components/CoachChatModal';
 import { ProScreen } from './ProScreen';
 import { SosBreathingModal } from '../components/SosBreathingModal';
@@ -162,11 +161,12 @@ export function HomeScreen(_props: HomeScreenProps) {
   if (!plan || !record) return null;
 
   const smokedCount = record.smoked;
-  const statusText =
+  const todayGoalCount = dailyGoal(plan, today, data.logs);
+  const todayStatusText =
     smokedCount === 0
-      ? t('home.noSmokingToday')
+      ? (lang === 'en' ? 'No cigarettes today yet 🎉' : 'Bugün henüz sigara içmedin 🎉')
       : lang === 'en'
-        ? `${t('home.todaySmokedLabel')}: ${smokedCount}`
+        ? `You've smoked ${smokedCount} today`
         : `Bugün ${smokedCount} sigara içtin`;
 
   let windowCompact: string | null = null;
@@ -183,7 +183,7 @@ export function HomeScreen(_props: HomeScreenProps) {
         windowCompact = t('home.outOfWindow', { time: nextWindowStr });
       }
     } else {
-      const left = Math.max(0, dailyGoal(plan, today, data.logs) - smokedCount);
+      const left = Math.max(0, todayGoalCount - smokedCount);
       windowCompact = lang === 'en' ? `Allowed today: ${left} left` : `Bugün kalan hak: ${left}`;
     }
   }
@@ -285,16 +285,38 @@ export function HomeScreen(_props: HomeScreenProps) {
           </Pressable>
         </View>
 
-        {/* Daily Status Card */}
-        <Card style={styles.statusCard}>
-          <View style={styles.statusMainRow}>
-            <View style={styles.statusTextWrap}>
-              <Text style={styles.statusLabel}>
-                {lang === 'en' ? 'Today’s status' : 'Bugünkü durum'}
+        {/* Big Blue Today & Goal Card */}
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDarker]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.todayCard}
+        >
+          <View style={styles.todayDashedBox}>
+            <View style={styles.todayDashedLeft}>
+              <Text style={styles.todayCardTitle}>
+                {lang === 'en' ? 'Cigarettes today' : 'Bugün içtiklerin'}
               </Text>
-              <Text style={styles.statusText}>{statusText}</Text>
-              {windowCompact ? <Text style={styles.statusWindow}>{windowCompact}</Text> : null}
+              <Text style={styles.todayCardStatus}>{todayStatusText}</Text>
+              {windowCompact ? <Text style={styles.todayCardWindow}>{windowCompact}</Text> : null}
             </View>
+            <Text style={styles.todayCardCount}>{smokedCount}</Text>
+          </View>
+
+          <View style={styles.todayGoalBlock}>
+            <Text style={styles.todayGoalWhite}>
+              {lang === 'en'
+                ? `Today's goal: ${todayGoalCount} 🚬 cigarettes`
+                : `Bugünkü hedefin: ${todayGoalCount} 🚬 sigara`}
+            </Text>
+            <Text style={styles.todayGoalYellow}>
+              {lang === 'en'
+                ? `Smoked today: ${smokedCount} 🚬`
+                : `Bugün içtiğin: ${smokedCount} 🚬`}
+            </Text>
+          </View>
+
+          <View style={styles.todayActionsRow}>
             <Pressable
               accessibilityRole="button"
               style={({ pressed }) => [styles.hadOneBtn, pressed && styles.pressed]}
@@ -304,13 +326,13 @@ export function HomeScreen(_props: HomeScreenProps) {
                 {lang === 'en' ? 'Smoked 1' : '1 Dal İçtim'}
               </Text>
             </Pressable>
+            <Pressable onPress={onSlipPress} hitSlop={8} style={styles.slipLinkWrap}>
+              <Text style={styles.slipLinkOnBlue}>
+                {lang === 'en' ? 'Had a slip-up? Log gently' : 'Kaçamak oldu mu? Nazikçe kaydet'}
+              </Text>
+            </Pressable>
           </View>
-          <Pressable onPress={onSlipPress} hitSlop={6} style={styles.slipLinkWrap}>
-            <Text style={styles.slipLink}>
-              {lang === 'en' ? 'Had a slip-up? Log it gently' : 'Kaçamak oldu mu? Nazikçe kaydet'}
-            </Text>
-          </Pressable>
-        </Card>
+        </LinearGradient>
       </ScrollView>
 
       <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
@@ -455,30 +477,83 @@ const createStyles = (colors: any) =>
     supportEmoji: { fontSize: 28 },
     supportTitle: { fontSize: fontSizes.md, fontWeight: '800', textAlign: 'center' },
 
-    statusCard: { padding: spacing.lg, gap: spacing.sm },
-    statusMainRow: {
+    todayCard: {
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      gap: spacing.md,
+      ...shadows.card,
+    },
+    todayDashedBox: {
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      borderColor: 'rgba(255,255,255,0.55)',
+      borderRadius: radius.lg,
+      padding: spacing.md,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: spacing.md,
     },
-    statusTextWrap: { flex: 1, gap: 4 },
-    statusLabel: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 },
-    statusText: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text, lineHeight: 26 },
-    statusWindow: { fontSize: fontSizes.sm, color: colors.textMuted, marginTop: 2, lineHeight: 20 },
+    todayDashedLeft: { flex: 1, gap: 4 },
+    todayCardTitle: {
+      fontSize: fontSizes.md,
+      fontWeight: '800',
+      color: colors.white,
+    },
+    todayCardStatus: {
+      fontSize: fontSizes.sm,
+      color: 'rgba(255,255,255,0.92)',
+      lineHeight: 20,
+    },
+    todayCardWindow: {
+      fontSize: fontSizes.xs,
+      color: 'rgba(255,255,255,0.8)',
+      marginTop: 2,
+    },
+    todayCardCount: {
+      fontSize: 48,
+      fontWeight: '800',
+      color: colors.white,
+      lineHeight: 52,
+      minWidth: 56,
+      textAlign: 'right',
+    },
+    todayGoalBlock: { gap: 6, marginTop: 2 },
+    todayGoalWhite: {
+      fontSize: fontSizes.xl,
+      fontWeight: '800',
+      color: colors.white,
+      lineHeight: 30,
+    },
+    todayGoalYellow: {
+      fontSize: fontSizes.xl,
+      fontWeight: '800',
+      color: colors.accent,
+      lineHeight: 30,
+    },
+    todayActionsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+      marginTop: 4,
+    },
     hadOneBtn: {
-      backgroundColor: colors.primarySoft,
-      borderWidth: 1,
-      borderColor: colors.primary,
+      backgroundColor: colors.white,
       borderRadius: radius.md,
       paddingVertical: spacing.md,
-      paddingHorizontal: spacing.md,
+      paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
     },
     hadOneBtnText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
-    slipLinkWrap: { alignSelf: 'flex-start', marginTop: 2 },
-    slipLink: { fontSize: fontSizes.xs, color: colors.textMuted, textDecorationLine: 'underline' },
+    slipLinkWrap: { flex: 1, alignItems: 'flex-end' },
+    slipLinkOnBlue: {
+      fontSize: fontSizes.xs,
+      color: 'rgba(255,255,255,0.9)',
+      textDecorationLine: 'underline',
+      textAlign: 'right',
+    },
 
     pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
     hiddenShareCard: { position: 'absolute', left: -9999, top: 0, opacity: 0 },

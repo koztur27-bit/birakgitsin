@@ -650,7 +650,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.7.1</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.7.2</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
