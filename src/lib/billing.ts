@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-export type ProductId = 'pro_monthly' | 'pro_yearly' | 'pro_lifetime';
+export type ProductId = 'pro_monthly' | 'pro_yearly';
 
 export type ProductInfo = {
   id: ProductId;
@@ -10,7 +10,10 @@ export type ProductInfo = {
   popular?: boolean;
 };
 
-export const PRODUCT_IDS: ProductId[] = ['pro_monthly', 'pro_yearly', 'pro_lifetime'];
+export const PRODUCT_IDS: ProductId[] = ['pro_monthly', 'pro_yearly'];
+// Lifetime pro is discontinued/cancelled as a purchasable plan, but keep recognizing
+// existing lifetime purchases for entitlement restore safety.
+const ENTITLEMENT_PRODUCT_IDS = ['pro_monthly', 'pro_yearly', 'pro_lifetime'];
 
 export const FALLBACK_PRODUCTS: ProductInfo[] = [
   {
@@ -25,12 +28,6 @@ export const FALLBACK_PRODUCTS: ProductInfo[] = [
     priceLabel: '₺199,99 / yıl',
     description: 'En iyi değer. Yılda bir kez öde, tüm yıl PRO.',
     popular: true,
-  },
-  {
-    id: 'pro_lifetime',
-    title: 'Ömür Boyu',
-    priceLabel: '₺399,99',
-    description: 'Tek seferlik ödeme, ömür boyu erişim.',
   },
 ];
 
@@ -113,11 +110,10 @@ export async function fetchProProducts(): Promise<ProductInfo[]> {
     let products: any[] = [];
     if (typeof iap.fetchProducts === 'function') {
       // react-native-iap v12+/v14+ style
-      const inapp = await iap.fetchProducts({ skus: ['pro_lifetime'], type: 'in-app' }).catch(() => []);
       const subs = await iap
         .fetchProducts({ skus: ['pro_monthly', 'pro_yearly'], type: 'subs' })
         .catch(() => []);
-      products = [...(subs || []), ...(inapp || [])];
+      products = [...(subs || [])];
     } else if (typeof iap.getProducts === 'function') {
       products = await iap.getProducts({ skus: PRODUCT_IDS as unknown as string[] }).catch(() => []);
     }
@@ -153,16 +149,13 @@ export async function purchasePro(productId: ProductId): Promise<{ ok: boolean; 
   }
   try {
     await initBilling();
-    const type = productId === 'pro_lifetime' ? 'in-app' : 'subs';
-    if (typeof iap.requestPurchase === 'function') {
-      await iap.requestPurchase({
-        type,
-        request:
-          Platform.OS === 'android'
-            ? { skus: [productId], subscriptionOffers: type === 'subs' ? [] : undefined }
-            : { sku: productId },
-      } as any);
-    }
+    await iap.requestPurchase({
+      type: 'subs',
+      request:
+        Platform.OS === 'android'
+          ? { skus: [productId], subscriptionOffers: [] }
+          : { sku: productId },
+    } as any);
     return { ok: true };
   } catch (e: any) {
     const msg = e?.message || String(e);
@@ -183,7 +176,7 @@ export async function restorePurchases(): Promise<{ ok: boolean; hasPro: boolean
     const purchases = await iap.getAvailablePurchases();
     const hasPro = (purchases || []).some((p: any) => {
       const id = String(p.productId || p.id || p.sku || '');
-      return PRODUCT_IDS.includes(id as ProductId);
+      return ENTITLEMENT_PRODUCT_IDS.includes(id);
     });
     return { ok: true, hasPro };
   } catch (e: any) {

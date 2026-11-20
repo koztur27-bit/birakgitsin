@@ -368,7 +368,6 @@ export const translations = {
       products: {
         pro_monthly: { title: 'Aylık', priceLabel: '₺29,99 / ay', description: 'Esnek, istediğin zaman iptal et.' },
         pro_yearly: { title: 'Yıllık', priceLabel: '₺199,99 / yıl', description: 'En iyi değer. Yılda bir kez öde, tüm yıl PRO.' },
-        pro_lifetime: { title: 'Ömür Boyu', priceLabel: '₺399,99', description: 'Tek seferlik ödeme, ömür boyu erişim.' },
       },
     },
     withdrawal: {
@@ -979,7 +978,6 @@ export const translations = {
       products: {
         pro_monthly: { title: 'Monthly', priceLabel: '$2.99 / month', description: 'Flexible, cancel anytime.' },
         pro_yearly: { title: 'Yearly', priceLabel: '$19.99 / year', description: 'Best value. Pay once a year, PRO all year.' },
-        pro_lifetime: { title: 'Lifetime', priceLabel: '$39.99', description: 'One-time payment, lifetime access.' },
       },
     },
     withdrawal: {
