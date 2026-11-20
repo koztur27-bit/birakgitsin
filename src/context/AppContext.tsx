@@ -92,10 +92,14 @@ async function ensureCrisisChannel() {
   if (Platform.OS !== 'android') return;
   try {
     await Notifications.setNotificationChannelAsync(CRISIS_CHANNEL, {
-      name: 'Kriz hatırlatıcıları',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      sound: null,
+      name: 'Kriz ve motivasyon hatırlatıcıları',
+      description: 'Akıllı kriz ve motivasyon bildirimleri',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
       vibrationPattern: [0, 120],
+      enableVibrate: true,
+      showBadge: true,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
   } catch {
     // ignore
@@ -148,7 +152,10 @@ async function syncCrisisReminderSchedules(reminders: CrisisReminder[] | undefin
         content: {
           title,
           body,
-          sound: false,
+          sound: 'default',
+          color: '#14B8A6',
+          categoryIdentifier: 'birakgitsin-smart',
+          data: { type: 'smart-reminder', reminderId: r.id },
           ...(Platform.OS === 'android' ? { channelId: CRISIS_CHANNEL } : {}),
         },
         trigger: {
@@ -160,6 +167,33 @@ async function syncCrisisReminderSchedules(reminders: CrisisReminder[] | undefin
     } catch {
       // ignore individual schedule failures
     }
+  }
+}
+
+
+async function scheduleSmartSnoozeNotification(title: string, body: string) {
+  if (Platform.OS === 'web') return;
+  try {
+    await ensureCrisisChannel();
+    await Notifications.scheduleNotificationAsync({
+      identifier: `crisis-snooze-${Date.now()}`,
+      content: {
+        title,
+        body,
+        sound: 'default',
+        color: '#14B8A6',
+        categoryIdentifier: 'birakgitsin-smart',
+        data: { type: 'smart-reminder', snoozed: true },
+        ...(Platform.OS === 'android' ? { channelId: CRISIS_CHANNEL } : {}),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 30 * 60,
+        repeats: false,
+      },
+    });
+  } catch {
+    // ignore
   }
 }
 
@@ -743,6 +777,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       smoke: () => logCigarette(),
       resisted: () => dismissTimer(),
       snooze5: () => extendTimer(5),
+      confirm_resisted: () => {
+        logCraving(true);
+      },
+      snooze30: () => {
+        const title = 'Kriz anı hatırlatıcısı';
+        const body = crisisBody(data);
+        scheduleSmartSnoozeNotification(title, body).catch(() => {});
+      },
     };
   });
 

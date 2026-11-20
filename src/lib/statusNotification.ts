@@ -185,6 +185,18 @@ export async function registerNotificationCategories(): Promise<void> {
         options: { opensAppToForeground: true },
       },
     ]);
+    await Notifications.setNotificationCategoryAsync('birakgitsin-smart', [
+      {
+        identifier: 'confirm_resisted',
+        buttonTitle: 'İçmedim 💪',
+        options: { opensAppToForeground: false },
+      },
+      {
+        identifier: 'snooze30',
+        buttonTitle: 'Ertele',
+        options: { opensAppToForeground: false },
+      },
+    ]);
   } catch {
     // categories unavailable
   }
