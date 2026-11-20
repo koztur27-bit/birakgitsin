@@ -48,6 +48,25 @@ export function HealthScreen() {
           <Text style={styles.subtitle}>Bırakmaya başladıktan sonra geçirdiğin süre</Text>
         </View>
 
+        <Card style={styles.nextCard}>
+          <Text style={styles.nextLabel}>Sıradaki sağlık kazancı</Text>
+          {nextMilestone ? (
+            <>
+              <Text style={styles.nextTitle}>
+                {nextMilestone.emoji} {nextMilestone.label}
+              </Text>
+              <Text style={styles.nextDetail}>{nextMilestone.detail}</Text>
+              <Text style={styles.nextTime}>
+                {formatUntil(nextMilestone.days - elapsed)} sonra
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.nextDetail}>
+              🎉 Bugüne kadar tüm büyük sağlık kilometre taşlarını geçtin.
+            </Text>
+          )}
+        </Card>
+
         <Card style={styles.overviewCard}>
           <View style={styles.overviewTop}>
             <View>
@@ -86,25 +105,6 @@ export function HealthScreen() {
             </Card>
           );
         })}
-
-        <Card style={styles.nextCard}>
-          <Text style={styles.nextLabel}>Sıradaki sağlık kazancı</Text>
-          {nextMilestone ? (
-            <>
-              <Text style={styles.nextTitle}>
-                {nextMilestone.emoji} {nextMilestone.label}
-              </Text>
-              <Text style={styles.nextDetail}>{nextMilestone.detail}</Text>
-              <Text style={styles.nextTime}>
-                {formatUntil(nextMilestone.days - elapsed)} sonra
-              </Text>
-            </>
-          ) : (
-            <Text style={styles.nextDetail}>
-              🎉 Bugüne kadar tüm büyük sağlık kilometre taşlarını geçtin.
-            </Text>
-          )}
-        </Card>
 
         <View style={styles.note}>
           <Text style={styles.noteText}>

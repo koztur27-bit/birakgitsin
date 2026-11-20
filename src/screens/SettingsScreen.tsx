@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ScreenMapModal } from '../components/ScreenMapModal';
+import { StatusPopup } from '../components/StatusPopup';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { WidgetGalleryScreen } from './WidgetGalleryScreen';
 import { ProScreen } from './ProScreen';
@@ -61,6 +62,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const plan = data.plan;
   const [backupText, setBackupText] = useState('');
   const [mapOpen, setMapOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [shortcutStatus, setShortcutStatus] = useState('');
   const [widgetsOpen, setWidgetsOpen] = useState(false);
@@ -228,6 +230,38 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{t('settings.title')}</Text>
+
+        <Card>
+          <Text style={styles.cardLabel}>{(data.language || 'tr') === 'en' ? 'Quick Tools' : 'Hızlı Araçlar'}</Text>
+          <Text style={styles.planSub}>
+            {(data.language || 'tr') === 'en'
+              ? 'Map, status, update, and refresh — moved here from the home screen for a cleaner layout.'
+              : 'Ana ekrandan taşınan Harita, Durum, Güncelle ve Yenile araçları burada.'}
+          </Text>
+          <View style={styles.toolGrid}>
+            <Pressable style={styles.toolBtn} onPress={() => setMapOpen(true)}>
+              <Text style={styles.toolBtnText}>{(data.language || 'tr') === 'en' ? 'Map' : 'Harita'}</Text>
+            </Pressable>
+            <Pressable style={styles.toolBtn} onPress={() => setStatusOpen(true)}>
+              <Text style={styles.toolBtnText}>{(data.language || 'tr') === 'en' ? 'Status' : 'Durum'}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toolBtn, updating && styles.smallBtnDisabled]}
+              onPress={doUpdate}
+              disabled={updating}
+            >
+              <Text style={styles.toolBtnText}>
+                {updating
+                  ? ((data.language || 'tr') === 'en' ? 'Updating…' : 'Güncelleniyor…')
+                  : ((data.language || 'tr') === 'en' ? 'Update' : 'Güncelle')}
+              </Text>
+            </Pressable>
+            <Pressable style={styles.toolBtn} onPress={reloadApp}>
+              <Text style={styles.toolBtnText}>{(data.language || 'tr') === 'en' ? 'Refresh' : 'Yenile'}</Text>
+            </Pressable>
+          </View>
+        </Card>
+
 
         <Card>
           <Text style={styles.cardLabel}>{t('settings.languageTitle')}</Text>
@@ -616,10 +650,11 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.3.0</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.7.0</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
+      <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
       <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
       <Modal visible={guideOpen} animationType="slide" onRequestClose={() => setGuideOpen(false)}>
@@ -684,6 +719,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.primaryDark,
   },
   inlineRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  toolGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  toolBtn: {
+    flexGrow: 1,
+    flexBasis: '47%',
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolBtnText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
   smallBtn: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,

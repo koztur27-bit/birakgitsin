@@ -6,110 +6,62 @@ import {
   Alert,
   Image,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
-import { CigaretteIcon } from '../components/CigaretteIcon';
-import { MapBadge } from '../components/MapBadge';
-import { ProgressBar } from '../components/ProgressBar';
-import { SavingsSimulator } from '../components/SavingsSimulator';
-import { ScreenMapModal } from '../components/ScreenMapModal';
-import { SosBreathingModal } from '../components/SosBreathingModal';
 import { CoachChatModal } from '../components/CoachChatModal';
-import { ShareThemeId, SuccessShareCard, SuccessShareCardHandle, useLocalizedShareThemes } from '../components/SuccessShareCard';
-import { StatusPopup } from '../components/StatusPopup';
+import { ProScreen } from './ProScreen';
+import { SosBreathingModal } from '../components/SosBreathingModal';
+import {
+  ShareThemeId,
+  SuccessShareCard,
+  SuccessShareCardHandle,
+  useLocalizedShareThemes,
+} from '../components/SuccessShareCard';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n';
-import { hasProAccess } from '../lib/proAccess';
-import { updateWidgetData } from '../lib/widgetData';
-import { ProScreen } from './ProScreen';
 import { showRewardedUnlockAd } from '../lib/ads';
 import {
-  avoidedOnDay,
   cigarettesAvoided,
   currentWindowIndex,
   dailyGoal,
-  formatCountdown,
-  fromMin,
-  goalStreak,
-  moneySavedOnDay,
-  nextWindowInfo,
-  nowMin,
-  totalMoneySaved,
-  todayKey,
-  daysSinceStart,
   elapsedDays,
   formatMoney,
   formatMoneyShort,
-  formatDuration,
-  formatUntil,
-  milestones,
+  fromMin,
   getLog,
-  cravingHours,
+  nextWindowInfo,
+  nowMin,
+  todayKey,
+  totalMoneySaved,
   windowAllowances,
   windowSmokedOn,
 } from '../lib/calculations';
+import { hasProAccess } from '../lib/proAccess';
+import { updateWidgetData } from '../lib/widgetData';
 import { fontSizes, radius, shadows, spacing } from '../theme';
-import { reloadApp } from '../lib/reload';
-import { downloadAndInstallUpdate } from '../lib/updater';
 
 type HomeScreenProps = {
   onOpenCraving: () => void;
 };
 
-export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
+export function HomeScreen(_props: HomeScreenProps) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const {
-    data,
-    logCigarette,
-    logSlip,
-    undoCigarette,
-    timer,
-    startTimer,
-    pauseTimer,
-    resumeTimer,
-    resetTimer,
-    dismissTimer,
-    setSavingsGoal,
-    grantProUnlock24h,
-  } = useApp();
+  const { data, logCigarette, logSlip, grantProUnlock24h } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
-  const [smokeNote, setSmokeNote] = useState<string | null>(null);
-  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [mapOpen, setMapOpen] = useState(false);
-  const [mapNumbers, setMapNumbers] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
-  const [updating, setUpdating] = useState(false);
+
   const [sosOpen, setSosOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
-  const [goalEditing, setGoalEditing] = useState(false);
-  const [goalTitle, setGoalTitle] = useState(data.savingsGoal?.title ?? '');
-  const [goalTarget, setGoalTarget] = useState(
-    data.savingsGoal ? String(data.savingsGoal.target) : '',
-  );
-
-  const saveGoal = () => {
-    const title = goalTitle.trim();
-    const target = Number(goalTarget.replace(',', '.'));
-    if (!title || !Number.isFinite(target) || target <= 0) {
-      Alert.alert(t('home.goalInvalidTitle'), t('home.goalInvalidMsg'));
-      return;
-    }
-    setSavingsGoal({ title, target });
-    setGoalEditing(false);
-  };
 
   const shareCardRef = useRef<SuccessShareCardHandle>(null);
   const isPro = hasProAccess(data);
@@ -117,6 +69,13 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const [shareTheme, setShareTheme] = useState<ShareThemeId>('classic');
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
   const [shareUnlocking, setShareUnlocking] = useState(false);
+
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const triggerShareWithTheme = (theme: ShareThemeId) => {
     setShareTheme(theme);
     setSharePickerOpen(false);
@@ -130,74 +89,37 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       triggerShareWithTheme(themeId);
       return;
     }
-    Alert.alert(
-      t('home.proFeatureTitle'),
-      t('home.proFeatureMsg'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('home.watchAdUnlock'),
-          onPress: async () => {
-            if (shareUnlocking) return;
-            setShareUnlocking(true);
-            try {
-              const res = await showRewardedUnlockAd();
-              if (res.rewarded) {
-                grantProUnlock24h();
-                Alert.alert(t('home.unlockedTitle'), t('home.unlockedMsg'));
-                triggerShareWithTheme(themeId);
-              } else if (res.message) {
-                Alert.alert(t('home.adTitle'), res.message);
-              }
-            } finally {
-              setShareUnlocking(false);
+    Alert.alert(t('home.proFeatureTitle'), t('home.proFeatureMsg'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('home.watchAdUnlock'),
+        onPress: async () => {
+          if (shareUnlocking) return;
+          setShareUnlocking(true);
+          try {
+            const res = await showRewardedUnlockAd();
+            if (res.rewarded) {
+              grantProUnlock24h();
+              Alert.alert(t('home.unlockedTitle'), t('home.unlockedMsg'));
+              triggerShareWithTheme(themeId);
+            } else if (res.message) {
+              Alert.alert(t('home.adTitle'), res.message);
             }
-          },
+          } finally {
+            setShareUnlocking(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
-  const shareSuccess = () => {
-    setSharePickerOpen(true);
-  };
-
-  const doUpdate = async () => {
-    if (Platform.OS === 'web') {
-      reloadApp();
-      return;
-    }
-    if (updating) return;
-    setUpdating(true);
-    const result = await downloadAndInstallUpdate();
-    setUpdating(false);
-    Alert.alert(t('home.updateTitle'), result.message);
-  };
-
-  const showSmokeNote = (text: string) => {
-    setSmokeNote(text);
-    if (noteTimer.current) clearTimeout(noteTimer.current);
-    noteTimer.current = setTimeout(() => setSmokeNote(null), 2600);
-  };
-
-  const handleSlip = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-    const { avoided } = logSlip({ windowIndex });
-    const msg = t('home.slipMsg', { count: Math.max(0, Math.floor(avoided)) });
-    if (Platform.OS === 'web') {
-      (globalThis as any).alert?.(msg);
-    } else {
-      Alert.alert(t('home.slipTitle'), msg);
-    }
-  };
-
+  // Widget sync (preserve existing behavior)
   useEffect(() => {
     if (!plan) return;
     const key = todayKey();
     const todayRecord = getLog(data.logs, key);
     const todayGoal = dailyGoal(plan, key, data.logs);
     const savedTotal = totalMoneySaved(plan, data.logs);
-    const currentStreak = goalStreak(plan, data.logs);
     const upcoming = nextWindowInfo(plan);
     const upcomingStr = upcoming ? fromMin((nowMin() + upcoming.minutes) % 1440) : '--:--';
     const elapsedMs = Math.max(0, Date.now() - new Date(plan.startDate).getTime());
@@ -210,7 +132,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       todayRecord.smoked,
       todayGoal,
       savedTotal,
-      currentStreak,
+      0,
       upcomingStr,
       quitText,
       savingsText,
@@ -218,587 +140,183 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     );
   }, [data, plan, lang]);
 
-  if (!plan) return null;
-
   const today = todayKey();
-  const record = getLog(data.logs, today);
-  const todayTimes = record.times ?? [];
-  const goal = dailyGoal(plan, today, data.logs);
-  const linearGoal = Math.max(
-    0,
-    plan.baselinePerDay - Math.floor(daysSinceStart(plan, today) / 7) * plan.weeklyReduction,
-  );
-  const adaptiveActive = plan.adaptive !== false && goal !== linearGoal;
-  const remaining = Math.max(0, goal - record.smoked);
-  const underGoal = record.smoked <= goal;
-  const progress = goal > 0 ? record.smoked / goal : record.smoked > 0 ? 1 : 0;
-
-  const activeWindow = currentWindowIndex(plan);
-  const windowIndex = activeWindow >= 0 ? activeWindow : null;
-  const allowances = windowAllowances(goal, plan.windows);
-  const nextWindow = nextWindowInfo(plan);
-  const nextWindowStr = nextWindow
-    ? fromMin((nowMin() + nextWindow.minutes) % 1440)
-    : '--:--';
-
-  const savedToday = moneySavedOnDay(plan, record);
-  const savedTotal = totalMoneySaved(plan, data.logs);
-  const avoided = cigarettesAvoided(plan, data.logs);
+  const record = plan ? getLog(data.logs, today) : null;
+  const savedTotal = plan ? totalMoneySaved(plan, data.logs) : 0;
+  const avoided = plan ? cigarettesAvoided(plan, data.logs) : 0;
   const avoidedTotalCount = Math.max(0, Math.floor(avoided));
-  const avoidedTodayCount = Math.max(0, Math.floor(avoidedOnDay(plan, record)));
-  const streak = goalStreak(plan, data.logs);
-  const savingsGoal = data.savingsGoal;
-  const goalProgress =
-    savingsGoal && savingsGoal.target > 0
-      ? Math.min(1, Math.max(0, savedTotal / savingsGoal.target))
-      : 0;
-  const goalRemaining = savingsGoal
-    ? Math.max(0, savingsGoal.target - savedTotal)
-    : 0;
+  const elapsedMs = plan ? Math.max(0, now - new Date(plan.startDate).getTime()) : 0;
+  const smokeFreeDays = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
+  const smokeFreeHours = Math.floor((elapsedMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const smokeFreeText = lang === 'en'
+    ? `${smokeFreeDays} ${smokeFreeDays === 1 ? 'Day' : 'Days'} ${smokeFreeHours} ${smokeFreeHours === 1 ? 'Hour' : 'Hours'}`
+    : `${smokeFreeDays} Gün ${smokeFreeHours} Saat`;
 
-  const days = daysSinceStart(plan, today);
+  const activeWindow = plan ? currentWindowIndex(plan) : -1;
+  const windowIndex = activeWindow >= 0 ? activeWindow : null;
+  const allowances = plan ? windowAllowances(dailyGoal(plan, today, data.logs), plan.windows) : [];
+  const nextWindow = plan ? nextWindowInfo(plan) : null;
+  const nextWindowStr = nextWindow ? fromMin((nowMin() + nextWindow.minutes) % 1440) : '--:--';
+  const heavyMode = !!plan && !!plan.heavySmokerMode && plan.baselinePerDay >= 20;
 
-  const elapsed = elapsedDays(plan);
-  const [nextMilestone] = milestones().filter((m) => m.days > elapsed);
-  const untilText = nextMilestone ? formatUntil(nextMilestone.days - elapsed) : '';
-  const hourRisk = cravingHours(data.cravings)[new Date().getHours()] ?? 0;
+  if (!plan || !record) return null;
 
-  const dateText = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'tr-TR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const smokedCount = record.smoked;
+  const statusText =
+    smokedCount === 0
+      ? t('home.noSmokingToday')
+      : lang === 'en'
+        ? `${t('home.todaySmokedLabel')}: ${smokedCount}`
+        : `Bugün ${smokedCount} sigara içtin`;
 
-  const heavyMode = !!plan.heavySmokerMode && plan.baselinePerDay >= 20;
-  const heroStatus =
-    plan.windows.length > 0 && activeWindow >= 0
-      ? t('home.inWindow', {
+  let windowCompact: string | null = null;
+  if (heavyMode) {
+    if (plan.windows.length > 0) {
+      if (activeWindow >= 0) {
+        const left = Math.max(0, (allowances[activeWindow] ?? 0) - windowSmokedOn(record, activeWindow));
+        windowCompact = t('home.inWindow', {
           start: plan.windows[activeWindow].start,
           end: plan.windows[activeWindow].end,
-          count: Math.max(0, (allowances[activeWindow] ?? 0) - windowSmokedOn(record, activeWindow)),
-        })
-      : plan.windows.length > 0
-        ? t('home.outOfWindow', { time: nextWindowStr })
-        : underGoal
-          ? heavyMode
-            ? t('home.underGoalHeavy', { count: remaining })
-            : t('home.underGoal', { count: remaining })
-          : heavyMode
-            ? t('home.overGoalHeavy')
-            : t('home.overGoal');
+          count: left,
+        });
+      } else {
+        windowCompact = t('home.outOfWindow', { time: nextWindowStr });
+      }
+    } else {
+      const left = Math.max(0, dailyGoal(plan, today, data.logs) - smokedCount);
+      windowCompact = lang === 'en' ? `Allowed today: ${left} left` : `Bugün kalan hak: ${left}`;
+    }
+  }
+
+  const onHadOne = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    logCigarette({ windowIndex });
+  };
+
+  const onSlipPress = () => {
+    const { avoided: slipAvoided } = logSlip({ windowIndex });
+    Alert.alert(t('home.slipTitle'), t('home.slipMsg', { count: Math.max(0, Math.floor(slipAvoided)) }));
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {mapNumbers ? (
-          <Pressable style={styles.mapHint} onPress={() => setMapOpen(true)}>
-            <MapBadge code="Harita" />
-            <Text style={styles.mapHintText}>
-              {t('home.mapHint')}
-            </Text>
-          </Pressable>
-        ) : null}
+        {/* Header: left brand+pro, right share only */}
         <View style={styles.header}>
-          <View>
-            <View style={styles.mapRow}>
-              <Image source={require('../../assets/widget_mascot.png')} style={styles.brandMascot} />
-              <Text style={styles.brand}>{t('common.appName')}</Text>
-              {mapNumbers ? <MapBadge code="1" /> : null}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${t('common.appName')} PRO`}
-                style={[styles.proBadge, isPro && styles.proBadgeActive]}
-                onPress={() => setProOpen(true)}
-                hitSlop={6}
-              >
-                <Text style={[styles.proBadgeText, isPro && styles.proBadgeTextActive]}>{t('home.pro')}</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.date}>{dateText}</Text>
-          </View>
-          <View style={styles.daysChip}>
-            <Text style={styles.daysChipText}>{formatDuration(days)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.headerActions}>
-          <Pressable
-            style={[styles.reloadChip, mapNumbers && styles.reloadChipActive]}
-            onPress={() => setMapOpen(true)}
-            hitSlop={8}
-          >
-            <Text style={[styles.reloadChipText, mapNumbers && styles.reloadChipTextActive]}>
-              {mapNumbers ? t('home.mapOn') : t('home.map')}
-            </Text>
-          </Pressable>
-          <Pressable style={styles.reloadChip} onPress={() => setStatusOpen(true)} hitSlop={8}>
-            <Text style={styles.reloadChipText}>{t('home.status')}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.reloadChip, updating && styles.reloadChipDisabled]}
-            onPress={doUpdate}
-            disabled={updating}
-            hitSlop={8}
-          >
-            <Text style={styles.reloadChipText}>{updating ? t('home.downloading') : t('home.update')}</Text>
-          </Pressable>
-          <Pressable style={styles.reloadChip} onPress={shareSuccess} hitSlop={8}>
-            <Text style={styles.reloadChipText}>{t('home.share')}</Text>
-          </Pressable>
-        </View>
-
-        <Pressable style={styles.refreshBar} onPress={reloadApp}>
-          {mapNumbers ? <MapBadge code="2" /> : null}
-          <Text style={styles.refreshBarText}>{t('home.refresh')}</Text>
-        </Pressable>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('home.sosTitle')}
-          style={({ pressed }) => [styles.sosBtn, pressed && styles.pressed]}
-          onPress={() => setSosOpen(true)}
-        >
-          {mapNumbers ? <MapBadge code="10" style={styles.sosBadge} /> : null}
-          <Text style={styles.sosEmoji}>🆘</Text>
-          <View style={styles.sosText}>
-            <Text style={styles.sosTitle}>{t('home.sosTitle')}</Text>
-            <Text style={styles.sosSub}>{t('home.sosSub')}</Text>
-          </View>
-          <Text style={styles.sosArrow}>›</Text>
-        </Pressable>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('coach.talkButton')}
-          style={({ pressed }) => [styles.coachBtn, pressed && styles.pressed]}
-          onPress={() => setCoachOpen(true)}
-        >
-          {mapNumbers ? <MapBadge code="10b" style={styles.sosBadge} /> : null}
-          <Text style={styles.coachEmoji}>💬</Text>
-          <View style={styles.sosText}>
-            <Text style={styles.coachTitle}>{t('coach.talkButton')}</Text>
-            <Text style={styles.coachSub}>{t('coach.talkButtonSub')}</Text>
-          </View>
-          <Text style={styles.coachArrow}>›</Text>
-        </Pressable>
-
-        {heavyMode ? (
-          <Card style={styles.heavyCard}>
-            <Text style={styles.heavyTitle}>{t('home.heavyTitle')}</Text>
-            <Text style={styles.heavyText}>{t('home.heavyText')}</Text>
-            <View style={styles.heavyTips}>
-              <Text style={styles.heavyTip}>{t('home.heavyTip1')}</Text>
-              <Text style={styles.heavyTip}>{t('home.heavyTip2')}</Text>
-              <Text style={styles.heavyTip}>{t('home.heavyTip3')}</Text>
-            </View>
-            <View style={styles.heavyActions}>
-              <Pressable style={styles.heavyActionBtn} onPress={onOpenCraving}>
-                <Text style={styles.heavyActionText}>{t('home.openCravingTools')}</Text>
-              </Pressable>
-              <Pressable style={styles.heavyActionBtnGhost} onPress={() => setSosOpen(true)}>
-                <Text style={styles.heavyActionTextGhost}>{t('home.breathGame')}</Text>
-              </Pressable>
-            </View>
-          </Card>
-        ) : null}
-
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDarker]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          {mapNumbers ? <MapBadge code="3" style={styles.heroMapBadge} /> : null}
-          <View style={styles.cigLogBox}>
-            <View style={styles.cigLogHead}>
-              <View style={styles.mapRow}>
-                {mapNumbers ? <MapBadge code="3a" /> : null}
-                <Text style={styles.cigLogTitle}>{t('home.smokedTodayTitle')}</Text>
-              </View>
-              <Text style={styles.cigLogCount}>{record.smoked}</Text>
-            </View>
-            {todayTimes.length === 0 ? (
-              <Text style={styles.cigLogEmpty}>
-                {record.smoked === 0
-                  ? t('home.noSmokingToday')
-                  : t('home.smokedNoTime', { count: record.smoked })}
-              </Text>
-            ) : (
-              <View style={styles.cigLogList}>
-                {todayTimes.map((ts, i) => (
-                  <View key={`${ts}-${i}`} style={styles.cigLogItem}>
-                    <CigaretteIcon size={20} />
-                    <Text style={styles.cigLogTime}>
-                      {new Date(ts).toLocaleTimeString(lang === 'en' ? 'en-US' : 'tr-TR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-
-          <View style={styles.mapRow}>
-            {mapNumbers ? <MapBadge code="3b" /> : null}
-            <Text style={styles.heroTitle}>{t('home.todayGoal')}</Text>
-          </View>
-          <View style={styles.heroGoalRow}>
-            <Text style={styles.heroGoal}>{goal}</Text>
-            <CigaretteIcon size={22} style={styles.heroGoalIcon} />
-            <Text style={styles.heroGoalUnit}>{t('home.cigaretteUnit')}</Text>
-          </View>
-          {adaptiveActive ? (
-            <Text style={styles.adaptiveNote}>
-              {t('home.adaptiveNote', { count: goal })}
-            </Text>
-          ) : null}
-
-          <View style={[styles.mapRow, styles.heroSpacer]}>
-            {mapNumbers ? <MapBadge code="3c" /> : null}
-            <Text style={styles.heroLabel}>{t('home.todaySmokedLabel')}</Text>
-          </View>
-          <View style={styles.smokedRow}>
-            <Text style={styles.heroCount}>{record.smoked}</Text>
-            <CigaretteIcon size={30} style={styles.smokedIcon} />
-          </View>
-
-          {mapNumbers ? (
-            <View style={styles.mapRow}>
-              <MapBadge code="3d" />
-            </View>
-          ) : null}
-          <View style={styles.heroProgress}>
-            <ProgressBar progress={progress} color={colors.accent} height={8} />
-          </View>
-
-          <View style={styles.mapRow}>
-            {mapNumbers ? <MapBadge code="3e" /> : null}
-            <Text style={[styles.heroStatus, styles.mapTextFlex]}>{heroStatus}</Text>
-          </View>
-
-          {smokeNote ? <Text style={styles.smokeNote}>{smokeNote}</Text> : null}
-
-          <View style={styles.actions}>
-            {mapNumbers ? <MapBadge code="3f" style={styles.actionsBadge} /> : null}
+          <View style={styles.headerLeft}>
+            <Image source={require('../../assets/widget_mascot.png')} style={styles.brandMascot} />
+            <Text style={styles.brand}>{t('common.appName')}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t('home.logBtn')}
-              style={({ pressed }) => [styles.logBtn, pressed && styles.pressed]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                logCigarette({ windowIndex });
-                showSmokeNote(t('home.timerRestartNote', { minutes: timer.minutes }));
-              }}
+              accessibilityLabel={`${t('common.appName')} PRO`}
+              style={[styles.proBadge, isPro && styles.proBadgeActive]}
+              onPress={() => setProOpen(true)}
+              hitSlop={6}
             >
-              <Text style={styles.logBtnText}>{t('home.logBtn')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('home.undoBtn')}
-              style={({ pressed }) => [
-                styles.undoBtn,
-                record.smoked === 0 && styles.undoDisabled,
-                pressed && styles.pressed,
-              ]}
-              disabled={record.smoked === 0}
-              onPress={() => undoCigarette({ windowIndex })}
-            >
-              <Text style={styles.undoText}>{t('home.undoBtn')}</Text>
+              <Text style={[styles.proBadgeText, isPro && styles.proBadgeTextActive]}>{t('home.pro')}</Text>
             </Pressable>
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t('home.slipBtn')}
-            style={({ pressed }) => [styles.slipBtn, pressed && styles.pressed]}
-            onPress={handleSlip}
+            accessibilityLabel={t('home.share')}
+            style={styles.shareIconBtn}
+            onPress={() => setSharePickerOpen(true)}
+            hitSlop={8}
           >
-            <Text style={styles.slipBtnText}>{t('home.slipBtn')}</Text>
-            <Text style={styles.slipBtnSub}>{t('home.slipSub')}</Text>
+            <Text style={styles.shareIcon}>⤴</Text>
           </Pressable>
+        </View>
+
+        {/* Center Focus Card */}
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDarker]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.focusCard}
+        >
+          <Text style={styles.focusLabel}>
+            {lang === 'en' ? 'Smoke-Free Time' : 'Sigarasız Süre'}
+          </Text>
+          <Text style={styles.focusTime}>{smokeFreeText}</Text>
+
+          <View style={styles.focusStatsRow}>
+            <View style={styles.focusStatBox}>
+              <Text style={styles.focusStatLabel}>
+                {lang === 'en' ? 'Cigarettes Avoided' : 'Kurtarılan Sigara'}
+              </Text>
+              <Text style={styles.focusStatValue}>{avoidedTotalCount}</Text>
+              <Text style={styles.focusStatUnit}>{lang === 'en' ? 'cigarettes' : 'adet'}</Text>
+            </View>
+            <View style={styles.focusStatBox}>
+              <Text style={styles.focusStatLabel}>
+                {lang === 'en' ? 'Money Saved' : 'Biriken Para'}
+              </Text>
+              <Text style={styles.focusStatValue} numberOfLines={1} adjustsFontSizeToFit>
+                {formatMoney(savedTotal, plan.currency)}
+              </Text>
+              <Text style={styles.focusStatUnit}>
+                {lang === 'en' ? 'total' : 'toplam'}
+              </Text>
+            </View>
+          </View>
         </LinearGradient>
 
-        <Card style={styles.timerCard}>
-          <View style={styles.timerHead}>
-            <View style={styles.timerInfo}>
-              <View style={styles.mapRow}>
-                {mapNumbers ? <MapBadge code="4" /> : null}
-                <Text style={styles.cardLabel}>{t('home.timerLabel')}</Text>
-              </View>
-              <Text style={styles.timerStatusText}>
-                {timer.status === 'running'
-                  ? t('home.timerRunning')
-                  : timer.status === 'paused'
-                    ? t('home.timerPaused')
-                    : timer.status === 'done'
-                      ? t('home.timerDone')
-                      : t('home.timerTarget', { minutes: timer.minutes })}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.timerTime,
-                timer.status === 'done' && styles.timerTimeDone,
-              ]}
-            >
-              {formatCountdown(timer.remaining)}
+        {/* Quick Support Row */}
+        <View style={styles.supportRow}>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.supportBtn, styles.supportBtnSOS, pressed && styles.pressed]}
+            onPress={() => setSosOpen(true)}
+          >
+            <Text style={styles.supportEmoji}>🆘</Text>
+            <Text style={[styles.supportTitle, { color: colors.danger }]}>
+              {lang === 'en' ? 'SOS – Craving' : 'Kriz Geldi (SOS)'}
             </Text>
-          </View>
-
-          <View style={styles.timerProgress}>
-            <ProgressBar
-              progress={timer.minutes > 0 ? timer.remaining / (timer.minutes * 60) : 1}
-              color={timer.status === 'done' ? colors.accent : colors.primary}
-              height={6}
-            />
-          </View>
-
-          <View style={styles.timerControls}>
-            {timer.status === 'idle' ? (
-              <Pressable style={styles.timerPrimaryBtn} onPress={() => startTimer()}>
-                <Text style={styles.timerPrimaryText}>{t('home.timerStart')}</Text>
-              </Pressable>
-            ) : timer.status === 'running' ? (
-              <Pressable style={styles.timerPrimaryBtn} onPress={pauseTimer}>
-                <Text style={styles.timerPrimaryText}>{t('home.timerPause')}</Text>
-              </Pressable>
-            ) : timer.status === 'paused' ? (
-              <Pressable style={styles.timerPrimaryBtn} onPress={resumeTimer}>
-                <Text style={styles.timerPrimaryText}>{t('home.timerResume')}</Text>
-              </Pressable>
-            ) : null}
-
-            {timer.status === 'done' ? (
-              <Pressable style={styles.timerDoneBtn} onPress={dismissTimer}>
-                <Text style={styles.timerDoneText}>{t('home.timerDismiss')}</Text>
-              </Pressable>
-            ) : timer.status !== 'idle' ? (
-              <Pressable style={styles.timerGhostBtn} onPress={resetTimer}>
-                <Text style={styles.timerGhostText}>{t('home.timerReset')}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </Card>
-
-        {mapNumbers ? (
-          <View style={styles.mapRow}>
-            <MapBadge code="5" />
-          </View>
-        ) : null}
-        <View style={styles.cardsRow}>
-          <Card style={styles.halfCard}>
-            <Text style={styles.cardLabel}>{t('home.todayEarned')}</Text>
-            <Text style={styles.moneyBig}>{formatMoney(savedToday, plan.currency)}</Text>
-            <Text style={styles.moneySmall}>
-              {t('home.avoidedToday', { count: avoidedTodayCount })}
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.supportBtn, styles.supportBtnCoach, pressed && styles.pressed]}
+            onPress={() => setCoachOpen(true)}
+          >
+            <Text style={styles.supportEmoji}>💬</Text>
+            <Text style={[styles.supportTitle, { color: colors.white }]}>
+              {lang === 'en' ? 'Quit Coach' : 'Bırakma Koçu'}
             </Text>
-          </Card>
-          <Card style={styles.halfCard}>
-            <Text style={styles.cardLabel}>{t('home.totalEarned')}</Text>
-            <Text style={styles.moneyBig}>{formatMoney(savedTotal, plan.currency)}</Text>
-            <Text style={styles.moneySmall}>
-              {t('home.avoidedTotal', { count: avoidedTotalCount })}
-            </Text>
-          </Card>
+          </Pressable>
         </View>
 
-        <Card style={styles.goalCard}>
-          <View style={styles.cardTitleRow}>
-            {mapNumbers ? <MapBadge code="11" /> : null}
-            <Text style={styles.cardLabel}>{t('home.savingsGoal')}</Text>
-          </View>
-
-          {!savingsGoal || goalEditing ? (
-            <View style={styles.goalForm}>
-              <Text style={styles.goalHint}>
-                {t('home.savingsGoalHint')}
+        {/* Daily Status Card */}
+        <Card style={styles.statusCard}>
+          <View style={styles.statusMainRow}>
+            <View style={styles.statusTextWrap}>
+              <Text style={styles.statusLabel}>
+                {lang === 'en' ? 'Today’s status' : 'Bugünkü durum'}
               </Text>
-              <TextInput
-                style={styles.goalInput}
-                placeholder={t('home.goalNamePlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                value={goalTitle}
-                onChangeText={setGoalTitle}
-                maxLength={60}
-              />
-              <TextInput
-                style={styles.goalInput}
-                placeholder={t('home.goalAmountPlaceholder', { currency: plan.currency })}
-                placeholderTextColor={colors.textMuted}
-                value={goalTarget}
-                onChangeText={setGoalTarget}
-                keyboardType="decimal-pad"
-                maxLength={12}
-              />
-              <View style={styles.goalFormActions}>
-                {savingsGoal ? (
-                  <Pressable style={styles.goalGhostBtn} onPress={() => setGoalEditing(false)}>
-                    <Text style={styles.goalGhostText}>{t('home.goalCancel')}</Text>
-                  </Pressable>
-                ) : null}
-                <Pressable style={styles.goalSaveBtn} onPress={saveGoal}>
-                  <Text style={styles.goalSaveText}>{t('home.goalSave')}</Text>
-                </Pressable>
-              </View>
+              <Text style={styles.statusText}>{statusText}</Text>
+              {windowCompact ? <Text style={styles.statusWindow}>{windowCompact}</Text> : null}
             </View>
-          ) : (
-            <View style={styles.goalBody}>
-              <View style={styles.goalHead}>
-                <View style={styles.goalHeadText}>
-                  <Text style={styles.goalTitle}>{savingsGoal.title}</Text>
-                  <Text style={styles.goalTargetText}>
-                    {t('home.goalTarget', { amount: formatMoney(savingsGoal.target, plan.currency) })}
-                  </Text>
-                </View>
-                <Text style={styles.goalPercent}>%{Math.round(goalProgress * 100)}</Text>
-              </View>
-              <ProgressBar
-                progress={goalProgress}
-                color={goalProgress >= 1 ? colors.success : colors.accent}
-                height={10}
-              />
-              <Text style={styles.goalStatus}>
-                {goalProgress >= 1
-                  ? t('home.goalReached', { amount: formatMoney(savingsGoal.target, plan.currency) })
-                  : t('home.goalStatus', {
-                      remaining: formatMoney(goalRemaining, plan.currency),
-                      saved: formatMoney(savedTotal, plan.currency),
-                    })}
+            <Pressable
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.hadOneBtn, pressed && styles.pressed]}
+              onPress={onHadOne}
+            >
+              <Text style={styles.hadOneBtnText}>
+                {lang === 'en' ? 'Smoked 1' : '1 Dal İçtim'}
               </Text>
-              <View style={styles.goalFormActions}>
-                <Pressable
-                  style={styles.goalGhostBtn}
-                  onPress={() => {
-                    setSavingsGoal(null);
-                    setGoalTitle('');
-                    setGoalTarget('');
-                  }}
-                >
-                  <Text style={styles.goalGhostText}>{t('home.goalRemove')}</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.goalGhostBtn}
-                  onPress={() => {
-                    setGoalTitle(savingsGoal.title);
-                    setGoalTarget(String(savingsGoal.target));
-                    setGoalEditing(true);
-                  }}
-                >
-                  <Text style={styles.goalGhostText}>{t('home.goalEdit')}</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-        </Card>
-
-        <SavingsSimulator plan={plan} logs={data.logs} />
-
-        {plan.windows.length > 0 ? (
-          <Card>
-            <View style={styles.mapRow}>
-              {mapNumbers ? <MapBadge code="6" /> : null}
-              <Text style={styles.cardLabel}>{t('home.allowedWindows')}</Text>
-            </View>
-            {plan.windows.map((window, i) => {
-              const allowance = allowances[i] ?? 0;
-              const smokedInWindow = windowSmokedOn(record, i);
-              const winRemaining = Math.max(0, allowance - smokedInWindow);
-              const isActive = i === activeWindow;
-              const winProgress = allowance > 0 ? smokedInWindow / allowance : 1;
-              return (
-                <View key={i} style={styles.windowRow}>
-                  <View
-                    style={[
-                      styles.windowDot,
-                      isActive && styles.windowDotActive,
-                      winRemaining === 0 && allowance > 0 && styles.windowDotDone,
-                    ]}
-                  />
-                  <View style={styles.windowInfo}>
-                    <Text style={styles.windowTime}>
-                      {window.start}–{window.end}
-                      {isActive ? `  ·  ${t('home.active')}` : ''}
-                    </Text>
-                    <ProgressBar
-                      progress={winProgress}
-                      color={winRemaining === 0 ? colors.success : colors.accent}
-                      height={6}
-                      label={t('home.allowance', { allowed: allowance, smoked: smokedInWindow })}
-                    />
-                  </View>
-                  <Text style={styles.windowRemaining}>{winRemaining}</Text>
-                </View>
-              );
-            })}
-            {activeWindow < 0 ? (
-              <Text style={styles.cardHint}>
-                {t('home.outsideWindowHint')}
-              </Text>
-            ) : null}
-          </Card>
-        ) : null}
-
-        <Card>
-          <View style={styles.mapRow}>
-            {mapNumbers ? <MapBadge code="7" /> : null}
-            <Text style={styles.cardLabel}>{t('home.streakLabel')}</Text>
+            </Pressable>
           </View>
-          <Text style={styles.bigNumber}>{streak}</Text>
-          <ProgressBar progress={Math.min(1, streak / 7)} />
-          <Text style={styles.cardHint}>{t('home.streakHint')}</Text>
-        </Card>
-
-        <Card>
-          <View style={styles.mapRow}>
-            {mapNumbers ? <MapBadge code="8" /> : null}
-            <Text style={styles.cardLabel}>{t('home.nextHealth')}</Text>
-          </View>
-          {nextMilestone ? (
-            <>
-              <Text style={styles.milestoneLabel}>
-                {nextMilestone.emoji} {nextMilestone.label}
-              </Text>
-              <Text style={styles.milestoneDetail}>{nextMilestone.detail}</Text>
-              <Text style={styles.milestoneDays}>
-                {lang === 'en' ? `${t('home.after')} ${untilText}` : `${untilText} ${t('home.after')}`}
-              </Text>
-            </>
-          ) : (
-            <Text style={styles.milestoneDetail}>{t('home.allHealthDone')}</Text>
-          )}
-        </Card>
-
-        {hourRisk >= 2 ? (
-          <View style={styles.riskWarn}>
-            <Text style={styles.riskWarnTitle}>{t('home.riskTitle')}</Text>
-            <Text style={styles.riskWarnText}>
-              {t('home.riskText', { count: hourRisk })}
+          <Pressable onPress={onSlipPress} hitSlop={6} style={styles.slipLinkWrap}>
+            <Text style={styles.slipLink}>
+              {lang === 'en' ? 'Had a slip-up? Log it gently' : 'Kaçamak oldu mu? Nazikçe kaydet'}
             </Text>
-          </View>
-        ) : null}
-
-        <Pressable style={styles.cravingCta} onPress={onOpenCraving}>
-          <Text style={styles.cravingCtaText}>{t('home.cravingCta')}</Text>
-        </Pressable>
+          </Pressable>
+        </Card>
       </ScrollView>
 
-      {mapNumbers ? (
-        <View style={styles.mapTabBadge} pointerEvents="none">
-          <MapBadge code="9" />
-        </View>
-      ) : null}
-
-      <ScreenMapModal
-        visible={mapOpen}
-        onClose={() => setMapOpen(false)}
-        showNumbers={mapNumbers}
-        onToggleNumbers={setMapNumbers}
-      />
-
-      <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
       <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
       <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
+      <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
+
       <Modal visible={sharePickerOpen} transparent animationType="fade" onRequestClose={() => setSharePickerOpen(false)}>
         <View style={styles.sharePickerOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setSharePickerOpen(false)} />
@@ -815,7 +333,9 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
                 >
                   <View style={styles.shareThemeInfo}>
                     <Text style={styles.shareThemeName}>{th.name}{locked ? ' 🔒' : ''}</Text>
-                    <Text style={styles.shareThemeMeta}>{th.proOnly ? (locked ? t('home.shareThemeProLocked') : t('home.shareThemePro')) : t('home.shareThemeFree')}</Text>
+                    <Text style={styles.shareThemeMeta}>
+                      {th.proOnly ? (locked ? t('home.shareThemeProLocked') : t('home.shareThemePro')) : t('home.shareThemeFree')}
+                    </Text>
                   </View>
                   <View style={[styles.shareThemeSwatch, { backgroundColor: th.colors[1], borderColor: th.accent }]}>
                     <View style={[styles.shareThemeSwatchDot, { backgroundColor: th.accent }]} />
@@ -830,7 +350,6 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         </View>
       </Modal>
 
-      <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
       <View style={styles.hiddenShareCard} pointerEvents="none">
         <SuccessShareCard
           ref={shareCardRef}
@@ -844,524 +363,165 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
-  mapRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  mapTextFlex: { flex: 1 },
-  heroSpacer: { marginTop: spacing.sm },
-  heroMapBadge: { alignSelf: 'flex-start', marginBottom: spacing.xs },
-  actionsBadge: { alignSelf: 'center' },
-  mapHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  mapHintText: { flex: 1, fontSize: fontSizes.xs, color: '#8a5a00', fontWeight: '700' },
-  mapTabBadge: {
-    position: 'absolute',
-    bottom: 4,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  brandMascot: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    marginRight: 2,
-  },
-  brand: {
-    fontSize: fontSizes.xl,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  hiddenShareCard: {
-    position: 'absolute',
-    left: -9999,
-    top: 0,
-    opacity: 0,
-  },
-  date: { fontSize: fontSizes.sm, color: colors.textMuted, marginTop: 2 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  headerActions: { flexDirection: 'row', gap: spacing.sm },
-  daysChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.round,
-    backgroundColor: colors.primarySoft,
-  },
-  daysChipText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark },
-  reloadChip: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  reloadChipText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
-  reloadChipDisabled: { opacity: 0.6 },
-  reloadChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  reloadChipTextActive: { color: colors.white },
-  refreshBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingVertical: spacing.md,
-  },
-  refreshBarText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.primaryDark },
-  hero: {
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    gap: 2,
-    ...shadows.card,
-  },
-  heroTitle: { fontSize: fontSizes.sm, color: 'rgba(255,255,255,0.85)' },
-  heroGoal: {
-    fontSize: fontSizes.xxl,
-    fontWeight: '800',
-    color: colors.white,
-  },
-  heroGoalRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  heroGoalIcon: { marginTop: 4 },
-  heroGoalUnit: { fontSize: fontSizes.md, fontWeight: '600', color: colors.white },
-  adaptiveNote: {
-    fontSize: fontSizes.xs,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: spacing.xs,
-  },
-  heroLabel: {
-    fontSize: fontSizes.sm,
-    color: 'rgba(255,255,255,0.85)',
-  },
-  smokedRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  smokedIcon: { marginBottom: spacing.xs },
-  cigLogBox: {
-    marginBottom: spacing.md,
-    minHeight: 132,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.4)',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    padding: spacing.lg,
-    justifyContent: 'center',
-  },
-  cigLogHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cigLogTitle: { color: 'rgba(255,255,255,0.9)', fontSize: fontSizes.md, fontWeight: '700' },
-  cigLogCount: { color: colors.white, fontSize: fontSizes.xl, fontWeight: '800' },
-  cigLogEmpty: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: fontSizes.sm,
-    marginTop: spacing.sm,
-  },
-  cigLogList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  cigLogItem: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    minWidth: 56,
-  },
-  cigLogTime: { color: colors.white, fontSize: fontSizes.md, fontWeight: '700' },
-  heroCount: {
-    fontSize: fontSizes.huge,
-    fontWeight: '800',
-    color: colors.accent,
-  },
-  heroProgress: { marginTop: spacing.xs, marginBottom: spacing.sm },
-  heroStatus: {
-    fontSize: fontSizes.sm,
-    color: 'rgba(255,255,255,0.95)',
-    fontWeight: '600',
-    lineHeight: fontSizes.md + 4,
-  },
-  smokeNote: {
-    marginTop: spacing.sm,
-    fontSize: fontSizes.sm,
-    fontWeight: '800',
-    color: colors.accent,
-  },
-  timerCard: { gap: spacing.md },
-  timerHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  timerInfo: { gap: 2 },
-  timerStatusText: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  timerTime: {
-    fontSize: fontSizes.xxl,
-    fontWeight: '800',
-    color: colors.primaryDark,
-    fontVariant: ['tabular-nums'],
-  },
-  timerTimeDone: { color: colors.danger },
-  timerProgress: { marginTop: spacing.xs },
-  timerControls: { flexDirection: 'row', gap: spacing.sm },
-  timerPrimaryBtn: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  timerPrimaryText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
-  timerDoneBtn: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.danger,
-    alignItems: 'center',
-  },
-  timerDoneText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
-  timerGhostBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timerGhostText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  logBtn: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-  },
-  logBtnText: {
-    fontSize: fontSizes.md,
-    fontWeight: '800',
-    color: colors.primaryDark,
-  },
-  undoBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  undoDisabled: { opacity: 0.4 },
-  undoText: { fontSize: fontSizes.md, fontWeight: '700', color: colors.white },
-  slipBtn: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.45)',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-  },
-  slipBtnText: {
-    fontSize: fontSizes.md,
-    fontWeight: '800',
-    color: colors.white,
-  },
-  slipBtnSub: {
-    fontSize: fontSizes.xs,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-  },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  cardsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  halfCard: { flex: 1 },
-  cardLabel: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  moneyBig: {
-    fontSize: fontSizes.xl,
-    fontWeight: '800',
-    color: colors.text,
-    marginTop: spacing.xs,
-  },
-  moneySmall: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
-  bigNumber: {
-    fontSize: fontSizes.xxl,
-    fontWeight: '800',
-    color: colors.primaryDark,
-    marginVertical: spacing.xs,
-  },
-  cardHint: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: spacing.sm },
-  windowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  windowDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.border,
-  },
-  windowDotActive: { backgroundColor: colors.primary },
-  windowDotDone: { backgroundColor: colors.success },
-  windowInfo: { flex: 1, gap: spacing.xs },
-  windowTime: {
-    fontSize: fontSizes.sm,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  windowRemaining: {
-    fontSize: fontSizes.lg,
-    fontWeight: '800',
-    color: colors.primaryDark,
-  },
-  milestoneLabel: {
-    fontSize: fontSizes.lg,
-    fontWeight: '700',
-    color: colors.text,
-    marginTop: spacing.xs,
-  },
-  milestoneDetail: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    lineHeight: fontSizes.md + 4,
-    marginTop: 2,
-  },
-  milestoneDays: {
-    fontSize: fontSizes.sm,
-    fontWeight: '700',
-    color: colors.primaryDark,
-    marginTop: spacing.sm,
-  },
-  riskWarn: {
-    backgroundColor: colors.dangerSoft,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    padding: spacing.md,
-    gap: 2,
-  },
-  riskWarnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.danger },
-  riskWarnText: {
-    fontSize: fontSizes.sm,
-    color: colors.text,
-    lineHeight: fontSizes.md + 4,
-  },
-  cravingCta: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  cravingCtaText: {
-    fontSize: fontSizes.md,
-    fontWeight: '700',
-    color: '#8a5a00',
-  },
-  sosBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.dangerSoft,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  sosBadge: { alignSelf: 'flex-start' },
-  sosEmoji: { fontSize: 26 },
-  sosText: { flex: 1, gap: 2 },
-  sosTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.danger },
-  sosSub: { fontSize: fontSizes.xs, color: colors.textMuted },
-  sosArrow: { fontSize: fontSizes.xl, color: colors.danger },
-  coachBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.primaryDark || colors.primary,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  coachEmoji: { fontSize: 26 },
-  coachTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
-  coachSub: { fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.9)' },
-  coachArrow: { fontSize: fontSizes.xl, color: colors.white },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  goalCard: { gap: spacing.sm },
-  goalForm: { gap: spacing.sm, marginTop: spacing.xs },
-  goalHint: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18 },
-  goalInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.text,
-    fontSize: fontSizes.sm,
-  },
-  goalFormActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
-  goalGhostBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  goalGhostText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
-  goalSaveBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-  },
-  goalSaveText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
-  goalBody: { gap: spacing.sm, marginTop: spacing.xs },
-  goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  goalHeadText: { flex: 1, gap: 2 },
-  goalTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-  goalTargetText: { fontSize: fontSizes.sm, color: colors.textMuted },
-  goalPercent: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.primaryDark },
-  goalStatus: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
-  heavyCard: {
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-  heavyTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.primaryDark },
-  heavyText: { fontSize: fontSizes.sm, color: colors.text, lineHeight: 20 },
-  heavyTips: { gap: 4 },
-  heavyTip: { fontSize: fontSizes.sm, color: colors.text, lineHeight: 20 },
-  heavyActions: { flexDirection: 'row', gap: spacing.sm, marginTop: 2 },
-  heavyActionBtn: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  heavyActionText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
-  heavyActionBtnGhost: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-  },
-  heavyActionTextGhost: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
-  sharePickerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-    padding: spacing.md,
-  },
-  sharePickerCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sharePickerTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-  sharePickerSub: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
-  shareThemeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  shareThemeRowLocked: { opacity: 0.95 },
-  shareThemeInfo: { flex: 1, gap: 2 },
-  shareThemeName: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
-  shareThemeMeta: { fontSize: fontSizes.xs, color: colors.textMuted },
-  shareThemeSwatch: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shareThemeSwatchDot: { width: 14, height: 14, borderRadius: 7 },
-  sharePickerClose: {
-    marginTop: 4,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  sharePickerCloseText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
-  proBadge: {
-    marginLeft: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(124,255,178,0.6)',
-  },
-  proBadgeActive: {
-    backgroundColor: '#7CFFB2',
-    borderColor: '#7CFFB2',
-  },
-  proBadgeText: {
-    fontSize: fontSizes.xs,
-    fontWeight: '900',
-    color: '#EAFBF3',
-    letterSpacing: 0.4,
-  },
-  proBadgeTextActive: {
-    color: '#0B3D2E',
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    scroll: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
+    brandMascot: { width: 36, height: 36, borderRadius: 18 },
+    brand: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.text },
+    proBadge: {
+      marginLeft: 2,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    proBadgeActive: { backgroundColor: '#7CFFB2', borderColor: '#7CFFB2' },
+    proBadgeText: { fontSize: fontSizes.xs, fontWeight: '900', color: colors.primaryDark, letterSpacing: 0.4 },
+    proBadgeTextActive: { color: '#0B3D2E' },
+    shareIconBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.card,
+    },
+    shareIcon: { fontSize: 20, color: colors.primaryDark, fontWeight: '700' },
+
+    focusCard: {
+      borderRadius: radius.xl,
+      padding: spacing.xl,
+      gap: spacing.md,
+      ...shadows.card,
+    },
+    focusLabel: {
+      fontSize: fontSizes.sm,
+      fontWeight: '700',
+      color: 'rgba(255,255,255,0.85)',
+      letterSpacing: 0.3,
+      textTransform: 'uppercase',
+    },
+    focusTime: {
+      fontSize: fontSizes.xxl,
+      fontWeight: '800',
+      color: colors.white,
+      lineHeight: 46,
+    },
+    focusStatsRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
+    focusStatBox: {
+      flex: 1,
+      backgroundColor: 'rgba(255,255,255,0.14)',
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      gap: 4,
+    },
+    focusStatLabel: { fontSize: fontSizes.xs, fontWeight: '700', color: 'rgba(255,255,255,0.85)' },
+    focusStatValue: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.white },
+    focusStatUnit: { fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.75)' },
+
+    supportRow: { flexDirection: 'row', gap: spacing.md },
+    supportBtn: {
+      flex: 1,
+      borderRadius: radius.lg,
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      minHeight: 96,
+    },
+    supportBtnSOS: {
+      backgroundColor: colors.dangerSoft,
+      borderWidth: 1,
+      borderColor: colors.danger,
+    },
+    supportBtnCoach: {
+      backgroundColor: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.primaryDark || colors.primary,
+    },
+    supportEmoji: { fontSize: 28 },
+    supportTitle: { fontSize: fontSizes.md, fontWeight: '800', textAlign: 'center' },
+
+    statusCard: { padding: spacing.lg, gap: spacing.sm },
+    statusMainRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    statusTextWrap: { flex: 1, gap: 4 },
+    statusLabel: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 },
+    statusText: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text, lineHeight: 26 },
+    statusWindow: { fontSize: fontSizes.sm, color: colors.textMuted, marginTop: 2, lineHeight: 20 },
+    hadOneBtn: {
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    hadOneBtnText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
+    slipLinkWrap: { alignSelf: 'flex-start', marginTop: 2 },
+    slipLink: { fontSize: fontSizes.xs, color: colors.textMuted, textDecorationLine: 'underline' },
+
+    pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+    hiddenShareCard: { position: 'absolute', left: -9999, top: 0, opacity: 0 },
+
+    sharePickerOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'flex-end',
+      padding: spacing.md,
+    },
+    sharePickerCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      gap: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sharePickerTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+    sharePickerSub: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
+    shareThemeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    shareThemeRowLocked: { opacity: 0.95 },
+    shareThemeInfo: { flex: 1, gap: 2 },
+    shareThemeName: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
+    shareThemeMeta: { fontSize: fontSizes.xs, color: colors.textMuted },
+    shareThemeSwatch: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    shareThemeSwatchDot: { width: 14, height: 14, borderRadius: 7 },
+    sharePickerClose: { marginTop: 4, paddingVertical: spacing.sm, alignItems: 'center' },
+    sharePickerCloseText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+  });
