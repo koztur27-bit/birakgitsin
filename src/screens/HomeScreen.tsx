@@ -183,7 +183,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const handleSlip = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     const { avoided } = logSlip({ windowIndex });
-    const msg = t('home.slipMsg', { count: avoided });
+    const msg = t('home.slipMsg', { count: Math.max(0, Math.floor(avoided)) });
     if (Platform.OS === 'web') {
       (globalThis as any).alert?.(msg);
     } else {
@@ -244,6 +244,8 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const savedToday = moneySavedOnDay(plan, record);
   const savedTotal = totalMoneySaved(plan, data.logs);
   const avoided = cigarettesAvoided(plan, data.logs);
+  const avoidedTotalCount = Math.max(0, Math.floor(avoided));
+  const avoidedTodayCount = Math.max(0, Math.floor(avoidedOnDay(plan, record)));
   const streak = goalStreak(plan, data.logs);
   const savingsGoal = data.savingsGoal;
   const goalProgress =
@@ -270,18 +272,20 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const heavyMode = !!plan.heavySmokerMode && plan.baselinePerDay >= 20;
   const heroStatus =
     plan.windows.length > 0 && activeWindow >= 0
-      ? `${plan.windows[activeWindow].start}–${plan.windows[activeWindow].end} penceresindesin · Kalan hak: ${
-          Math.max(0, (allowances[activeWindow] ?? 0) - windowSmokedOn(record, activeWindow))
-        } sigara`
+      ? t('home.inWindow', {
+          start: plan.windows[activeWindow].start,
+          end: plan.windows[activeWindow].end,
+          count: Math.max(0, (allowances[activeWindow] ?? 0) - windowSmokedOn(record, activeWindow)),
+        })
       : plan.windows.length > 0
-        ? `Pencere dışındasın · Sıradaki penceren: ${nextWindowStr}`
+        ? t('home.outOfWindow', { time: nextWindowStr })
         : underGoal
           ? heavyMode
-            ? `Kalan hakkın: ${remaining} sigara. Kademeli ilerliyorsun; her içmediğin sigara değerli.`
-            : `Kalan hakkın: ${remaining} sigara. Hedefinin altındasın, devam!`
+            ? t('home.underGoalHeavy', { count: remaining })
+            : t('home.underGoal', { count: remaining })
           : heavyMode
-            ? 'Bugün hedefin üstüne çıktın, bu çok normal. Önemli olan pes etmemek; küçük adımlar da ilerlemedir. Yarın yeniden deneyebilirsin.'
-            : 'Bugün hedefi aştın. Sorun değil, yarın yeniden başla.';
+            ? t('home.overGoalHeavy')
+            : t('home.overGoal');
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
@@ -290,7 +294,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           <Pressable style={styles.mapHint} onPress={() => setMapOpen(true)}>
             <MapBadge code="Harita" />
             <Text style={styles.mapHintText}>
-              Numaralar açık. Bir bölgeyi söylemek için numarasını yaz. Listeyi görmek için dokun.
+              {t('home.mapHint')}
             </Text>
           </Pressable>
         ) : null}
@@ -380,22 +384,19 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
 
         {heavyMode ? (
           <Card style={styles.heavyCard}>
-            <Text style={styles.heavyTitle}>Ağır Tiryaki Desteği</Text>
-            <Text style={styles.heavyText}>
-              Kademeli azaltma senin için daha gerçekçi. Hedefi kaçırdığın günler yargı değil,
-              öğrenme fırsatıdır; önemli olan yönün ileri olması.
-            </Text>
+            <Text style={styles.heavyTitle}>{t('home.heavyTitle')}</Text>
+            <Text style={styles.heavyText}>{t('home.heavyText')}</Text>
             <View style={styles.heavyTips}>
-              <Text style={styles.heavyTip}>• İstek dalgası 3–5 dk sürer: nefes, su veya 60 sn baloncuk oyunu dene.</Text>
-              <Text style={styles.heavyTip}>• Tetikleyici anlar (kahve, yemek sonrası) için kriz bildirimlerini ve SOS’u hazır tut.</Text>
-              <Text style={styles.heavyTip}>• “1 dal içtim” seçeneği serini bozmaz; kaldığın yerden şefkatle devam edebilirsin.</Text>
+              <Text style={styles.heavyTip}>{t('home.heavyTip1')}</Text>
+              <Text style={styles.heavyTip}>{t('home.heavyTip2')}</Text>
+              <Text style={styles.heavyTip}>{t('home.heavyTip3')}</Text>
             </View>
             <View style={styles.heavyActions}>
               <Pressable style={styles.heavyActionBtn} onPress={onOpenCraving}>
-                <Text style={styles.heavyActionText}>Kriz Araçlarını Aç</Text>
+                <Text style={styles.heavyActionText}>{t('home.openCravingTools')}</Text>
               </Pressable>
               <Pressable style={styles.heavyActionBtnGhost} onPress={() => setSosOpen(true)}>
-                <Text style={styles.heavyActionTextGhost}>Nefes / Oyun</Text>
+                <Text style={styles.heavyActionTextGhost}>{t('home.breathGame')}</Text>
               </Pressable>
             </View>
           </Card>
@@ -412,7 +413,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             <View style={styles.cigLogHead}>
               <View style={styles.mapRow}>
                 {mapNumbers ? <MapBadge code="3a" /> : null}
-                <Text style={styles.cigLogTitle}>Bugün içtiklerin</Text>
+                <Text style={styles.cigLogTitle}>{t('home.smokedTodayTitle')}</Text>
               </View>
               <Text style={styles.cigLogCount}>{record.smoked}</Text>
             </View>
@@ -420,15 +421,15 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               <Text style={styles.cigLogEmpty}>
                 {record.smoked === 0
                   ? t('home.noSmokingToday')
-                  : `${record.smoked} sigara · (saat kaydı yok)`}
+                  : t('home.smokedNoTime', { count: record.smoked })}
               </Text>
             ) : (
               <View style={styles.cigLogList}>
-                {todayTimes.map((t, i) => (
-                  <View key={`${t}-${i}`} style={styles.cigLogItem}>
+                {todayTimes.map((ts, i) => (
+                  <View key={`${ts}-${i}`} style={styles.cigLogItem}>
                     <CigaretteIcon size={20} />
                     <Text style={styles.cigLogTime}>
-                      {new Date(t).toLocaleTimeString('tr-TR', {
+                      {new Date(ts).toLocaleTimeString(lang === 'en' ? 'en-US' : 'tr-TR', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -441,22 +442,22 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
 
           <View style={styles.mapRow}>
             {mapNumbers ? <MapBadge code="3b" /> : null}
-            <Text style={styles.heroTitle}>Bugünkü hedefin</Text>
+            <Text style={styles.heroTitle}>{t('home.todayGoal')}</Text>
           </View>
           <View style={styles.heroGoalRow}>
             <Text style={styles.heroGoal}>{goal}</Text>
             <CigaretteIcon size={22} style={styles.heroGoalIcon} />
-            <Text style={styles.heroGoalUnit}>sigara</Text>
+            <Text style={styles.heroGoalUnit}>{t('home.cigaretteUnit')}</Text>
           </View>
           {adaptiveActive ? (
             <Text style={styles.adaptiveNote}>
-              Sana göre plan: bu hafta hedefin {goal} sigara.
+              {t('home.adaptiveNote', { count: goal })}
             </Text>
           ) : null}
 
           <View style={[styles.mapRow, styles.heroSpacer]}>
             {mapNumbers ? <MapBadge code="3c" /> : null}
-            <Text style={styles.heroLabel}>Bugün içtiğin</Text>
+            <Text style={styles.heroLabel}>{t('home.todaySmokedLabel')}</Text>
           </View>
           <View style={styles.smokedRow}>
             <Text style={styles.heroCount}>{record.smoked}</Text>
@@ -483,19 +484,19 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             {mapNumbers ? <MapBadge code="3f" style={styles.actionsBadge} /> : null}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Bir sigara içtim olarak kaydet"
+              accessibilityLabel={t('home.logBtn')}
               style={({ pressed }) => [styles.logBtn, pressed && styles.pressed]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 logCigarette({ windowIndex });
-                showSmokeNote(`Dayanma sayacı ${timer.minutes} dk ile yeniden başladı`);
+                showSmokeNote(t('home.timerRestartNote', { minutes: timer.minutes }));
               }}
             >
-              <Text style={styles.logBtnText}>+1 Sigara içtim</Text>
+              <Text style={styles.logBtnText}>{t('home.logBtn')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Son sigara kaydını geri al"
+              accessibilityLabel={t('home.undoBtn')}
               style={({ pressed }) => [
                 styles.undoBtn,
                 record.smoked === 0 && styles.undoDisabled,
@@ -504,17 +505,17 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               disabled={record.smoked === 0}
               onPress={() => undoCigarette({ windowIndex })}
             >
-              <Text style={styles.undoText}>Geri al</Text>
+              <Text style={styles.undoText}>{t('home.undoBtn')}</Text>
             </Pressable>
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="1 dal içtim, kaçamak oldu"
+            accessibilityLabel={t('home.slipBtn')}
             style={({ pressed }) => [styles.slipBtn, pressed && styles.pressed]}
             onPress={handleSlip}
           >
-            <Text style={styles.slipBtnText}>1 Dal İçtim (Kaçamak Oldu)</Text>
-            <Text style={styles.slipBtnSub}>Serini sıfırlamaz, şefkatle devam et</Text>
+            <Text style={styles.slipBtnText}>{t('home.slipBtn')}</Text>
+            <Text style={styles.slipBtnSub}>{t('home.slipSub')}</Text>
           </Pressable>
         </LinearGradient>
 
@@ -523,16 +524,16 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             <View style={styles.timerInfo}>
               <View style={styles.mapRow}>
                 {mapNumbers ? <MapBadge code="4" /> : null}
-                <Text style={styles.cardLabel}>Dayanma sayacı</Text>
+                <Text style={styles.cardLabel}>{t('home.timerLabel')}</Text>
               </View>
               <Text style={styles.timerStatusText}>
                 {timer.status === 'running'
-                  ? 'sayıyor...'
+                  ? t('home.timerRunning')
                   : timer.status === 'paused'
-                    ? 'duraklatıldı'
+                    ? t('home.timerPaused')
                     : timer.status === 'done'
-                      ? 'süre doldu!'
-                      : `hedef ${timer.minutes} dk`}
+                      ? t('home.timerDone')
+                      : t('home.timerTarget', { minutes: timer.minutes })}
               </Text>
             </View>
             <Text
@@ -556,25 +557,25 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           <View style={styles.timerControls}>
             {timer.status === 'idle' ? (
               <Pressable style={styles.timerPrimaryBtn} onPress={() => startTimer()}>
-                <Text style={styles.timerPrimaryText}>Sayacı Başlat</Text>
+                <Text style={styles.timerPrimaryText}>{t('home.timerStart')}</Text>
               </Pressable>
             ) : timer.status === 'running' ? (
               <Pressable style={styles.timerPrimaryBtn} onPress={pauseTimer}>
-                <Text style={styles.timerPrimaryText}>Duraklat</Text>
+                <Text style={styles.timerPrimaryText}>{t('home.timerPause')}</Text>
               </Pressable>
             ) : timer.status === 'paused' ? (
               <Pressable style={styles.timerPrimaryBtn} onPress={resumeTimer}>
-                <Text style={styles.timerPrimaryText}>Devam Et</Text>
+                <Text style={styles.timerPrimaryText}>{t('home.timerResume')}</Text>
               </Pressable>
             ) : null}
 
             {timer.status === 'done' ? (
               <Pressable style={styles.timerDoneBtn} onPress={dismissTimer}>
-                <Text style={styles.timerDoneText}>Dayandım, Tamam</Text>
+                <Text style={styles.timerDoneText}>{t('home.timerDismiss')}</Text>
               </Pressable>
             ) : timer.status !== 'idle' ? (
               <Pressable style={styles.timerGhostBtn} onPress={resetTimer}>
-                <Text style={styles.timerGhostText}>Sıfırla</Text>
+                <Text style={styles.timerGhostText}>{t('home.timerReset')}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -587,33 +588,35 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         ) : null}
         <View style={styles.cardsRow}>
           <Card style={styles.halfCard}>
-            <Text style={styles.cardLabel}>Bugün kazandın</Text>
+            <Text style={styles.cardLabel}>{t('home.todayEarned')}</Text>
             <Text style={styles.moneyBig}>{formatMoney(savedToday, plan.currency)}</Text>
             <Text style={styles.moneySmall}>
-              {avoidedOnDay(plan, record)} sigara içmedin
+              {t('home.avoidedToday', { count: avoidedTodayCount })}
             </Text>
           </Card>
           <Card style={styles.halfCard}>
-            <Text style={styles.cardLabel}>Toplam kazandın</Text>
+            <Text style={styles.cardLabel}>{t('home.totalEarned')}</Text>
             <Text style={styles.moneyBig}>{formatMoney(savedTotal, plan.currency)}</Text>
-            <Text style={styles.moneySmall}>{avoided} sigara içmedin</Text>
+            <Text style={styles.moneySmall}>
+              {t('home.avoidedTotal', { count: avoidedTotalCount })}
+            </Text>
           </Card>
         </View>
 
         <Card style={styles.goalCard}>
           <View style={styles.cardTitleRow}>
             {mapNumbers ? <MapBadge code="11" /> : null}
-            <Text style={styles.cardLabel}>Tasarruf Hedefi</Text>
+            <Text style={styles.cardLabel}>{t('home.savingsGoal')}</Text>
           </View>
 
           {!savingsGoal || goalEditing ? (
             <View style={styles.goalForm}>
               <Text style={styles.goalHint}>
-                Biriken paranla almak istediğin şeyi yaz; ilerlemeni buradan takip et.
+                {t('home.savingsGoalHint')}
               </Text>
               <TextInput
                 style={styles.goalInput}
-                placeholder="Örn. Yeni kulaklık"
+                placeholder={t('home.goalNamePlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 value={goalTitle}
                 onChangeText={setGoalTitle}
@@ -621,7 +624,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               />
               <TextInput
                 style={styles.goalInput}
-                placeholder={`Hedef tutar (${plan.currency})`}
+                placeholder={t('home.goalAmountPlaceholder', { currency: plan.currency })}
                 placeholderTextColor={colors.textMuted}
                 value={goalTarget}
                 onChangeText={setGoalTarget}
@@ -631,11 +634,11 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               <View style={styles.goalFormActions}>
                 {savingsGoal ? (
                   <Pressable style={styles.goalGhostBtn} onPress={() => setGoalEditing(false)}>
-                    <Text style={styles.goalGhostText}>Vazgeç</Text>
+                    <Text style={styles.goalGhostText}>{t('home.goalCancel')}</Text>
                   </Pressable>
                 ) : null}
                 <Pressable style={styles.goalSaveBtn} onPress={saveGoal}>
-                  <Text style={styles.goalSaveText}>Hedefi Kaydet</Text>
+                  <Text style={styles.goalSaveText}>{t('home.goalSave')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -645,7 +648,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
                 <View style={styles.goalHeadText}>
                   <Text style={styles.goalTitle}>{savingsGoal.title}</Text>
                   <Text style={styles.goalTargetText}>
-                    Hedef: {formatMoney(savingsGoal.target, plan.currency)}
+                    {t('home.goalTarget', { amount: formatMoney(savingsGoal.target, plan.currency) })}
                   </Text>
                 </View>
                 <Text style={styles.goalPercent}>%{Math.round(goalProgress * 100)}</Text>
@@ -657,11 +660,11 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               />
               <Text style={styles.goalStatus}>
                 {goalProgress >= 1
-                  ? `Hedefe ulaştın! ${formatMoney(savingsGoal.target, plan.currency)} biriktirdin. 🎉`
-                  : `Kalan: ${formatMoney(goalRemaining, plan.currency)} · Biriktirdin: ${formatMoney(
-                      savedTotal,
-                      plan.currency,
-                    )}`}
+                  ? t('home.goalReached', { amount: formatMoney(savingsGoal.target, plan.currency) })
+                  : t('home.goalStatus', {
+                      remaining: formatMoney(goalRemaining, plan.currency),
+                      saved: formatMoney(savedTotal, plan.currency),
+                    })}
               </Text>
               <View style={styles.goalFormActions}>
                 <Pressable
@@ -672,7 +675,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
                     setGoalTarget('');
                   }}
                 >
-                  <Text style={styles.goalGhostText}>Hedefi kaldır</Text>
+                  <Text style={styles.goalGhostText}>{t('home.goalRemove')}</Text>
                 </Pressable>
                 <Pressable
                   style={styles.goalGhostBtn}
@@ -682,7 +685,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
                     setGoalEditing(true);
                   }}
                 >
-                  <Text style={styles.goalGhostText}>Düzenle</Text>
+                  <Text style={styles.goalGhostText}>{t('home.goalEdit')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -695,7 +698,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
           <Card>
             <View style={styles.mapRow}>
               {mapNumbers ? <MapBadge code="6" /> : null}
-              <Text style={styles.cardLabel}>İzinli pencereler</Text>
+              <Text style={styles.cardLabel}>{t('home.allowedWindows')}</Text>
             </View>
             {plan.windows.map((window, i) => {
               const allowance = allowances[i] ?? 0;
@@ -715,13 +718,13 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
                   <View style={styles.windowInfo}>
                     <Text style={styles.windowTime}>
                       {window.start}–{window.end}
-                      {isActive ? '  ·  aktif' : ''}
+                      {isActive ? `  ·  ${t('home.active')}` : ''}
                     </Text>
                     <ProgressBar
                       progress={winProgress}
                       color={winRemaining === 0 ? colors.success : colors.accent}
                       height={6}
-                      label={`Hak ${allowance} · İçilen ${smokedInWindow}`}
+                      label={t('home.allowance', { allowed: allowance, smoked: smokedInWindow })}
                     />
                   </View>
                   <Text style={styles.windowRemaining}>{winRemaining}</Text>
@@ -730,7 +733,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             })}
             {activeWindow < 0 ? (
               <Text style={styles.cardHint}>
-                Şu an pencere dışı. İzin penceresi gelene kadar içmeden durmaya çalış.
+                {t('home.outsideWindowHint')}
               </Text>
             ) : null}
           </Card>
@@ -739,17 +742,17 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         <Card>
           <View style={styles.mapRow}>
             {mapNumbers ? <MapBadge code="7" /> : null}
-            <Text style={styles.cardLabel}>Hedefe sadık kaldığın gün</Text>
+            <Text style={styles.cardLabel}>{t('home.streakLabel')}</Text>
           </View>
           <Text style={styles.bigNumber}>{streak}</Text>
           <ProgressBar progress={Math.min(1, streak / 7)} />
-          <Text style={styles.cardHint}>7 gün üst üste hedefini tuttur, yeni bir rozet!</Text>
+          <Text style={styles.cardHint}>{t('home.streakHint')}</Text>
         </Card>
 
         <Card>
           <View style={styles.mapRow}>
             {mapNumbers ? <MapBadge code="8" /> : null}
-            <Text style={styles.cardLabel}>Sıradaki sağlık kazancı</Text>
+            <Text style={styles.cardLabel}>{t('home.nextHealth')}</Text>
           </View>
           {nextMilestone ? (
             <>
@@ -757,27 +760,26 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
                 {nextMilestone.emoji} {nextMilestone.label}
               </Text>
               <Text style={styles.milestoneDetail}>{nextMilestone.detail}</Text>
-              <Text style={styles.milestoneDays}>{untilText} sonra</Text>
+              <Text style={styles.milestoneDays}>
+                {lang === 'en' ? `${t('home.after')} ${untilText}` : `${untilText} ${t('home.after')}`}
+              </Text>
             </>
           ) : (
-            <Text style={styles.milestoneDetail}>
-              🎉 Bugüne kadar tüm büyük sağlık kilometre taşlarını geçtin.
-            </Text>
+            <Text style={styles.milestoneDetail}>{t('home.allHealthDone')}</Text>
           )}
         </Card>
 
         {hourRisk >= 2 ? (
           <View style={styles.riskWarn}>
-            <Text style={styles.riskWarnTitle}>⚠️ Dikkatli ol</Text>
+            <Text style={styles.riskWarnTitle}>{t('home.riskTitle')}</Text>
             <Text style={styles.riskWarnText}>
-              Geçmişte bu saatlerde canın {hourRisk} kez sigara çekmiş. Şimdi bir kriz aracı
-              (nefes, topraklama) hazır tut.
+              {t('home.riskText', { count: hourRisk })}
             </Text>
           </View>
         ) : null}
 
         <Pressable style={styles.cravingCta} onPress={onOpenCraving}>
-          <Text style={styles.cravingCtaText}>Canın mı çekti? Kriz modunu başlat</Text>
+          <Text style={styles.cravingCtaText}>{t('home.cravingCta')}</Text>
         </Pressable>
       </ScrollView>
 
