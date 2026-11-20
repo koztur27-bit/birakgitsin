@@ -19,9 +19,10 @@ export function detectSystemLanguage(): AppLanguage {
     const lower = String(locale || '').toLowerCase();
     if (lower.startsWith('tr')) return 'tr';
   } catch {
-    // default to English on detection failure
+    // default to Turkish on detection failure
   }
-  return 'en';
+  // Varsayılan başlangıç dili Türkçe'dir; İngilizce yalnızca kullanıcı seçtiğinde aktif olur.
+  return 'tr';
 }
 
 export function localeTag(lang: AppLanguage): string {

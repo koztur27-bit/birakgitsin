@@ -22,9 +22,10 @@ export function detectSystemLanguage(): AppLanguage {
     const lower = String(locale || '').toLowerCase();
     if (lower.startsWith('tr')) return 'tr';
   } catch {
-    // default to English on detection failure
+    // default to Turkish on detection failure
   }
-  return 'en';
+  // Varsayılan başlangıç dili Türkçe'dir; İngilizce yalnızca kullanıcı seçtiğinde aktif olur.
+  return 'tr';
 }
 
 const defaultData: AppData = {
@@ -38,7 +39,7 @@ const defaultData: AppData = {
   isPremium: false,
   proUnlockUntil: 0,
   showLockScreen: true,
-  language: 'en',
+  language: 'tr',
   slipLogs: [],
   coachUsage: { date: '', count: 0 },
 };
@@ -47,8 +48,8 @@ export async function loadData(): Promise<AppData> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const fresh = { ...defaultData, language: detectSystemLanguage() };
-      // İlk açılışta algılanan dili kalıcı sakla (widget/native senkronu için de).
+      const fresh = { ...defaultData, language: 'tr' as AppLanguage };
+      // İlk açılışta varsayılan dili (Türkçe) kalıcı sakla (widget/native senkronu için de).
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
       } catch {}
@@ -66,14 +67,14 @@ export async function loadData(): Promise<AppData> {
       };
     }
     if (merged.language !== 'tr' && merged.language !== 'en') {
-      merged.language = detectSystemLanguage();
+      merged.language = 'tr';
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
       } catch {}
     }
     return merged;
   } catch {
-    return { ...defaultData, language: detectSystemLanguage() };
+    return { ...defaultData, language: 'tr' as AppLanguage };
   }
 }
 

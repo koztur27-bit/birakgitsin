@@ -23,7 +23,7 @@ import {
   TimerState,
   TimerStatus,
 } from '../types';
-import { clearData, detectSystemLanguage, loadData, persistData } from '../storage';
+import { clearData, loadData, persistData } from '../storage';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -680,7 +680,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isPremium: false,
       proUnlockUntil: 0,
       showLockScreen: true,
-      language: data.language || detectSystemLanguage(),
+      language: data.language || 'tr',
       slipLogs: [],
       coachUsage: { date: '', count: 0 },
     });
@@ -732,7 +732,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? incoming.proUnlockUntil
           : 0,
       showLockScreen: incoming.showLockScreen !== false,
-      language: incoming.language === 'tr' || incoming.language === 'en' ? incoming.language : (data.language || detectSystemLanguage()),
+      language: incoming.language === 'tr' || incoming.language === 'en' ? incoming.language : (data.language || 'tr'),
       slipLogs: Array.isArray((incoming as any).slipLogs)
         ? (incoming as any).slipLogs
             .filter((s: any) => s && typeof s.timestamp === 'string')
