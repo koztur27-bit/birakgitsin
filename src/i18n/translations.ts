@@ -44,7 +44,7 @@ export const translations = {
     },
     tabs: {
       home: 'Ana Sayfa',
-      craving: 'Kriz',
+      craving: 'SOS',
       timer: 'Sayaç',
       stats: 'İstatistik',
       health: 'Sağlık',

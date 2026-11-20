@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -22,7 +23,7 @@ import { SavingsSimulator } from '../components/SavingsSimulator';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { SosBreathingModal } from '../components/SosBreathingModal';
 import { CoachChatModal } from '../components/CoachChatModal';
-import { SHARE_THEMES, ShareThemeId, SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
+import { ShareThemeId, SuccessShareCard, SuccessShareCardHandle, useLocalizedShareThemes } from '../components/SuccessShareCard';
 import { StatusPopup } from '../components/StatusPopup';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n';
@@ -103,7 +104,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     const title = goalTitle.trim();
     const target = Number(goalTarget.replace(',', '.'));
     if (!title || !Number.isFinite(target) || target <= 0) {
-      Alert.alert('Tasarruf hedefi', 'Ürün adı ve geçerli bir hedef tutarı gir.');
+      Alert.alert(t('home.goalInvalidTitle'), t('home.goalInvalidMsg'));
       return;
     }
     setSavingsGoal({ title, target });
@@ -112,6 +113,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
 
   const shareCardRef = useRef<SuccessShareCardHandle>(null);
   const isPro = hasProAccess(data);
+  const localizedShareThemes = useLocalizedShareThemes();
   const [shareTheme, setShareTheme] = useState<ShareThemeId>('classic');
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
   const [shareUnlocking, setShareUnlocking] = useState(false);
@@ -129,12 +131,12 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       return;
     }
     Alert.alert(
-      'Özel Tema (PRO)',
-      'Özel başarı kartı temaları PRO özelliğidir. İstersen kısa bir reklam izleyerek bu temayı 24 saat ücretsiz kullanabilirsin.',
+      t('home.proFeatureTitle'),
+      t('home.proFeatureMsg'),
       [
-        { text: t('home.goalCancel'), style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Kısa Reklam İzle ve 24 Saat Aç',
+          text: t('home.watchAdUnlock'),
           onPress: async () => {
             if (shareUnlocking) return;
             setShareUnlocking(true);
@@ -142,10 +144,10 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
               const res = await showRewardedUnlockAd();
               if (res.rewarded) {
                 grantProUnlock24h();
-                Alert.alert('Erişim açıldı', 'PRO özellikler 24 saat boyunca açık.');
+                Alert.alert(t('home.unlockedTitle'), t('home.unlockedMsg'));
                 triggerShareWithTheme(themeId);
               } else if (res.message) {
-                Alert.alert('Reklam', res.message);
+                Alert.alert(t('home.adTitle'), res.message);
               }
             } finally {
               setShareUnlocking(false);
@@ -259,7 +261,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const untilText = nextMilestone ? formatUntil(nextMilestone.days - elapsed) : '';
   const hourRisk = cravingHours(data.cravings)[new Date().getHours()] ?? 0;
 
-  const dateText = new Date().toLocaleDateString('tr-TR', {
+  const dateText = new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'tr-TR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -295,11 +297,12 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         <View style={styles.header}>
           <View>
             <View style={styles.mapRow}>
-              <Text style={styles.brand}>Bırak Gitsin</Text>
+              <Image source={require('../../assets/widget_mascot.png')} style={styles.brandMascot} />
+              <Text style={styles.brand}>{t('common.appName')}</Text>
               {mapNumbers ? <MapBadge code="1" /> : null}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Bırak Gitsin PRO"
+                accessibilityLabel={`${t('common.appName')} PRO`}
                 style={[styles.proBadge, isPro && styles.proBadgeActive]}
                 onPress={() => setProOpen(true)}
                 hitSlop={6}
@@ -321,11 +324,11 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             hitSlop={8}
           >
             <Text style={[styles.reloadChipText, mapNumbers && styles.reloadChipTextActive]}>
-              {mapNumbers ? 'Harita ✓' : t('home.map')}
+              {mapNumbers ? t('home.mapOn') : t('home.map')}
             </Text>
           </Pressable>
           <Pressable style={styles.reloadChip} onPress={() => setStatusOpen(true)} hitSlop={8}>
-            <Text style={styles.reloadChipText}>Durum</Text>
+            <Text style={styles.reloadChipText}>{t('home.status')}</Text>
           </Pressable>
           <Pressable
             style={[styles.reloadChip, updating && styles.reloadChipDisabled]}
@@ -333,29 +336,29 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             disabled={updating}
             hitSlop={8}
           >
-            <Text style={styles.reloadChipText}>{updating ? 'İndiriliyor…' : 'Güncelle'}</Text>
+            <Text style={styles.reloadChipText}>{updating ? t('home.downloading') : t('home.update')}</Text>
           </Pressable>
           <Pressable style={styles.reloadChip} onPress={shareSuccess} hitSlop={8}>
-            <Text style={styles.reloadChipText}>Paylaş</Text>
+            <Text style={styles.reloadChipText}>{t('home.share')}</Text>
           </Pressable>
         </View>
 
         <Pressable style={styles.refreshBar} onPress={reloadApp}>
           {mapNumbers ? <MapBadge code="2" /> : null}
-          <Text style={styles.refreshBarText}>↻  Sayfayı yenile</Text>
+          <Text style={styles.refreshBarText}>{t('home.refresh')}</Text>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Kriz Geldi, nefes egzersizini başlat"
+          accessibilityLabel={t('home.sosTitle')}
           style={({ pressed }) => [styles.sosBtn, pressed && styles.pressed]}
           onPress={() => setSosOpen(true)}
         >
           {mapNumbers ? <MapBadge code="10" style={styles.sosBadge} /> : null}
           <Text style={styles.sosEmoji}>🆘</Text>
           <View style={styles.sosText}>
-            <Text style={styles.sosTitle}>Kriz Geldi (SOS)</Text>
-            <Text style={styles.sosSub}>60 sn nefes egzersizi veya baloncuk oyunu</Text>
+            <Text style={styles.sosTitle}>{t('home.sosTitle')}</Text>
+            <Text style={styles.sosSub}>{t('home.sosSub')}</Text>
           </View>
           <Text style={styles.sosArrow}>›</Text>
         </Pressable>
@@ -798,41 +801,43 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
         <View style={styles.sharePickerOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setSharePickerOpen(false)} />
           <View style={styles.sharePickerCard}>
-            <Text style={styles.sharePickerTitle}>Başarı Kartı Teması</Text>
-            <Text style={styles.sharePickerSub}>Klasik tema ücretsiz. Özel temalar PRO özelliğidir (reklam izleyerek 24 saat açılabilir).</Text>
-            {SHARE_THEMES.map((t) => {
-              const locked = t.proOnly && !isPro;
+            <Text style={styles.sharePickerTitle}>{t('home.shareThemeTitle')}</Text>
+            <Text style={styles.sharePickerSub}>{t('home.shareThemeSub')}</Text>
+            {localizedShareThemes.map((th) => {
+              const locked = th.proOnly && !isPro;
               return (
                 <Pressable
-                  key={t.id}
+                  key={th.id}
                   style={[styles.shareThemeRow, locked && styles.shareThemeRowLocked]}
-                  onPress={() => onSelectShareTheme(t.id, t.proOnly)}
+                  onPress={() => onSelectShareTheme(th.id, th.proOnly)}
                 >
                   <View style={styles.shareThemeInfo}>
-                    <Text style={styles.shareThemeName}>{t.name}{locked ? ' 🔒' : ''}</Text>
-                    <Text style={styles.shareThemeMeta}>{t.proOnly ? (locked ? 'PRO / 24 saat reklamla aç' : 'PRO tema') : 'Ücretsiz'}</Text>
+                    <Text style={styles.shareThemeName}>{th.name}{locked ? ' 🔒' : ''}</Text>
+                    <Text style={styles.shareThemeMeta}>{th.proOnly ? (locked ? t('home.shareThemeProLocked') : t('home.shareThemePro')) : t('home.shareThemeFree')}</Text>
                   </View>
-                  <View style={[styles.shareThemeSwatch, { backgroundColor: t.colors[1], borderColor: t.accent }]}>
-                    <View style={[styles.shareThemeSwatchDot, { backgroundColor: t.accent }]} />
+                  <View style={[styles.shareThemeSwatch, { backgroundColor: th.colors[1], borderColor: th.accent }]}>
+                    <View style={[styles.shareThemeSwatchDot, { backgroundColor: th.accent }]} />
                   </View>
                 </Pressable>
               );
             })}
             <Pressable style={styles.sharePickerClose} onPress={() => setSharePickerOpen(false)}>
-              <Text style={styles.sharePickerCloseText}>Vazgeç</Text>
+              <Text style={styles.sharePickerCloseText}>{t('common.cancel')}</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
 
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
-      <SuccessShareCard
-        ref={shareCardRef}
-        themeId={shareTheme}
-        days={Math.max(0, Math.floor(elapsedDays(plan)))}
-        avoided={Math.max(0, Math.round(avoided))}
-        savedText={formatMoney(savedTotal, plan.currency)}
-      />
+      <View style={styles.hiddenShareCard} pointerEvents="none">
+        <SuccessShareCard
+          ref={shareCardRef}
+          themeId={shareTheme}
+          days={Math.max(0, Math.floor(elapsedDays(plan)))}
+          avoided={Math.max(0, Math.round(avoided))}
+          savedText={formatMoney(savedTotal, plan.currency)}
+        />
+      </View>
     </View>
   );
 }
@@ -869,10 +874,22 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
   },
+  brandMascot: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    marginRight: 2,
+  },
   brand: {
     fontSize: fontSizes.xl,
     fontWeight: '800',
     color: colors.text,
+  },
+  hiddenShareCard: {
+    position: 'absolute',
+    left: -9999,
+    top: 0,
+    opacity: 0,
   },
   date: { fontSize: fontSizes.sm, color: colors.textMuted, marginTop: 2 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
