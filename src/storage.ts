@@ -46,6 +46,7 @@ const defaultData: AppData = {
   futureOnboardingShown: false,
   happinessPrompts: {},
   inviteRedeemed: false,
+  dailyPledges: [],
 };
 
 export function generateInviteCode(): string {
@@ -90,6 +91,11 @@ export async function loadData(): Promise<AppData> {
     }
     if (!merged.inviteCode || typeof merged.inviteCode !== 'string') {
       merged.inviteCode = generateInviteCode();
+    }
+    if (!Array.isArray(merged.dailyPledges)) {
+      merged.dailyPledges = [];
+    } else {
+      merged.dailyPledges = merged.dailyPledges.filter((x: any) => typeof x === 'string');
     }
     merged.inviteRedeemed = !!merged.inviteRedeemed;
     merged.futureOnboardingShown = !!merged.futureOnboardingShown;

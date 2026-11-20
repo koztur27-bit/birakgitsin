@@ -318,6 +318,40 @@ export function goalStreak(plan: Plan, logs: DayRecord[]): number {
   return streak;
 }
 
+export function pledgeStreak(pledges: string[] = [], endKey: string = todayKey()): number {
+  const set = new Set(pledges || []);
+  if (set.size === 0) return 0;
+  let streak = 0;
+  let key = endKey;
+  // If today not pledged yet, allow streak to continue from yesterday.
+  if (!set.has(key)) {
+    const d = parseKey(key);
+    key = dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+  }
+  for (let i = 0; i < 3650; i++) {
+    if (!set.has(key)) break;
+    streak += 1;
+    const d = parseKey(key);
+    key = dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+  }
+  return streak;
+}
+
+export function hasSlipOnDay(slipLogs: { timestamp: string }[] = [], dateKeyStr: string): boolean {
+  return (slipLogs || []).some((s) => dayKey(new Date(s.timestamp)) === dateKeyStr);
+}
+
+export function slipDaySet(slipLogs: { timestamp: string }[] = []): Set<string> {
+  const out = new Set<string>();
+  (slipLogs || []).forEach((s) => {
+    try {
+      out.add(dayKey(new Date(s.timestamp)));
+    } catch {}
+  });
+  return out;
+}
+
+
 export type Milestone = {
   id: string;
   label: string;
@@ -494,6 +528,34 @@ export function healthRecovery(plan: Plan, now: number = Date.now()): HealthMetr
       targetLabel: d.targetLabel,
       detail: percent >= 100 ? d.done : d.detail,
     };
+  });
+}
+
+
+export type BodyRenewalOrganId = 'heart' | 'lungs' | 'blood' | 'tasteSmell' | 'skinEnergy';
+
+export type BodyRenewalOrgan = {
+  id: BodyRenewalOrganId;
+  emoji: string;
+  percent: number;
+  targetDays: number;
+  remainingDays: number;
+  elapsed: number;
+};
+
+export function bodyRenewalMap(plan: Plan, now: number = Date.now()): BodyRenewalOrgan[] {
+  const elapsed = elapsedDays(plan, now);
+  const defs: { id: BodyRenewalOrganId; emoji: string; targetDays: number }[] = [
+    { id: 'heart', emoji: '❤️', targetDays: 90 },
+    { id: 'lungs', emoji: '🫁', targetDays: 270 },
+    { id: 'blood', emoji: '🩸', targetDays: 1 },
+    { id: 'tasteSmell', emoji: '👃', targetDays: 14 },
+    { id: 'skinEnergy', emoji: '✨', targetDays: 60 },
+  ];
+  return defs.map((d) => {
+    const percent = Math.max(0, Math.min(100, Math.round((elapsed / d.targetDays) * 100)));
+    const remainingDays = Math.max(0, d.targetDays - elapsed);
+    return { id: d.id, emoji: d.emoji, percent, targetDays: d.targetDays, remainingDays, elapsed };
   });
 }
 

@@ -106,6 +106,8 @@ export type AppData = {
   inviteCode?: string;
   /** Arkadaş davet kodu girilerek +7 gün PRO ödülü alındı mı? */
   inviteRedeemed?: boolean;
+  /** Günlük bırakma yemini verilen günler (YYYY-MM-DD). */
+  dailyPledges?: string[];
 };
 
 export type TabKey = 'home' | 'craving' | 'timer' | 'stats' | 'health' | 'settings';

@@ -42,6 +42,7 @@ import {
   getLog,
   nextWindowInfo,
   nowMin,
+  pledgeStreak,
   todayKey,
   totalMoneySaved,
   windowAllowances,
@@ -61,7 +62,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt } = useApp();
+  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
@@ -174,6 +175,15 @@ export function HomeScreen(_props: HomeScreenProps) {
     if (!hp.sosPassed) {
       setHappinessKey('sosPassed');
     }
+  };
+
+  const todayPledged = (data.dailyPledges || []).includes(todayKey());
+  const currentPledgeStreak = pledgeStreak(data.dailyPledges || []);
+  const onPledgePress = () => {
+    if (todayPledged) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    pledgeToday();
   };
 
   const shareInvite = async () => {
@@ -377,6 +387,34 @@ export function HomeScreen(_props: HomeScreenProps) {
             </Pressable>
           </View>
         </LinearGradient>
+
+        {/* Daily Quit Pledge */}
+        <View style={[styles.pledgeCard, todayPledged && styles.pledgeCardDone]}>
+          <View style={styles.pledgeHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.pledgeTitle}>{t('home.pledgeTitle')}</Text>
+              <Text style={styles.pledgeHint}>{t('home.pledgeHint')}</Text>
+            </View>
+            <View style={styles.pledgeStreakBox}>
+              <Text style={styles.pledgeStreakLabel}>{t('home.pledgeStreakLabel')}</Text>
+              <Text style={styles.pledgeStreakValue}>{t('home.pledgeStreakValue', { count: currentPledgeStreak })}</Text>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.pledgeBtn,
+              todayPledged ? styles.pledgeBtnDone : styles.pledgeBtnActive,
+              pressed && !todayPledged && styles.pressed,
+            ]}
+            onPress={onPledgePress}
+            disabled={todayPledged}
+          >
+            <Text style={[styles.pledgeBtnText, todayPledged && styles.pledgeBtnTextDone]}>
+              {todayPledged ? t('home.pledgeDone') : t('home.pledgeCta')}
+            </Text>
+          </Pressable>
+        </View>
 
         {/* Quick Access Buttons */}
         <View style={styles.quickSection}>
@@ -742,6 +780,42 @@ const createStyles = (colors: any) =>
     shareThemeSwatchDot: { width: 14, height: 14, borderRadius: 7 },
     sharePickerClose: { marginTop: 4, paddingVertical: spacing.sm, alignItems: 'center' },
     sharePickerCloseText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+    pledgeCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.xl,
+      padding: spacing.md,
+      gap: spacing.sm,
+      borderWidth: 1.5,
+      borderColor: colors.primarySoft,
+      ...shadows.card,
+    },
+    pledgeCardDone: {
+      borderColor: '#34D399',
+      backgroundColor: '#ECFDF5',
+    },
+    pledgeHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    pledgeTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
+    pledgeHint: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
+    pledgeStreakBox: {
+      alignItems: 'center',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.md,
+      backgroundColor: colors.primarySoft,
+      minWidth: 84,
+    },
+    pledgeStreakLabel: { fontSize: fontSizes.xs, color: colors.primaryDark, fontWeight: '700' },
+    pledgeStreakValue: { fontSize: fontSizes.md, fontWeight: '900', color: colors.primaryDark, marginTop: 2 },
+    pledgeBtn: {
+      borderRadius: radius.lg,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pledgeBtnActive: { backgroundColor: colors.primary },
+    pledgeBtnDone: { backgroundColor: '#10B981' },
+    pledgeBtnText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white, textAlign: 'center' },
+    pledgeBtnTextDone: { color: colors.white },
     inviteShareBtn: {
       borderRadius: radius.md,
       padding: spacing.md,

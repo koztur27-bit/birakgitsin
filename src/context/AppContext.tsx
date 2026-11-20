@@ -70,6 +70,7 @@ type AppContextValue = {
   markFutureOnboardingShown: () => void;
   markHappinessPrompt: (key: keyof HappinessPrompts) => void;
   redeemInviteCode: (code: string) => { ok: boolean; message?: string };
+  pledgeToday: () => void;
   timer: TimerState;
   setTimerDuration: (minutes: number) => void;
   startTimer: (minutes?: number) => void;
@@ -220,6 +221,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     futureOnboardingShown: false,
     happinessPrompts: {},
     inviteRedeemed: false,
+    dailyPledges: [],
   });
   const [ready, setReady] = useState(false);
   const [timer, setTimer] = useState<TimerState>(defaultTimer);
@@ -699,6 +701,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       happinessPrompts: {},
       inviteCode: generateInviteCode(),
       inviteRedeemed: false,
+      dailyPledges: [],
     };
     setData(fresh);
     persistData(fresh).catch(() => {});
@@ -760,6 +763,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const nextUntil = Math.max(Date.now(), data.proUnlockUntil || 0) + ms;
     persist({ ...data, proUnlockUntil: nextUntil, inviteRedeemed: true });
     return { ok: true };
+  };
+
+  const pledgeToday = () => {
+    const key = todayKey();
+    const pledges = data.dailyPledges || [];
+    if (pledges.includes(key)) return;
+    persist({ ...data, dailyPledges: [...pledges, key] });
   };
 
   const restoreData = (incoming: AppData) => {
@@ -826,6 +836,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           : {},
       inviteCode: typeof incoming.inviteCode === 'string' && incoming.inviteCode ? incoming.inviteCode : (data.inviteCode || generateInviteCode()),
       inviteRedeemed: !!incoming.inviteRedeemed,
+      dailyPledges: Array.isArray((incoming as any).dailyPledges)
+        ? (incoming as any).dailyPledges.filter((x: any) => typeof x === 'string')
+        : (data.dailyPledges || []),
     };
     persist(clean);
     if (Platform.OS !== 'web') {
@@ -891,6 +904,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     markFutureOnboardingShown,
     markHappinessPrompt,
     redeemInviteCode,
+    pledgeToday,
     timer,
     setTimerDuration,
     startTimer,

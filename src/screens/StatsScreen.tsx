@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarGrid } from '../components/CalendarGrid';
+import { StreakCalendar } from '../components/StreakCalendar';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
 import { SavingsSimulator } from '../components/SavingsSimulator';
@@ -412,6 +413,20 @@ export function StatsScreen() {
               ? `${Math.round((monthOK / Math.max(1, officialDaysInMonth)) * 100)}% on-target rate (month)`
               : `${Math.round((monthOK / Math.max(1, officialDaysInMonth)) * 100)}% hedefi tutturma oranı (ay başına göre)`}
           </Text>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>{t('stats.streakCalendarTitle')}</Text>
+          <Text style={styles.cardHint}>{t('stats.streakCalendarSub')}</Text>
+          <View style={{ marginTop: spacing.sm }}>
+            <StreakCalendar
+              plan={plan}
+              logs={data.logs}
+              slipLogs={data.slipLogs || []}
+              year={cursor.getFullYear()}
+              month={cursor.getMonth()}
+            />
+          </View>
         </Card>
 
         <Card>

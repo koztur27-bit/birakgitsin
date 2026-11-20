@@ -1,13 +1,16 @@
 import { useTheme } from '../context/ThemeContext';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import {
+  bodyRenewalMap,
+  BodyRenewalOrganId,
   elapsedDays,
   formatDuration,
   formatUntil,
@@ -21,7 +24,9 @@ export function HealthScreen() {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { data } = useApp();
+  const { t, locale } = useI18n();
   const plan = data.plan;
+  const isEn = (data.language || locale || 'tr') === 'en';
 
   // Yüzdeler bırakma süresine bağlı olduğu için ekran açıkken canlı güncellenir.
   const [now, setNow] = useState(() => Date.now());
@@ -30,7 +35,10 @@ export function HealthScreen() {
     return () => clearInterval(id);
   }, []);
 
+  const [selectedOrgan, setSelectedOrgan] = useState<BodyRenewalOrganId | null>(null);
+
   const metrics = useMemo(() => (plan ? healthRecovery(plan, now) : []), [plan, now]);
+  const organs = useMemo(() => (plan ? bodyRenewalMap(plan, now) : []), [plan, now]);
   const elapsed = plan ? elapsedDays(plan, now) : 0;
   const overall = metrics.length
     ? Math.round(metrics.reduce((sum, m) => sum + m.percent, 0) / metrics.length)
@@ -40,6 +48,15 @@ export function HealthScreen() {
   if (!plan) return null;
 
   const metricColors = [colors.danger, colors.accent, colors.primary, colors.success];
+
+  const organStageText = (id: BodyRenewalOrganId, percent: number): string => {
+    if (percent >= 100) return t(`health.bodyMapOrgans.${id}.done`);
+    if (percent >= 60) return t(`health.bodyMapOrgans.${id}.late`);
+    if (percent >= 25) return t(`health.bodyMapOrgans.${id}.mid`);
+    return t(`health.bodyMapOrgans.${id}.early`);
+  };
+
+  const selected = selectedOrgan ? organs.find((o) => o.id === selectedOrgan) : null;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
@@ -83,6 +100,46 @@ export function HealthScreen() {
         </Card>
 
         <View style={styles.sectionTitleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionTitle}>{t('health.bodyMapTitle')}</Text>
+            <Text style={styles.sectionSub}>{t('health.bodyMapSubtitle')}</Text>
+          </View>
+          <Text style={styles.sectionHint}>canlı</Text>
+        </View>
+
+        <View style={styles.organGrid}>
+          {organs.map((organ) => {
+            const done = organ.percent >= 100;
+            return (
+              <Pressable
+                key={organ.id}
+                style={({ pressed }) => [
+                  styles.organCard,
+                  done && styles.organCardDone,
+                  pressed && { opacity: 0.9 },
+                ]}
+                onPress={() => setSelectedOrgan(organ.id)}
+              >
+                <Text style={styles.organEmoji}>{organ.emoji}</Text>
+                <Text style={styles.organTitle} numberOfLines={2}>
+                  {t(`health.bodyMapOrgans.${organ.id}.title`)}
+                </Text>
+                <Text style={[styles.organPercent, done && { color: '#059669' }]}>%{organ.percent}</Text>
+                <View style={styles.organBarWrap}>
+                  <View
+                    style={[
+                      styles.organBarFill,
+                      { width: `${organ.percent}%`, backgroundColor: done ? '#10B981' : colors.primary },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.organTap}>{t('health.bodyMapTap')}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.sectionTitleRow}>
           <Text style={styles.sectionTitle}>Kazanımlar</Text>
           <Text style={styles.sectionHint}>canlı</Text>
         </View>
@@ -119,6 +176,46 @@ export function HealthScreen() {
         </View>
         <WithdrawalGuide />
       </ScrollView>
+
+      <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelectedOrgan(null)}>
+        <View style={styles.modalBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedOrgan(null)} />
+          {selected ? (
+            <View style={styles.modalCard}>
+              <View style={styles.modalHead}>
+                <Text style={styles.modalEmoji}>{selected.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalTitle}>{t(`health.bodyMapOrgans.${selected.id}.title`)}</Text>
+                  <Text style={styles.modalPercent}>%{selected.percent} · {t('health.bodyMapProgress')}</Text>
+                </View>
+              </View>
+              <View style={styles.modalBarBg}>
+                <View
+                  style={[
+                    styles.modalBarFill,
+                    { width: `${selected.percent}%`, backgroundColor: selected.percent >= 100 ? '#10B981' : colors.primary },
+                  ]}
+                />
+              </View>
+              <Text style={styles.modalSection}>{t('health.bodyMapCurrent')}</Text>
+              <Text style={styles.modalText}>{organStageText(selected.id, selected.percent)}</Text>
+              <Text style={styles.modalSection}>
+                {selected.percent >= 100 ? t('health.bodyMapComplete') : t('health.bodyMapRemaining', { time: formatUntil(selected.remainingDays) })}
+              </Text>
+              {selected.percent < 100 ? (
+                <Text style={styles.modalText}>
+                  {isEn
+                    ? `About ${Math.max(0, Math.ceil(selected.remainingDays))} day(s) to reach 100% for this milestone (based on ${selected.targetDays} days target).`
+                    : `Bu hedefte %100 için yaklaşık ${Math.max(0, Math.ceil(selected.remainingDays))} gün kaldı (${selected.targetDays} günlük hedef).`}
+                </Text>
+              ) : null}
+              <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedOrgan(null)}>
+                <Text style={styles.modalCloseText}>{t('health.bodyMapClose')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -154,8 +251,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: spacing.sm,
+    gap: spacing.sm,
   },
   sectionTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+  sectionSub: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
   sectionHint: {
     fontSize: fontSizes.xs,
     fontWeight: '700',
@@ -165,6 +264,25 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
+  organGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  organCard: {
+    width: '48%',
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  organCardDone: { borderColor: '#34D399', backgroundColor: '#ECFDF5' },
+  organEmoji: { fontSize: 30 },
+  organTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text, textAlign: 'center', minHeight: 36 },
+  organPercent: { fontSize: fontSizes.lg, fontWeight: '900', color: colors.primaryDark },
+  organBarWrap: { width: '100%', height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' },
+  organBarFill: { height: '100%', borderRadius: 4 },
+  organTap: { fontSize: fontSizes.xs, color: colors.textMuted, fontWeight: '600' },
   metricCard: { gap: spacing.sm },
   metricTop: {
     flexDirection: 'row',
@@ -193,4 +311,33 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: spacing.md,
   },
   noteText: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...shadows.card,
+  },
+  modalHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  modalEmoji: { fontSize: 36 },
+  modalTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+  modalPercent: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark, marginTop: 2 },
+  modalBarBg: { height: 10, borderRadius: 5, backgroundColor: colors.border, overflow: 'hidden', marginVertical: 4 },
+  modalBarFill: { height: '100%', borderRadius: 5 },
+  modalSection: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text, marginTop: spacing.xs },
+  modalText: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
+  modalCloseBtn: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  modalCloseText: { color: colors.white, fontWeight: '800', fontSize: fontSizes.md },
 });
