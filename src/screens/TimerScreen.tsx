@@ -50,7 +50,7 @@ export function TimerScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.titleRow}><MapBadge code="6" /><Text style={styles.title}>Dayanma Sayacı</Text></View>
+        <View style={styles.titleRow}><MapBadge code="4" /><Text style={styles.title}>Dayanma Sayacı</Text></View>
         <Text style={styles.subtitle}>
           Sigarasız geçirilecek bir süre belirle. Bir sigara içersen sayaç seçtiğin süreyle
           otomatik yeniden başlar. Süre dolunca uygulama 5 kez titretip sesli haber verir.

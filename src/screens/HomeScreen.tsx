@@ -303,7 +303,7 @@ export function HomeScreen(_props: HomeScreenProps) {
           <View style={styles.todayDashedBox}>
             <View style={styles.todayDashedLeft}>
               <View style={styles.mapTitleRow}>
-                <MapBadge code="4" />
+                <MapBadge code="6" />
                 <Text style={styles.todayCardTitle}>
                   {lang === 'en' ? 'Cigarettes today' : 'Bugün içtiklerin'}
                 </Text>
