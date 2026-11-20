@@ -21,7 +21,9 @@ import { Card } from '../components/Card';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { WidgetGalleryScreen } from './WidgetGalleryScreen';
+import { ProScreen } from './ProScreen';
 import { useApp } from '../context/AppContext';
+import { formatUnlockRemaining, hasProAccess, proUnlockRemainingMs } from '../lib/proAccess';
 import { CrisisReminder } from '../types';
 import { dailyGoal, formatMoney, todayKey } from '../lib/calculations';
 import { useInstallPrompt } from '../lib/install';
@@ -44,7 +46,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const {
     data,
     resetAll,
-    setPremium,
     setPlan,
     setShowLockScreen,
     logCigarette,
@@ -62,6 +63,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [proOpen, setProOpen] = useState(false);
 
   const defaultCrisis = useMemo<CrisisReminder[]>(
     () => [
@@ -562,19 +564,21 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         </Card>
 
         <Card>
-          <Text style={styles.cardLabel}>Bırak Gitsin Premium</Text>
+          <Text style={styles.cardLabel}>Bırak Gitsin PRO</Text>
           <Text style={styles.planSub}>
-            Yakında: ana ekran widget’ı (tek dokunuşla kayıt), reklamsız deneyim,
-            kişiselleştirilmiş raporlar ve tam rozet koleksiyonu. Widget; EAS ile
-            derlenen gerçek uygulama sürümünde aktif olacak.
+            {data.isPremium
+              ? 'PRO aktif. Gelişmiş simülatör senaryoları ve özel başarı kartı temaları açık.'
+              : hasProAccess(data)
+                ? `Geçici PRO açık (${formatUnlockRemaining(proUnlockRemainingMs(data))} kaldı). Gelişmiş özellikleri deneyebilirsin.`
+                : 'Günde yarım paket sigara fiyatına kendi sağlığına ve geleceğine yatırım yap. Aylık, yıllık veya ömür boyu paketlerle PRO özellikleri aç.'}
           </Text>
           <View style={styles.inlineRow}>
             <Pressable
-              style={[styles.smallBtn, data.isPremium && styles.smallBtnActive]}
-              onPress={() => setPremium(!data.isPremium)}
+              style={[styles.smallBtn, styles.smallBtnFill, styles.smallBtnActive]}
+              onPress={() => setProOpen(true)}
             >
-              <Text style={[styles.smallBtnText, data.isPremium && styles.smallBtnTextActive]}>
-                {data.isPremium ? 'Premium aktif' : 'Premium dene'}
+              <Text style={[styles.smallBtnText, styles.smallBtnTextActive]}>
+                {hasProAccess(data) ? 'PRO Durumunu Gör' : "PRO'yu Görüntüle"}
               </Text>
             </Pressable>
           </View>
@@ -584,11 +588,12 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.2.0</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.3.0</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
       <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
+      <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
       <Modal visible={guideOpen} animationType="slide" onRequestClose={() => setGuideOpen(false)}>
         <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

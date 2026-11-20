@@ -64,6 +64,8 @@ export type AppData = {
   savingsGoal?: SavingsGoal | null;
   crisisReminders?: CrisisReminder[];
   isPremium: boolean;
+  /** Ödüllü reklamla açılan geçici PRO erişiminin bitiş zamanı (ms). */
+  proUnlockUntil?: number;
   showLockScreen: boolean;
 };
 

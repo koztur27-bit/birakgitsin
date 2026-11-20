@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -20,10 +21,13 @@ import { ProgressBar } from '../components/ProgressBar';
 import { SavingsSimulator } from '../components/SavingsSimulator';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { SosBreathingModal } from '../components/SosBreathingModal';
-import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
+import { SHARE_THEMES, ShareThemeId, SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
 import { StatusPopup } from '../components/StatusPopup';
 import { useApp } from '../context/AppContext';
+import { hasProAccess } from '../lib/proAccess';
 import { updateWidgetData } from '../lib/widgetData';
+import { ProScreen } from './ProScreen';
+import { showRewardedUnlockAd } from '../lib/ads';
 import {
   avoidedOnDay,
   cigarettesAvoided,
@@ -73,6 +77,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     resetTimer,
     dismissTimer,
     setSavingsGoal,
+    grantProUnlock24h,
   } = useApp();
   const plan = data.plan;
   const [smokeNote, setSmokeNote] = useState<string | null>(null);
@@ -82,6 +87,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
+  const [proOpen, setProOpen] = useState(false);
   const [goalEditing, setGoalEditing] = useState(false);
   const [goalTitle, setGoalTitle] = useState(data.savingsGoal?.title ?? '');
   const [goalTarget, setGoalTarget] = useState(
@@ -100,8 +106,53 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   };
 
   const shareCardRef = useRef<SuccessShareCardHandle>(null);
-  const shareSuccess = async () => {
-    await shareCardRef.current?.share();
+  const isPro = hasProAccess(data);
+  const [shareTheme, setShareTheme] = useState<ShareThemeId>('classic');
+  const [sharePickerOpen, setSharePickerOpen] = useState(false);
+  const [shareUnlocking, setShareUnlocking] = useState(false);
+  const triggerShareWithTheme = (theme: ShareThemeId) => {
+    setShareTheme(theme);
+    setSharePickerOpen(false);
+    setTimeout(() => {
+      shareCardRef.current?.share();
+    }, 120);
+  };
+
+  const onSelectShareTheme = async (themeId: ShareThemeId, proOnly: boolean) => {
+    if (!proOnly || isPro) {
+      triggerShareWithTheme(themeId);
+      return;
+    }
+    Alert.alert(
+      'Özel Tema (PRO)',
+      'Özel başarı kartı temaları PRO özelliğidir. İstersen kısa bir reklam izleyerek bu temayı 24 saat ücretsiz kullanabilirsin.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Kısa Reklam İzle ve 24 Saat Aç',
+          onPress: async () => {
+            if (shareUnlocking) return;
+            setShareUnlocking(true);
+            try {
+              const res = await showRewardedUnlockAd();
+              if (res.rewarded) {
+                grantProUnlock24h();
+                Alert.alert('Erişim açıldı', 'PRO özellikler 24 saat boyunca açık.');
+                triggerShareWithTheme(themeId);
+              } else if (res.message) {
+                Alert.alert('Reklam', res.message);
+              }
+            } finally {
+              setShareUnlocking(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const shareSuccess = () => {
+    setSharePickerOpen(true);
   };
 
   const doUpdate = async () => {
@@ -239,6 +290,15 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             <View style={styles.mapRow}>
               <Text style={styles.brand}>Bırak Gitsin</Text>
               {mapNumbers ? <MapBadge code="1" /> : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Bırak Gitsin PRO"
+                style={[styles.proBadge, isPro && styles.proBadgeActive]}
+                onPress={() => setProOpen(true)}
+                hitSlop={6}
+              >
+                <Text style={[styles.proBadgeText, isPro && styles.proBadgeTextActive]}>PRO</Text>
+              </Pressable>
             </View>
             <Text style={styles.date}>{dateText}</Text>
           </View>
@@ -711,8 +771,41 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
 
       <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
       <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
+      <Modal visible={sharePickerOpen} transparent animationType="fade" onRequestClose={() => setSharePickerOpen(false)}>
+        <View style={styles.sharePickerOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setSharePickerOpen(false)} />
+          <View style={styles.sharePickerCard}>
+            <Text style={styles.sharePickerTitle}>Başarı Kartı Teması</Text>
+            <Text style={styles.sharePickerSub}>Klasik tema ücretsiz. Özel temalar PRO özelliğidir (reklam izleyerek 24 saat açılabilir).</Text>
+            {SHARE_THEMES.map((t) => {
+              const locked = t.proOnly && !isPro;
+              return (
+                <Pressable
+                  key={t.id}
+                  style={[styles.shareThemeRow, locked && styles.shareThemeRowLocked]}
+                  onPress={() => onSelectShareTheme(t.id, t.proOnly)}
+                >
+                  <View style={styles.shareThemeInfo}>
+                    <Text style={styles.shareThemeName}>{t.name}{locked ? ' 🔒' : ''}</Text>
+                    <Text style={styles.shareThemeMeta}>{t.proOnly ? (locked ? 'PRO / 24 saat reklamla aç' : 'PRO tema') : 'Ücretsiz'}</Text>
+                  </View>
+                  <View style={[styles.shareThemeSwatch, { backgroundColor: t.colors[1], borderColor: t.accent }]}>
+                    <View style={[styles.shareThemeSwatchDot, { backgroundColor: t.accent }]} />
+                  </View>
+                </Pressable>
+              );
+            })}
+            <Pressable style={styles.sharePickerClose} onPress={() => setSharePickerOpen(false)}>
+              <Text style={styles.sharePickerCloseText}>Vazgeç</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
       <SuccessShareCard
         ref={shareCardRef}
+        theme={shareTheme}
         durationText={`${Math.floor(elapsedDays(plan) * 24 / 24)} gün ${Math.floor(elapsedDays(plan) * 24) % 24} saat`}
         avoidedTotal={avoided}
         savedText={formatMoney(savedTotal, plan.currency)}
@@ -1147,4 +1240,71 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
   },
   heavyActionTextGhost: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
+  sharePickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+    padding: spacing.md,
+  },
+  sharePickerCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sharePickerTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+  sharePickerSub: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
+  shareThemeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  shareThemeRowLocked: { opacity: 0.95 },
+  shareThemeInfo: { flex: 1, gap: 2 },
+  shareThemeName: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
+  shareThemeMeta: { fontSize: fontSizes.xs, color: colors.textMuted },
+  shareThemeSwatch: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shareThemeSwatchDot: { width: 14, height: 14, borderRadius: 7 },
+  sharePickerClose: {
+    marginTop: 4,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  sharePickerCloseText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+  proBadge: {
+    marginLeft: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(124,255,178,0.6)',
+  },
+  proBadgeActive: {
+    backgroundColor: '#7CFFB2',
+    borderColor: '#7CFFB2',
+  },
+  proBadgeText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '900',
+    color: '#EAFBF3',
+    letterSpacing: 0.4,
+  },
+  proBadgeTextActive: {
+    color: '#0B3D2E',
+  },
 });

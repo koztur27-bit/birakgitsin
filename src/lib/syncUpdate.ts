@@ -1,7 +1,7 @@
 import { Alert, Linking } from 'react-native';
 import { refreshWidgets } from './widgetData';
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.3.0';
 const RELEASES_API = 'https://api.github.com/repos/koztur27-bit/birakgitsin/releases/tags/apk-latest';
 const RELEASES_PAGE = 'https://github.com/koztur27-bit/birakgitsin/releases/tag/apk-latest';
 
@@ -37,7 +37,7 @@ async function checkForAppUpdate(): Promise<UpdateCheckResult> {
     const res = await fetch(RELEASES_API, {
       headers: {
         Accept: 'application/vnd.github+json',
-        'User-Agent': 'BirakGitsin/1.2.0',
+        'User-Agent': 'BirakGitsin/1.3.0',
       },
       signal: controller?.signal,
     }).finally(() => clearTimeout(timer));

@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useApp } from '../context/AppContext';
+import { showRewardedUnlockAd } from '../lib/ads';
+import { hasProAccess } from '../lib/proAccess';
 import { useTheme } from '../context/ThemeContext';
 import {
   cigarettesAvoided,
@@ -34,6 +37,42 @@ function clamp(n: number, min: number, max: number) {
 export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const { data, grantProUnlock24h } = useApp();
+  const proAllowed = hasProAccess(data);
+  const [unlocking, setUnlocking] = useState(false);
+
+  const requestProOrAd = (onUnlocked?: () => void) => {
+    if (proAllowed) {
+      onUnlocked?.();
+      return;
+    }
+    Alert.alert(
+      'PRO Özellik',
+      'Gelişmiş simülatör senaryoları PRO kullanıcılarına özeldir. İstersen kısa bir reklam izleyerek bu özelliği 24 saat ücretsiz açabilirsin.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Kısa Reklam İzle ve 24 Saat Aç',
+          onPress: async () => {
+            if (unlocking) return;
+            setUnlocking(true);
+            try {
+              const res = await showRewardedUnlockAd();
+              if (res.rewarded) {
+                grantProUnlock24h();
+                Alert.alert('Erişim açıldı', 'Gelişmiş simülatör senaryoları 24 saat boyunca açık.');
+                onUnlocked?.();
+              } else if (res.message) {
+                Alert.alert('Reklam', res.message);
+              }
+            } finally {
+              setUnlocking(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const today = todayKey();
   const baseline = Math.max(0, plan.baselinePerDay);
@@ -73,8 +112,15 @@ export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
     activePerDay !== null ? Math.max(0, baseline - activePerDay) : null;
 
   const adjust = (delta: number) => {
-    setMode('custom');
-    setCustomPerDay((v) => clamp(Math.round(v + delta), 0, baseline));
+    const apply = () => {
+      setMode('custom');
+      setCustomPerDay((v) => clamp(Math.round(v + delta), 0, baseline));
+    };
+    if (!proAllowed) {
+      requestProOrAd(apply);
+      return;
+    }
+    apply();
   };
 
   return (
@@ -103,14 +149,26 @@ export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.modeBtn, mode === 'custom' && styles.modeBtnActive]}
-          onPress={() => setMode('custom')}
+          style={[styles.modeBtn, mode === 'custom' && styles.modeBtnActive, !proAllowed && styles.modeBtnLocked]}
+          onPress={() => {
+            if (!proAllowed) {
+              requestProOrAd(() => setMode('custom'));
+              return;
+            }
+            setMode('custom');
+          }}
         >
           <Text style={[styles.modeBtnText, mode === 'custom' && styles.modeBtnTextActive]}>
-            Kendim belirleyeyim
+            {proAllowed ? 'Kendim belirleyeyim' : 'Kendim belirleyeyim 🔒'}
           </Text>
         </Pressable>
       </View>
+
+      {!proAllowed ? (
+        <Text style={styles.customHint}>
+          Gelişmiş &quot;kendim belirleyeyim&quot; senaryosu PRO özelliğidir. İstersen kısa reklam izleyerek 24 saat açabilirsin.
+        </Text>
+      ) : null}
 
       {mode === 'custom' ? (
         <View style={styles.customBox}>
@@ -135,8 +193,15 @@ export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
             <Pressable
               style={styles.adjustBtnWide}
               onPress={() => {
-                setMode('custom');
-                setCustomPerDay(currentGoalToday);
+                const apply = () => {
+                  setMode('custom');
+                  setCustomPerDay(currentGoalToday);
+                };
+                if (!proAllowed) {
+                  requestProOrAd(apply);
+                  return;
+                }
+                apply();
               }}
             >
               <Text style={styles.adjustBtnText}>Bugünkü hedef</Text>
@@ -197,6 +262,7 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.bg,
     },
     modeBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    modeBtnLocked: { borderStyle: 'dashed' },
     modeBtnText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
     modeBtnTextActive: { color: colors.white },
     customBox: { gap: 6 },

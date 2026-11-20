@@ -10,7 +10,9 @@ const defaultData: AppData = {
   badges: [],
   savingsGoal: null,
   crisisReminders: [],
+  nrtLogs: [],
   isPremium: false,
+  proUnlockUntil: 0,
   showLockScreen: true,
 };
 

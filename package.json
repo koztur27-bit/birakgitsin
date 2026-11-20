@@ -1,6 +1,6 @@
 {
   "name": "birakgitsin",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "main": "index.ts",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -15,6 +15,7 @@
     "expo-intent-launcher": "~57.0.1",
     "expo-linear-gradient": "~57.0.2",
     "expo-notifications": "~57.0.25",
+    "expo-sharing": "~57.0.0",
     "expo-splash-screen": "~57.0.11",
     "expo-status-bar": "~57.0.1",
     "expo-updates": "~57.0.28",
@@ -22,10 +23,11 @@
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-android-widget": "^0.26.0",
+    "react-native-google-mobile-ads": "^15.6.0",
+    "react-native-iap": "^17.4.1",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-web": "^0.21.2",
-    "expo-sharing": "~57.0.0",
-    "react-native-view-shot": "4.0.3"
+    "react-native-view-shot": "4.0.3",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

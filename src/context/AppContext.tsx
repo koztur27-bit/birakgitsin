@@ -58,6 +58,7 @@ type AppContextValue = {
   setCrisisReminders: (reminders: CrisisReminder[]) => Promise<void>;
   resetAll: () => void;
   setPremium: (value: boolean) => void;
+  grantProUnlock24h: () => void;
   setShowLockScreen: (value: boolean) => void;
   timer: TimerState;
   setTimerDuration: (minutes: number) => void;
@@ -167,6 +168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     badges: [],
     savingsGoal: null,
     isPremium: false,
+    proUnlockUntil: 0,
     showLockScreen: true,
   });
   const [ready, setReady] = useState(false);
@@ -634,11 +636,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       savingsGoal: null,
       crisisReminders: [],
       isPremium: false,
+      proUnlockUntil: 0,
       showLockScreen: true,
     });
   };
 
   const setPremium = (value: boolean) => persist({ ...data, isPremium: value });
+
+  const grantProUnlock24h = () =>
+    persist({ ...data, proUnlockUntil: Date.now() + 24 * 60 * 60 * 1000 });
 
   const setShowLockScreen = (value: boolean) => persist({ ...data, showLockScreen: value });
 
@@ -667,6 +673,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }))
         : [],
       isPremium: !!incoming.isPremium,
+      proUnlockUntil:
+        typeof incoming.proUnlockUntil === 'number' && Number.isFinite(incoming.proUnlockUntil)
+          ? incoming.proUnlockUntil
+          : 0,
       showLockScreen: incoming.showLockScreen !== false,
     };
     persist(clean);
@@ -716,6 +726,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCrisisReminders,
     resetAll,
     setPremium,
+    grantProUnlock24h,
     setShowLockScreen,
     timer,
     setTimerDuration,
