@@ -39,16 +39,24 @@ jobs:
         if: ${{ hashFiles('package.json') != '' && hashFiles('android/gradlew') == '' }}
         run: CI=1 npx expo prebuild --platform android --clean --no-install
 
-      - name: aapt2 ayari
+      - name: Gradle hizlandirma ve aapt2 ayari
         if: ${{ hashFiles('android/**') != '' }}
         run: |
           mkdir -p android
           touch android/gradle.properties
+          set_prop() { key="$1"; val="$2"; if grep -q "^${key}=" android/gradle.properties; then sed -i "s|^${key}=.*|${key}=${val}|" android/gradle.properties; else echo "${key}=${val}" >> android/gradle.properties; fi; }
+          set_prop org.gradle.daemon true
+          set_prop org.gradle.parallel true
+          set_prop org.gradle.caching true
+          set_prop org.gradle.configureondemand true
+          set_prop org.gradle.jvmargs "-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+          set_prop reactNativeArchitectures arm64-v8a
           AAPT2="${ANDROID_HOME:-$HOME/Android/Sdk}/build-tools/36.0.0/aapt2"
           if [ -x "$AAPT2" ]; then
-            grep -q '^android.aapt2FromMavenOverride=' android/gradle.properties || \
-              echo "android.aapt2FromMavenOverride=$AAPT2" >> android/gradle.properties
+            set_prop android.aapt2FromMavenOverride "$AAPT2"
           fi
+          echo "--- android/gradle.properties (key props) ---"
+          grep -E '^(org.gradle.daemon|org.gradle.parallel|org.gradle.caching|org.gradle.configureondemand|org.gradle.jvmargs|reactNativeArchitectures|android.aapt2FromMavenOverride)=' android/gradle.properties || true
 
       - name: Surum bilgisini al
         id: ver
