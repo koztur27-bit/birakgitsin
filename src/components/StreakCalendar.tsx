@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../i18n';
@@ -14,20 +14,52 @@ type Props = {
   month: number;
 };
 
+const FALLBACK_WEEKDAYS_TR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+const FALLBACK_WEEKDAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 export function StreakCalendar({ plan, logs, slipLogs = [], year, month }: Props) {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, ta, locale } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
 
-  const first = new Date(year, month, 1);
+  const safeLogs = useMemo(() => (Array.isArray(logs) ? logs : []), [logs]);
+  const safeSlipLogs = useMemo(() => (Array.isArray(slipLogs) ? slipLogs : []), [slipLogs]);
+
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const lead = (first.getDay() + 6) % 7; // Monday-based
+  const lead = (new Date(year, month, 1).getDay() + 6) % 7; // Monday-based
   const today = new Date();
   const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const planStart = parseKey(plan.startDate).getTime();
-  const slips = React.useMemo(() => slipDaySet(slipLogs), [slipLogs]);
 
-  const weekdays = (t('stats.weekdays') as unknown as string[]) || ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const planStart = useMemo(() => {
+    try {
+      if (plan?.startDate && typeof parseKey === 'function') return parseKey(plan.startDate).getTime();
+    } catch {}
+    return 0;
+  }, [plan?.startDate]);
+
+  const slips = useMemo(() => {
+    try {
+      if (typeof slipDaySet === 'function') return slipDaySet(safeSlipLogs);
+      const out = new Set<string>();
+      safeSlipLogs.forEach((s: any) => {
+        try {
+          if (s?.timestamp && typeof dayKey === 'function') out.add(dayKey(new Date(s.timestamp)));
+        } catch {}
+      });
+      return out;
+    } catch {}
+    return new Set<string>();
+  }, [safeSlipLogs]);
+
+  const weekdays = useMemo(() => {
+    try {
+      if (typeof ta === 'function') {
+        const arr = ta<string[]>('stats.weekdays');
+        if (Array.isArray(arr) && arr.length === 7) return arr;
+      }
+    } catch {}
+    return locale === 'en' ? FALLBACK_WEEKDAYS_EN : FALLBACK_WEEKDAYS_TR;
+  }, [ta, locale]);
 
   const cells: (number | null)[] = [
     ...Array.from({ length: lead }, () => null),
@@ -35,23 +67,27 @@ export function StreakCalendar({ plan, logs, slipLogs = [], year, month }: Props
   ];
 
   const getStatus = (day: number): 'future' | 'smokefree' | 'slip' | 'smoked' | 'before' => {
-    const d = new Date(year, month, day);
-    const dMid = new Date(year, month, day).getTime();
-    if (dMid > todayMid) return 'future';
-    if (dMid < planStart) return 'before';
-    const key = dayKey(d);
-    if (slips.has(key)) return 'slip';
-    const rec = getLog(logs, key);
-    if ((rec.smoked || 0) === 0) return 'smokefree';
-    return 'smoked';
+    try {
+      const d = new Date(year, month, day);
+      const dMid = new Date(year, month, day).getTime();
+      if (dMid > todayMid) return 'future';
+      if (dMid < planStart) return 'before';
+      const key = typeof dayKey === 'function' ? dayKey(d) : '';
+      if (key && slips && typeof (slips as Set<string>).has === 'function' && (slips as Set<string>).has(key)) return 'slip';
+      const rec = typeof getLog === 'function' ? getLog(safeLogs as any, key) : { smoked: 0 };
+      if ((rec?.smoked || 0) === 0) return 'smokefree';
+      return 'smoked';
+    } catch {
+      return 'future';
+    }
   };
 
   return (
     <View>
       <View style={styles.weekRow}>
-        {weekdays.map((d, i) => (
-          <Text key={`${d}-${i}`} style={styles.weekLabel}>
-            {d}
+        {(Array.isArray(weekdays) ? weekdays : FALLBACK_WEEKDAYS_TR).map((d, i) => (
+          <Text key={`${String(d)}-${i}`} style={styles.weekLabel}>
+            {String(d)}
           </Text>
         ))}
       </View>
@@ -136,7 +172,7 @@ const createStyles = (colors: any) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    circleGreen: { backgroundColor: '#10B981' }, // emerald
+    circleGreen: { backgroundColor: '#10B981' },
     circleYellow: { backgroundColor: '#F59E0B' },
     circleSmoked: { backgroundColor: '#FECACA' },
     circleFuture: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, opacity: 0.45 },

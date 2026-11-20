@@ -178,7 +178,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   };
 
   const todayPledged = (data.dailyPledges || []).includes(todayKey());
-  const currentPledgeStreak = pledgeStreak(data.dailyPledges || []);
+  const currentPledgeStreak = typeof pledgeStreak === 'function' ? pledgeStreak(data.dailyPledges || []) : 0;
   const onPledgePress = () => {
     if (todayPledged) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
