@@ -43,6 +43,16 @@ export type NrtLog = {
   amount: number;
 };
 
+export type SlipLog = {
+  timestamp: string;
+  trigger?: string;
+};
+
+export type CoachUsage = {
+  date: string; // YYYY-MM-DD
+  count: number;
+};
+
 export type SavingsGoal = {
   title: string;
   target: number;
@@ -71,6 +81,10 @@ export type AppData = {
   showLockScreen: boolean;
   /** Uygulama dili. İlk açılışta sistem dilinden algılanır ve kalıcı saklanır. */
   language?: AppLanguage;
+  /** "1 Dal İçtim" kaçamak kayıtları (tetikleyici analizi için). */
+  slipLogs?: SlipLog[];
+  /** Bırakma koçu günlük mesaj kullanımı (günde 5 ücretsiz). */
+  coachUsage?: CoachUsage;
 };
 
 export type TabKey = 'home' | 'craving' | 'timer' | 'stats' | 'health' | 'settings';

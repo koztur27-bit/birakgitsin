@@ -9,7 +9,10 @@ import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessS
 import { ProgressBar } from '../components/ProgressBar';
 import { WeekChart } from '../components/WeekChart';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import { badgeDefs } from '../lib/badges';
+import { analyzeTriggers, adviceForTrigger, triggerLabel, formatHourRange } from '../lib/triggerAnalysis';
+import { computeMedals } from '../lib/medals';
 import {
   averageIntensity,
   buildDaysStat,
@@ -55,6 +58,7 @@ export function StatsScreen() {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { data } = useApp();
+  const { t, locale } = useI18n();
   const plan = data.plan;
   const shareCardRef = useRef<SuccessShareCardHandle>(null);
   const shareSuccess = async () => {
@@ -71,6 +75,19 @@ export function StatsScreen() {
   const days = daysSinceStart(plan);
   const saved = totalMoneySaved(plan, data.logs);
   const avoided = cigarettesAvoided(plan, data.logs);
+  const triggerMap = analyzeTriggers(data.cravings, data.slipLogs ?? []);
+  const medals = computeMedals(data);
+  const shareChallenge = async () => {
+    try {
+      const msg = t('medals.challengeMsg', {
+        days: Math.max(0, days),
+        saved: formatMoney(saved, plan.currency),
+      });
+      await Share.share({ title: t('medals.challengeTitle'), message: msg });
+    } catch {
+      Alert.alert(t('alerts.error') || 'Hata', locale === 'en' ? 'Could not share right now.' : 'Şu anda paylaşım açılamadı.');
+    }
+  };
   const smoked = totalSmoked(data.logs);
   const list = milestones();
   const todayRecord = getLog(data.logs, todayKey());
@@ -312,6 +329,33 @@ export function StatsScreen() {
         </Card>
 
         <Card>
+          <Text style={styles.cardLabel}>{t('medals.title')}</Text>
+          <Text style={styles.cardHint}>{t('medals.subtitle')}</Text>
+          <View style={styles.medalGrid}>
+            {medals.map((m) => {
+              const def = (t('medals.list') as any)[m.id] || { title: m.id, desc: '' };
+              const pct = Math.round(m.progress * 100);
+              return (
+                <View key={m.id} style={[styles.medalCard, m.earned ? styles.medalCardEarned : styles.medalCardLocked]}>
+                  <Text style={[styles.medalIcon, !m.earned && styles.medalIconLocked]}>{m.earned ? '🏅' : '🔒'}</Text>
+                  <Text style={[styles.medalTitle, !m.earned && styles.medalTitleLocked]} numberOfLines={2}>{def.title}</Text>
+                  <Text style={styles.medalDesc} numberOfLines={2}>{def.desc}</Text>
+                  <View style={styles.medalProgressTrack}>
+                    <View style={[styles.medalProgressFill, { width: `${pct}%`, backgroundColor: m.earned ? colors.success : colors.primary }]} />
+                  </View>
+                  <Text style={[styles.medalStatus, m.earned && styles.medalStatusEarned]}>
+                    {m.earned ? t('medals.earned') : `${t('medals.progress')}: %${pct}`}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          <Pressable style={({ pressed }) => [styles.challengeBtn, pressed && { opacity: 0.85 }]} onPress={shareChallenge}>
+            <Text style={styles.challengeBtnText}>{t('medals.challengeBtn')}</Text>
+          </Pressable>
+        </Card>
+
+        <Card>
           <Text style={styles.cardLabel}>Sağlık kilometre taşları</Text>
           {nextHealth ? (
             <>
@@ -409,6 +453,81 @@ export function StatsScreen() {
               <Text style={styles.cardHint}>
                 Toplam {hourHist.reduce((a, b) => a + b, 0)} istek kaydın var.
               </Text>
+            </>
+          )}
+        </Card>
+
+        <Card>
+          <Text style={styles.cardLabel}>{t('triggerMap.title')}</Text>
+          <Text style={styles.cardHint}>{t('triggerMap.subtitle')}</Text>
+          {triggerMap.totalEvents === 0 ? (
+            <Text style={[styles.cardHint, { marginTop: spacing.sm }]}>{t('triggerMap.noData')}</Text>
+          ) : (
+            <>
+              <View style={styles.tmSummaryRow}>
+                <View style={styles.tmSummaryBox}>
+                  <Text style={styles.tmSummaryLabel}>{t('triggerMap.topTrigger')}</Text>
+                  <Text style={styles.tmSummaryValue}>
+                    {triggerMap.primary ? triggerLabel(triggerMap.primary.key, locale) : '—'}
+                  </Text>
+                </View>
+                <View style={styles.tmSummaryBox}>
+                  <Text style={styles.tmSummaryLabel}>{t('triggerMap.peakHours')}</Text>
+                  <Text style={styles.tmSummaryValue}>
+                    {triggerMap.peakRange ? formatHourRange(triggerMap.peakRange.start, triggerMap.peakRange.end) : '—'}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.analysisHead}>{t('triggerMap.triggerCounts')}</Text>
+              {(triggerMap.triggerEntries.length ? triggerMap.triggerEntries : []).map((e) => (
+                <View key={e.key} style={styles.riskRow}>
+                  <Text style={styles.riskHour}>{triggerLabel(e.key, locale)}</Text>
+                  <View style={styles.riskBarWrap}>
+                    <View
+                      style={[
+                        styles.riskBar,
+                        { width: `${Math.max(8, (e.count / triggerMap.maxTrigger) * 100)}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.riskCount}>{e.count}×</Text>
+                </View>
+              ))}
+              {triggerMap.triggerEntries.length === 0 ? (
+                <Text style={styles.cardHint}>{t('triggerMap.noData')}</Text>
+              ) : null}
+
+              <Text style={styles.analysisHead}>{t('triggerMap.hourCounts')}</Text>
+              {(triggerMap.hourEntries.length ? triggerMap.hourEntries : []).map((e) => (
+                <View key={e.hour} style={styles.riskRow}>
+                  <Text style={styles.riskHour}>
+                    {String(e.hour).padStart(2, '0')}:00–{String((e.hour + 1) % 24).padStart(2, '0')}:00
+                  </Text>
+                  <View style={styles.riskBarWrap}>
+                    <View
+                      style={[
+                        styles.riskBar,
+                        { width: `${Math.max(8, (e.count / triggerMap.maxHour) * 100)}%`, backgroundColor: colors.danger },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.riskCount}>{e.count}×</Text>
+                </View>
+              ))}
+              {triggerMap.hourEntries.length === 0 ? (
+                <Text style={styles.cardHint}>{t('triggerMap.slips')}: {triggerMap.slipCount} · {t('triggerMap.events', { count: triggerMap.totalEvents })}</Text>
+              ) : null}
+
+              <View style={styles.tmAdviceCard}>
+                <Text style={styles.tmAdviceTitle}>{t('triggerMap.adviceTitle')}</Text>
+                <Text style={styles.tmAdviceText}>
+                  {adviceForTrigger(triggerMap.primary ? triggerMap.primary.key : 'other', locale)}
+                </Text>
+                <Text style={styles.tmAdviceMeta}>
+                  {t('triggerMap.slips')}: {triggerMap.slipCount} · {t('triggerMap.events', { count: triggerMap.totalEvents })}
+                </Text>
+              </View>
             </>
           )}
         </Card>
@@ -698,4 +817,55 @@ const createStyles = (colors: any) => StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: spacing.md,
   },
+  tmSummaryRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  tmSummaryBox: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tmSummaryLabel: { fontSize: fontSizes.xs, color: colors.textMuted, fontWeight: '700' },
+  tmSummaryValue: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark, marginTop: 4 },
+  tmAdviceCard: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.accentSoft || colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tmAdviceTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text },
+  tmAdviceText: { fontSize: fontSizes.sm, color: colors.text, lineHeight: 20, marginTop: spacing.xs },
+  tmAdviceMeta: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: spacing.sm },
+  medalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  medalCard: {
+    width: '48%',
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+    gap: 4,
+  },
+  medalCardEarned: { backgroundColor: colors.primarySoft, borderColor: colors.primary, opacity: 1 },
+  medalCardLocked: { opacity: 0.6 },
+  medalIcon: { fontSize: 22 },
+  medalIconLocked: { opacity: 0.7 },
+  medalTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text },
+  medalTitleLocked: { color: colors.textMuted },
+  medalDesc: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 16 },
+  medalProgressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden', marginTop: 4 },
+  medalProgressFill: { height: '100%', borderRadius: 3 },
+  medalStatus: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.textMuted, marginTop: 2 },
+  medalStatusEarned: { color: colors.success },
+  challengeBtn: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  challengeBtnText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
 });

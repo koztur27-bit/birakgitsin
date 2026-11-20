@@ -44,7 +44,7 @@ if (Platform.OS !== 'web') {
   });
 }
 
-type LogOptions = { dateKey?: string; windowIndex?: number | null };
+type LogOptions = { dateKey?: string; windowIndex?: number | null; trigger?: string };
 
 type AppContextValue = {
   data: AppData;
@@ -62,6 +62,7 @@ type AppContextValue = {
   grantProUnlock24h: () => void;
   setShowLockScreen: (value: boolean) => void;
   setLanguage: (language: AppLanguage) => void;
+  incrementCoachUsage: () => void;
   timer: TimerState;
   setTimerDuration: (minutes: number) => void;
   startTimer: (minutes?: number) => void;
@@ -172,6 +173,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     isPremium: false,
     proUnlockUntil: 0,
     showLockScreen: true,
+    slipLogs: [],
+    coachUsage: { date: '', count: 0 },
   });
   const [ready, setReady] = useState(false);
   const [timer, setTimer] = useState<TimerState>(defaultTimer);
@@ -551,10 +554,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Şefkatli "kaçamak" kaydı: +1 sigara işler, tasarruf/ilerleme sıfırlanmaz;
   // sert alarm/sayaç yeniden başlatma yok, yalnızca nazik geri bildirim.
   const logSlip = (opts?: LogOptions): { avoided: number } => {
-    const next = withBadges(
+    const mutated = withBadges(
       mutateLog(opts?.dateKey ?? todayKey(), 1, opts?.windowIndex === undefined ? null : opts.windowIndex),
       true,
     );
+    const slipEntry = { timestamp: new Date().toISOString(), trigger: opts?.trigger };
+    const next = { ...mutated, slipLogs: [...(mutated.slipLogs ?? []), slipEntry] };
     persist(next);
     if (Platform.OS === 'web') {
       try {
@@ -642,6 +647,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       proUnlockUntil: 0,
       showLockScreen: true,
       language: data.language || detectSystemLanguage(),
+      slipLogs: [],
+      coachUsage: { date: '', count: 0 },
     });
   };
 
@@ -653,6 +660,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setShowLockScreen = (value: boolean) => persist({ ...data, showLockScreen: value });
 
   const setLanguage = (language: AppLanguage) => persist({ ...data, language });
+
+  const incrementCoachUsage = () => {
+    const today = todayKey();
+    const prev = data.coachUsage;
+    const count = prev && prev.date === today ? Math.max(0, prev.count) + 1 : 1;
+    persist({ ...data, coachUsage: { date: today, count } });
+  };
 
   const restoreData = (incoming: AppData) => {
     const clean: AppData = {
@@ -685,6 +699,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           : 0,
       showLockScreen: incoming.showLockScreen !== false,
       language: incoming.language === 'tr' || incoming.language === 'en' ? incoming.language : (data.language || detectSystemLanguage()),
+      slipLogs: Array.isArray((incoming as any).slipLogs)
+        ? (incoming as any).slipLogs
+            .filter((s: any) => s && typeof s.timestamp === 'string')
+            .map((s: any) => ({ timestamp: s.timestamp, trigger: typeof s.trigger === 'string' ? s.trigger : undefined }))
+        : [],
+      coachUsage:
+        (incoming as any).coachUsage && typeof (incoming as any).coachUsage === 'object'
+          ? {
+              date: typeof (incoming as any).coachUsage.date === 'string' ? (incoming as any).coachUsage.date : '',
+              count: Number.isFinite((incoming as any).coachUsage.count) ? Math.max(0, (incoming as any).coachUsage.count) : 0,
+            }
+          : { date: '', count: 0 },
     };
     persist(clean);
     if (Platform.OS !== 'web') {
@@ -736,6 +762,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     grantProUnlock24h,
     setShowLockScreen,
     setLanguage,
+    incrementCoachUsage,
     timer,
     setTimerDuration,
     startTimer,

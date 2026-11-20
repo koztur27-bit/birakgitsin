@@ -21,6 +21,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { SavingsSimulator } from '../components/SavingsSimulator';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { SosBreathingModal } from '../components/SosBreathingModal';
+import { CoachChatModal } from '../components/CoachChatModal';
 import { SHARE_THEMES, ShareThemeId, SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
 import { StatusPopup } from '../components/StatusPopup';
 import { useApp } from '../context/AppContext';
@@ -90,6 +91,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [goalEditing, setGoalEditing] = useState(false);
   const [goalTitle, setGoalTitle] = useState(data.savingsGoal?.title ?? '');
@@ -356,6 +358,21 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             <Text style={styles.sosSub}>60 sn nefes egzersizi veya baloncuk oyunu</Text>
           </View>
           <Text style={styles.sosArrow}>›</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('coach.talkButton')}
+          style={({ pressed }) => [styles.coachBtn, pressed && styles.pressed]}
+          onPress={() => setCoachOpen(true)}
+        >
+          {mapNumbers ? <MapBadge code="10b" style={styles.sosBadge} /> : null}
+          <Text style={styles.coachEmoji}>💬</Text>
+          <View style={styles.sosText}>
+            <Text style={styles.coachTitle}>{t('coach.talkButton')}</Text>
+            <Text style={styles.coachSub}>{t('coach.talkButtonSub')}</Text>
+          </View>
+          <Text style={styles.coachArrow}>›</Text>
         </Pressable>
 
         {heavyMode ? (
@@ -776,6 +793,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
 
       <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
       <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
+      <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
       <Modal visible={sharePickerOpen} transparent animationType="fade" onRequestClose={() => setSharePickerOpen(false)}>
         <View style={styles.sharePickerOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setSharePickerOpen(false)} />
@@ -1179,6 +1197,21 @@ const createStyles = (colors: any) => StyleSheet.create({
   sosTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.danger },
   sosSub: { fontSize: fontSizes.xs, color: colors.textMuted },
   sosArrow: { fontSize: fontSizes.xl, color: colors.danger },
+  coachBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.primaryDark || colors.primary,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  coachEmoji: { fontSize: 26 },
+  coachTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
+  coachSub: { fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.9)' },
+  coachArrow: { fontSize: fontSizes.xl, color: colors.white },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   goalCard: { gap: spacing.sm },
   goalForm: { gap: spacing.sm, marginTop: spacing.xs },

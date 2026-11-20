@@ -39,6 +39,8 @@ const defaultData: AppData = {
   proUnlockUntil: 0,
   showLockScreen: true,
   language: 'en',
+  slipLogs: [],
+  coachUsage: { date: '', count: 0 },
 };
 
 export async function loadData(): Promise<AppData> {
@@ -54,6 +56,15 @@ export async function loadData(): Promise<AppData> {
     }
     const parsed = JSON.parse(raw);
     const merged = { ...defaultData, ...parsed } as AppData;
+    if (!Array.isArray(merged.slipLogs)) merged.slipLogs = [];
+    if (!merged.coachUsage || typeof merged.coachUsage !== 'object') {
+      merged.coachUsage = { date: '', count: 0 };
+    } else {
+      merged.coachUsage = {
+        date: typeof (merged.coachUsage as any).date === 'string' ? (merged.coachUsage as any).date : '',
+        count: Number.isFinite((merged.coachUsage as any).count) ? Math.max(0, (merged.coachUsage as any).count) : 0,
+      };
+    }
     if (merged.language !== 'tr' && merged.language !== 'en') {
       merged.language = detectSystemLanguage();
       try {

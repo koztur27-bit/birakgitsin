@@ -6,7 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { BubblePopGame } from '../components/BubblePopGame';
+import { CoachChatModal } from '../components/CoachChatModal';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import { triggerAction } from '../lib/coach';
 import { fontSizes, radius, spacing } from '../theme';
 
@@ -58,6 +60,8 @@ export function CravingScreen() {
   const heavyMode = !!plan?.heavySmokerMode && (plan?.baselinePerDay ?? 0) >= 20;
 
   const [tool, setTool] = useState<Tool>('breath');
+  const [coachOpen, setCoachOpen] = useState(false);
+  const { t } = useI18n();
 
   const [running, setRunning] = useState(false);
   const [phaseIndex, setPhaseIndex] = useState(0);
@@ -181,6 +185,19 @@ export function CravingScreen() {
           Canın sigara çektiğinde buraya gel. İstek ortalama 3–5 dakika sürer; bu araçlarla
           tepe noktasını geç.
         </Text>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setCoachOpen(true)}
+          style={({ pressed }) => [styles.coachBtn, pressed && { opacity: 0.85 }]}
+        >
+          <Text style={styles.coachEmoji}>💬</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.coachTitle}>{t('coach.talkButton')}</Text>
+            <Text style={styles.coachSub}>{t('coach.talkButtonSub')}</Text>
+          </View>
+          <Text style={styles.coachArrow}>›</Text>
+        </Pressable>
 
         {heavyMode ? (
           <Card style={styles.heavySupportCard}>
@@ -429,6 +446,7 @@ export function CravingScreen() {
           </View>
         </Card>
       </ScrollView>
+      <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
     </View>
   );
 }
@@ -702,4 +720,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignSelf: 'stretch',
     backgroundColor: colors.border,
   },
+  coachBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  coachEmoji: { fontSize: 24 },
+  coachTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
+  coachSub: { fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.9)', marginTop: 2 },
+  coachArrow: { fontSize: 24, color: colors.white },
 });
