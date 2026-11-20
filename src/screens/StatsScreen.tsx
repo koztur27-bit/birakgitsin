@@ -58,6 +58,11 @@ export function StatsScreen() {
   const plan = data.plan;
   const isEn = (data.language || locale || 'tr') === 'en';
 
+  const logs = Array.isArray(data.logs) ? data.logs : [];
+  const cravings = Array.isArray(data.cravings) ? data.cravings : [];
+  const slipLogs = Array.isArray(data.slipLogs) ? data.slipLogs : [];
+  const badges = Array.isArray(data.badges) ? data.badges : [];
+
   const shareCardRef = useRef<SuccessShareCardHandle>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const openShareModal = () => setShareModalOpen(true);
@@ -86,16 +91,16 @@ export function StatsScreen() {
 
   if (!plan) return null;
 
-  const week = buildDaysStat(plan, data.logs, 7);
-  const avg = week.reduce((s, d) => s + d.smoked, 0) / week.length;
+  const week = buildDaysStat(plan, logs, 7);
+  const avg = week.length ? week.reduce((s, d) => s + (d.smoked || 0), 0) / week.length : 0;
   const days = daysSinceStart(plan);
-  const saved = totalMoneySaved(plan, data.logs);
+  const saved = totalMoneySaved(plan, logs);
   const savingsGoal = data.savingsGoal;
   const goalProgress = savingsGoal && savingsGoal.target > 0 ? Math.min(1, Math.max(0, saved / savingsGoal.target)) : 0;
   const goalRemaining = savingsGoal ? Math.max(0, savingsGoal.target - saved) : 0;
-  const avoided = cigarettesAvoided(plan, data.logs);
-  const triggerMap = analyzeTriggers(data.cravings, data.slipLogs ?? []);
-  const medals = computeMedals(data);
+  const avoided = cigarettesAvoided(plan, logs);
+  const triggerMap = analyzeTriggers(cravings, slipLogs);
+  const medals = computeMedals({ ...data, logs, cravings, slipLogs, badges } as any);
   const medalDefs = (ta('medals.list') as Record<string, { title: string; desc: string }>) || {};
 
   const shareChallenge = async () => {
@@ -110,17 +115,16 @@ export function StatsScreen() {
     }
   };
 
-  const smoked = totalSmoked(data.logs);
+  const smoked = totalSmoked(logs);
   const list = milestones();
-  const todayRecord = getLog(data.logs, todayKey());
+  const todayRecord = getLog(logs, todayKey());
 
   const monthPrefix = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-  const monthLogs = data.logs.filter((l) => l.date.startsWith(monthPrefix));
-  const monthSmoked = monthLogs.reduce((s, l) => s + l.smoked, 0);
-  const monthOK = monthLogs.filter((l) => l.smoked <= dailyGoal(plan, l.date, data.logs)).length;
-  const monthOver = monthLogs.filter((l) => l.smoked > dailyGoal(plan, l.date, data.logs)).length;
+  const monthLogs = logs.filter((l) => l?.date?.startsWith(monthPrefix));
+  const monthSmoked = monthLogs.reduce((s, l) => s + (l.smoked || 0), 0);
+  const monthOK = monthLogs.filter((l) => (l.smoked || 0) <= dailyGoal(plan, l.date, logs)).length;
+  const monthOver = monthLogs.filter((l) => (l.smoked || 0) > dailyGoal(plan, l.date, logs)).length;
   const officialDaysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
-  const badges = data.badges ?? [];
   const badgesWon = badges.length;
   const elapsed = elapsedDays(plan);
   const reachedCount = list.filter((m) => elapsed >= m.days).length;
@@ -129,12 +133,12 @@ export function StatsScreen() {
   const healthProgress = nextHealth
     ? Math.min(1, Math.max(0, (elapsed - prevHealthDays) / (nextHealth.days - prevHealthDays)))
     : 1;
-  const riskHours = riskiestHours(data.cravings, 3);
+  const riskHours = riskiestHours(cravings, 3);
   const riskMax = riskHours.length ? riskHours[0].count : 1;
-  const triggers = topTriggerCounts(data.cravings, 4);
-  const hourHist = cravingHours(data.cravings);
-  const avgIntensity = averageIntensity(data.cravings);
-  const report = weeklyReport(plan, data.logs, data.cravings);
+  const triggers = topTriggerCounts(cravings, 4);
+  const hourHist = cravingHours(cravings);
+  const avgIntensity = averageIntensity(cravings);
+  const report = weeklyReport(plan, logs, cravings);
   const months = isEn ? MONTHS_EN : MONTHS_TR;
 
   const shareWeekly = async () => {
@@ -174,7 +178,7 @@ export function StatsScreen() {
     try {
       await Share.share({
         title: isEn ? 'Quit & Let Go — Doctor/pharmacist summary' : 'Bırak Gitsin — doktor/eczacı özeti',
-        message: doctorSummary(plan, data.logs, data.cravings),
+        message: doctorSummary(plan, logs, cravings),
       });
     } catch {
       Alert.alert(isEn ? 'Could not share' : 'Paylaşılamadı', isEn ? 'Sharing is unavailable right now.' : 'Şu anda paylaşım ekranı açılamadı.');
@@ -267,7 +271,7 @@ export function StatsScreen() {
           )}
         </Card>
 
-        <SavingsSimulator plan={plan} logs={data.logs} />
+        <SavingsSimulator plan={plan} logs={logs} />
 
         <View style={styles.titleRow}>
           <Text style={styles.title}>{isEn ? 'Statistics' : 'İstatistikler'}</Text>
@@ -394,7 +398,7 @@ export function StatsScreen() {
           <View style={styles.calendarWrap}>
             <CalendarGrid
               plan={plan}
-              logs={data.logs}
+              logs={logs}
               year={cursor.getFullYear()}
               month={cursor.getMonth()}
             />
@@ -421,8 +425,8 @@ export function StatsScreen() {
           <View style={{ marginTop: spacing.sm }}>
             <StreakCalendar
               plan={plan}
-              logs={data.logs}
-              slipLogs={data.slipLogs || []}
+              logs={logs}
+              slipLogs={slipLogs}
               year={cursor.getFullYear()}
               month={cursor.getMonth()}
             />
@@ -524,7 +528,7 @@ export function StatsScreen() {
 
         <Card>
           <Text style={styles.cardLabel}>{isEn ? 'Craving & trigger analysis' : 'İstek & tetik analizi'}</Text>
-          {data.cravings.length === 0 ? (
+          {cravings.length === 0 ? (
             <Text style={styles.cardHint}>
               {isEn
                 ? 'As you log cravings in the SOS tab, you will see when and why you crave cigarettes most.'
@@ -636,8 +640,8 @@ export function StatsScreen() {
         {todayRecord.smoked > 0 ? (
           <Text style={styles.tip}>
             {isEn
-              ? `You smoked ${todayRecord.smoked} today. Your goal is ${dailyGoal(plan, todayKey(), data.logs)}. You can update today's records from Home.`
-              : `Bugün ${todayRecord.smoked} sigara içtin. Hedefin ${dailyGoal(plan, todayKey(), data.logs)}. İstersen ana sayfadan gün içi kayıtlarını güncelleyebilirsin.`}
+              ? `You smoked ${todayRecord.smoked} today. Your goal is ${dailyGoal(plan, todayKey(), logs)}. You can update today's records from Home.`
+              : `Bugün ${todayRecord.smoked} sigara içtin. Hedefin ${dailyGoal(plan, todayKey(), logs)}. İstersen ana sayfadan gün içi kayıtlarını güncelleyebilirsin.`}
           </Text>
         ) : null}
       </ScrollView>

@@ -220,11 +220,14 @@ export function pricePerCigarette(plan: Plan): number {
 }
 
 export function getLog(logs: DayRecord[], dateKey: string): DayRecord {
+  const safeLogs = Array.isArray(logs) ? logs : [];
+  logs = safeLogs as DayRecord[];
   return logs.find((l) => l.date === dateKey) ?? { date: dateKey, smoked: 0 };
 }
 
 export function totalSmoked(logs: DayRecord[]): number {
-  return logs.reduce((sum, l) => sum + l.smoked, 0);
+  const safeLogs = Array.isArray(logs) ? logs : [];
+  return safeLogs.reduce((sum, l) => sum + (l?.smoked || 0), 0);
 }
 
 /**
@@ -238,6 +241,7 @@ export function avoidedCigarettesTotal(
   logs: DayRecord[],
   now: number = Date.now(),
 ): number {
+  logs = Array.isArray(logs) ? logs : [];
   const start = parseKey(plan.startDate);
   const current = new Date(now);
   const todayMidnight = new Date(current.getFullYear(), current.getMonth(), current.getDate());
@@ -249,7 +253,8 @@ export function avoidedCigarettesTotal(
     0,
     Math.min(1, (now - todayMidnight.getTime()) / MS_DAY),
   );
-  const smokedByDate = new Map(logs.map((l) => [l.date, l.smoked]));
+  const safeLogs = Array.isArray(logs) ? logs : [];
+  const smokedByDate = new Map(safeLogs.map((l) => [l.date, l.smoked || 0]));
 
   let avoided = 0;
   for (let i = 0; i < wholeDays; i++) {
@@ -290,14 +295,16 @@ export function lastNDays(n: number, endKey = todayKey()): string[] {
 }
 
 export function buildDaysStat(plan: Plan, logs: DayRecord[], n: number, endKey = todayKey()): DayStat[] {
+  const safeLogs = Array.isArray(logs) ? logs : [];
   return lastNDays(n, endKey).map((date) => ({
     date,
-    goal: dailyGoal(plan, date, logs),
-    smoked: getLog(logs, date).smoked,
+    goal: dailyGoal(plan, date, safeLogs),
+    smoked: getLog(safeLogs, date).smoked,
   }));
 }
 
 export function goalStreak(plan: Plan, logs: DayRecord[]): number {
+  logs = Array.isArray(logs) ? logs : [];
   let streak = 0;
   let key = todayKey();
   const start = parseKey(plan.startDate);
@@ -609,6 +616,7 @@ export function formatUntil(days: number): string {
 }
 
 export function cravingHours(cravings: CravingRecord[]): number[] {
+  cravings = Array.isArray(cravings) ? cravings : [];
   const hours = new Array(24).fill(0) as number[];
   cravings.forEach((c) => {
     const h = new Date(c.timestamp).getHours();
