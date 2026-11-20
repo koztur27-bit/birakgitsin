@@ -34,8 +34,10 @@ import { reloadApp } from '../lib/reload';
 import { playAlarmFor } from '../lib/alarm';
 import { debugLockStatus } from '../lib/statusNotification';
 import { downloadAndInstallUpdate } from '../lib/updater';
+import { IS_USER_RELEASE } from '../lib/buildFlags';
 import { pinHomeShortcut } from '../lib/shortcut';
 import { syncWidgetsAndCheckUpdate } from '../lib/syncUpdate';
+import { refreshWidgets } from '../lib/widgetData';
 import { fontSizes, radius, spacing } from '../theme';
 
 type SettingsScreenProps = {
@@ -232,6 +234,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.titleRow}><MapBadge code="10" /><Text style={styles.title}>{t('settings.title')}</Text></View>
 
+        {!IS_USER_RELEASE && (
         <Card>
           <Text style={styles.cardLabel}>{(data.language || 'tr') === 'en' ? 'Quick Tools' : 'Hızlı Araçlar'}</Text>
           <Text style={styles.planSub}>
@@ -262,6 +265,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             </Pressable>
           </View>
         </Card>
+        )}
 
 
         <Card>
@@ -301,18 +305,19 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         </Card>
 
         <Card>
-          <Text style={styles.cardLabel}>Güncelle / Senkronize Et</Text>
+          <Text style={styles.cardLabel}>{IS_USER_RELEASE ? 'Widget Senkronize Et' : 'Güncelle / Senkronize Et'}</Text>
           <Text style={styles.planSub}>
-            Tüm ana ekran widget&apos;larını zorla yeniler ve GitHub üzerinden yeni
-            uygulama sürümü olup olmadığını kontrol eder.
+            {IS_USER_RELEASE
+              ? "Tüm ana ekran widget'larını zorla yeniler."
+              : "Tüm ana ekran widget'larını zorla yeniler ve GitHub üzerinden yeni uygulama sürümü olup olmadığını kontrol eder."}
           </Text>
           <Pressable
             style={[styles.rowBtn, { backgroundColor: colors.primary }]}
-            onPress={handleSyncAndUpdate}
+            onPress={IS_USER_RELEASE ? () => { try { refreshWidgets(); Alert.alert('Tamam', "Widget'lar yenilendi."); } catch { Alert.alert('Hata', "Widget'lar yenilenemedi."); } } : handleSyncAndUpdate}
             disabled={syncing}
           >
             <Text style={[styles.rowBtnText, { color: colors.white }]}>
-              {syncing ? 'Güncelleniyor…' : 'Güncelle / Senkronize Et'}
+              {syncing ? 'Güncelleniyor…' : (IS_USER_RELEASE ? 'Senkronize Et' : 'Güncelle / Senkronize Et')}
             </Text>
           </Pressable>
         </Card>
@@ -447,6 +452,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </Pressable>
         </Card>
 
+        {!IS_USER_RELEASE && (
         <Card>
           <Text style={styles.cardLabel}>Test modu</Text>
           <Text style={styles.planSub}>
@@ -467,6 +473,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             </Pressable>
           </View>
         </Card>
+        )}
 
         <Card>
           <View style={styles.switchRow}>
@@ -485,9 +492,11 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
               thumbColor={colors.white}
             />
           </View>
+          {!IS_USER_RELEASE && (
           <Pressable style={styles.rowBtn} onPress={testNotification}>
             <Text style={styles.rowBtnText}>Bildirimi test et</Text>
           </Pressable>
+          )}
           <Pressable
             style={styles.rowBtn}
             onPress={() => {
@@ -651,11 +660,15 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.7.7</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.8.0</Text>
       </ScrollView>
 
-      <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
-      <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
+      {!IS_USER_RELEASE && (
+        <>
+          <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
+          <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
+        </>
+      )}
       <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
       <Modal visible={guideOpen} animationType="slide" onRequestClose={() => setGuideOpen(false)}>

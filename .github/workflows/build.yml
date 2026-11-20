@@ -1,7 +1,6 @@
-# Evrensel APK derleme sablonu (GitHub Actions)
-# Yeni projelerde .github/workflows/build.yml olarak kopyalanir.
+# Bırak Gitsin - CI: dev ve user (Play) APK üretimi
 # Tetikleme: push (master/main/v*), tag veya manuel workflow_dispatch.
-# Azami sure 25 dakika (proje bazli kota korumasi).
+# Azami sure 25 dakika.
 name: Build APK
 
 on:
@@ -28,32 +27,19 @@ jobs:
           java-version: '17'
 
       - name: Setup Node 22 (Expo / React Native)
-        if: hashFiles('package.json') != ''
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Setup Flutter (varsa)
-        if: hashFiles('pubspec.yaml') != ''
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
       - name: Install JS dependencies
-        if: hashFiles('package.json') != ''
         run: npm ci
 
-      - name: Flutter pub get
-        if: hashFiles('pubspec.yaml') != ''
-        run: flutter pub get
-
       - name: Expo prebuild (android/ yoksa)
-        if: hashFiles('package.json') != '' && hashFiles('android/gradlew') == ''
+        if: hashFiles('android/gradlew') == ''
         run: CI=1 npx expo prebuild --platform android --clean --no-install
 
       - name: aapt2 ayari (build-tools 36 varsa)
-        if: hashFiles('android/**') != ''
         run: |
           mkdir -p android
           touch android/gradle.properties
@@ -63,62 +49,87 @@ jobs:
               echo "android.aapt2FromMavenOverride=$AAPT2" >> android/gradle.properties
           fi
 
-      - name: Flutter release APK
-        if: hashFiles('pubspec.yaml') != ''
-        run: flutter build apk --release
-
-      - name: Gradle release APK (Android / React Native)
-        if: hashFiles('pubspec.yaml') == '' && hashFiles('android/gradlew') != ''
-        run: |
-          chmod +x android/gradlew
-          cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
-
-      - name: APK'yi topla
-        id: apk
-        shell: bash
-        run: |
-          APK="$(find . -type f \( -name 'app-release.apk' -o -name '*-release.apk' \) -print -quit 2>/dev/null)"
-          if [ -z "$APK" ]; then
-            APK="$(find . -type f -name '*.apk' -print -quit 2>/dev/null)"
-          fi
-          if [ -z "$APK" ]; then
-            echo "HATA: APK uretilmedi."
-            exit 1
-          fi
-          cp "$APK" ./app-release.apk
-          ls -lh ./app-release.apk
-          echo "path=./app-release.apk" >> "$GITHUB_OUTPUT"
-
       - name: Surum bilgisini al
         id: ver
         shell: bash
         run: |
-          V=""
-          if [ -f pubspec.yaml ]; then
-            V=$(grep '^version:' pubspec.yaml | head -n1 | awk '{print $2}' | cut -d+ -f1)
-          elif [ -f package.json ]; then
-            V=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
-          fi
+          V=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "Surum: $V"
 
-      - name: APK'yi apk-latest Release olarak yayinla
+      - name: Build flag -> DEV (IS_USER_RELEASE=false)
+        run: |
+          printf '%s\n' "// Build-time flag." "// false = developer build (Ekran Haritası, Durum, test/güncelleme araçları açık)" "// true  = user/Play build (müşteriye temiz deneyim, geliştirici araçları gizli)" "// CI bu dosyayı iki derleme arasında değiştirerek dev ve user APK üretir." "export const IS_USER_RELEASE = false;" > src/lib/buildFlags.ts
+          cat src/lib/buildFlags.ts
+
+      - name: Gradle release APK (DEV)
+        run: |
+          chmod +x android/gradlew
+          cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+
+      - name: DEV APK'yi topla
+        run: |
+          APK="$(find . -type f -name 'app-release.apk' -path '*android/app/build/outputs/apk/release/*' -print -quit 2>/dev/null)"
+          if [ -z "$APK" ]; then
+            APK="$(find . -type f -name 'app-release.apk' -print -quit 2>/dev/null)"
+          fi
+          if [ -z "$APK" ]; then
+            echo "HATA: DEV APK uretilmedi."
+            exit 1
+          fi
+          cp "$APK" ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk
+          ls -lh ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk
+
+      - name: Build flag -> USER (IS_USER_RELEASE=true)
+        run: |
+          printf '%s\n' "// Build-time flag." "// false = developer build (Ekran Haritası, Durum, test/güncelleme araçları açık)" "// true  = user/Play build (müşteriye temiz deneyim, geliştirici araçları gizli)" "// CI bu dosyayı iki derleme arasında değiştirerek dev ve user APK üretir." "export const IS_USER_RELEASE = true;" > src/lib/buildFlags.ts
+          cat src/lib/buildFlags.ts
+
+      - name: JS bundle ara ciktilarini temizle (flag degisikligi icin)
+        run: |
+          rm -rf android/app/build/generated/assets || true
+          rm -rf android/app/build/intermediates/assets || true
+          rm -rf android/app/build/intermediates/react || true
+          rm -rf android/app/build/outputs/apk/release || true
+
+      - name: Gradle release APK (USER)
+        run: |
+          cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+
+      - name: USER APK'yi topla
+        run: |
+          APK="$(find . -type f -name 'app-release.apk' -path '*android/app/build/outputs/apk/release/*' -print -quit 2>/dev/null)"
+          if [ -z "$APK" ]; then
+            APK="$(find . -type f -name 'app-release.apk' -print -quit 2>/dev/null)"
+          fi
+          if [ -z "$APK" ]; then
+            echo "HATA: USER APK uretilmedi."
+            exit 1
+          fi
+          cp "$APK" ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk
+          ls -lh ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk
+
+      - name: APK'leri apk-latest Release olarak yayinla
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
-          name: ${{ steps.ver.outputs.version != '' && format('APK - son surum (v{0})', steps.ver.outputs.version) || 'APK - son surum' }}
-          body: ${{ steps.ver.outputs.version != '' && format('Guncel APK v{0} (her derlemede uzerine yazilir).', steps.ver.outputs.version) || 'Guncel APK (her derlemede uzerine yazilir).' }}
-          files: ${{ steps.apk.outputs.path }}
+          name: ${{ format('APK - son surum (v{0})', steps.ver.outputs.version) }}
+          body: ${{ format('Guncel APK v{0} (dev + user). Dev: harita/durum/test/guncelleme araclari acik. User: temiz musteri/Play surumu.', steps.ver.outputs.version) }}
+          files: |
+            ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk
+            ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk
           overwrite_files: true
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload APK artifact (1 gun, kota dolarsa atlanir)
+      - name: Upload APK artifacts (1 gun)
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: ${{ steps.apk.outputs.path }}
+          name: apk-dev-user
+          path: |
+            ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk
+            ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk
           if-no-files-found: error
           retention-days: 1
