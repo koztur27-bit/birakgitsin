@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
+import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { useApp } from '../context/AppContext';
@@ -44,7 +45,7 @@ export function HealthScreen() {
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Sağlık Durumum</Text>
+          <View style={styles.titleRow}><MapBadge code="9" /><Text style={styles.title}>Sağlık Durumum</Text></View>
           <Text style={styles.subtitle}>Bırakmaya başladıktan sonra geçirdiğin süre</Text>
         </View>
 
@@ -126,6 +127,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
   header: { gap: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.text },
   subtitle: { fontSize: fontSizes.sm, color: colors.textMuted },
   overviewCard: { gap: spacing.sm, ...shadows.card },

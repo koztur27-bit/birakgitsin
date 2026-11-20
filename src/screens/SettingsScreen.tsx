@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
+import { MapBadge } from '../components/MapBadge';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { StatusPopup } from '../components/StatusPopup';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
@@ -229,7 +230,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{t('settings.title')}</Text>
+        <View style={styles.titleRow}><MapBadge code="10" /><Text style={styles.title}>{t('settings.title')}</Text></View>
 
         <Card>
           <Text style={styles.cardLabel}>{(data.language || 'tr') === 'en' ? 'Quick Tools' : 'Hızlı Araçlar'}</Text>
@@ -650,7 +651,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v1.7.2</Text>
+        <Text style={styles.footer}>Bırak Gitsin v1.7.3</Text>
       </ScrollView>
 
       <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
@@ -677,6 +678,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
 const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '800',

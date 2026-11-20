@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
+import { MapBadge } from '../components/MapBadge';
 import { Stepper } from '../components/Stepper';
 import { useApp } from '../context/AppContext';
 import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
@@ -49,7 +50,7 @@ export function TimerScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Dayanma Sayacı</Text>
+        <View style={styles.titleRow}><MapBadge code="6" /><Text style={styles.title}>Dayanma Sayacı</Text></View>
         <Text style={styles.subtitle}>
           Sigarasız geçirilecek bir süre belirle. Bir sigara içersen sayaç seçtiğin süreyle
           otomatik yeniden başlar. Süre dolunca uygulama 5 kez titretip sesli haber verir.
@@ -167,6 +168,7 @@ export function TimerScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '800',

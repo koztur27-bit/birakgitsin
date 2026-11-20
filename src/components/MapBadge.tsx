@@ -20,12 +20,15 @@ export function MapBadge({ code, style }: MapBadgeProps) {
 
 const createStyles = (colors: any) => StyleSheet.create({
   badge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    minWidth: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: radius.round,
     backgroundColor: colors.accent,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: { fontSize: fontSizes.xs, fontWeight: '800', color: '#5A3D00' },
+  text: { fontSize: fontSizes.sm, fontWeight: '900', color: '#3D2800' },
 });

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CoachChatModal } from '../components/CoachChatModal';
+import { MapBadge } from '../components/MapBadge';
 import { ProScreen } from './ProScreen';
 import { SosBreathingModal } from '../components/SosBreathingModal';
 import {
@@ -204,6 +205,7 @@ export function HomeScreen(_props: HomeScreenProps) {
         {/* Header: left brand+pro, right share only */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
+            <MapBadge code="1" />
             <Image source={require('../../assets/widget_mascot.png')} style={styles.brandMascot} />
             <Text style={styles.brand}>{t('common.appName')}</Text>
             <Pressable
@@ -234,9 +236,12 @@ export function HomeScreen(_props: HomeScreenProps) {
           end={{ x: 1, y: 1 }}
           style={styles.focusCard}
         >
-          <Text style={styles.focusLabel}>
-            {lang === 'en' ? 'Smoke-Free Time' : 'Sigarasız Süre'}
-          </Text>
+          <View style={styles.mapTitleRow}>
+            <MapBadge code="2" />
+            <Text style={styles.focusLabel}>
+              {lang === 'en' ? 'Smoke-Free Time' : 'Sigarasız Süre'}
+            </Text>
+          </View>
           <Text style={styles.focusTime}>{smokeFreeText}</Text>
 
           <View style={styles.focusStatsRow}>
@@ -262,7 +267,9 @@ export function HomeScreen(_props: HomeScreenProps) {
         </LinearGradient>
 
         {/* Quick Support Row */}
-        <View style={styles.supportRow}>
+        <View style={styles.supportSection}>
+          <MapBadge code="3" style={styles.mapBadgeInline} />
+          <View style={styles.supportRow}>
           <Pressable
             accessibilityRole="button"
             style={({ pressed }) => [styles.supportBtn, styles.supportBtnSOS, pressed && styles.pressed]}
@@ -283,6 +290,7 @@ export function HomeScreen(_props: HomeScreenProps) {
               {lang === 'en' ? 'Quit Coach' : 'Bırakma Koçu'}
             </Text>
           </Pressable>
+          </View>
         </View>
 
         {/* Big Blue Today & Goal Card */}
@@ -294,9 +302,12 @@ export function HomeScreen(_props: HomeScreenProps) {
         >
           <View style={styles.todayDashedBox}>
             <View style={styles.todayDashedLeft}>
-              <Text style={styles.todayCardTitle}>
-                {lang === 'en' ? 'Cigarettes today' : 'Bugün içtiklerin'}
-              </Text>
+              <View style={styles.mapTitleRow}>
+                <MapBadge code="4" />
+                <Text style={styles.todayCardTitle}>
+                  {lang === 'en' ? 'Cigarettes today' : 'Bugün içtiklerin'}
+                </Text>
+              </View>
               <Text style={styles.todayCardStatus}>{todayStatusText}</Text>
               {windowCompact ? <Text style={styles.todayCardWindow}>{windowCompact}</Text> : null}
             </View>
@@ -389,6 +400,9 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
     scroll: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
+    mapTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    supportSection: { gap: spacing.xs },
+    mapBadgeInline: { alignSelf: 'flex-start' },
     header: {
       flexDirection: 'row',
       alignItems: 'center',

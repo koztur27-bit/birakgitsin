@@ -4,6 +4,7 @@ import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { Card } from '../components/Card';
+import { MapBadge } from '../components/MapBadge';
 import { SavingsSimulator } from '../components/SavingsSimulator';
 import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
 import { ProgressBar } from '../components/ProgressBar';
@@ -183,7 +184,7 @@ export function StatsScreen() {
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Card style={styles.goalCard}>
-          <Text style={styles.cardLabel}>{t('home.savingsGoal')}</Text>
+          <View style={styles.mapTitleRow}><MapBadge code="7" /><Text style={styles.cardLabel}>{t('home.savingsGoal')}</Text></View>
           {!savingsGoal || goalEditing ? (
             <View style={styles.goalForm}>
               <Text style={styles.cardHint}>{t('home.savingsGoalHint')}</Text>
@@ -277,7 +278,7 @@ export function StatsScreen() {
         <Card style={styles.coachCard}>
           <View style={styles.coachHead}>
             <View style={styles.coachHeadText}>
-              <Text style={styles.cardLabel}>{isEn ? 'Weekly coach report' : 'Haftalık koç raporu'}</Text>
+              <View style={styles.mapTitleRow}><MapBadge code="8" /><Text style={styles.cardLabel}>{isEn ? 'Weekly coach report' : 'Haftalık koç raporu'}</Text></View>
               <Text style={styles.coachHeadline}>{report.headline}</Text>
             </View>
             <View style={styles.coachBadge}>
@@ -662,6 +663,7 @@ export function StatsScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  mapTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',

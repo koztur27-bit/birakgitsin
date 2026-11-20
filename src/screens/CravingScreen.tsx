@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
+import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { BubblePopGame } from '../components/BubblePopGame';
 import { CoachChatModal } from '../components/CoachChatModal';
@@ -180,7 +181,7 @@ export function CravingScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Kriz Anı</Text>
+        <View style={styles.titleRow}><MapBadge code="5" /><Text style={styles.title}>Kriz Anı</Text></View>
         <Text style={styles.subtitle}>
           Canın sigara çektiğinde buraya gel. İstek ortalama 3–5 dakika sürer; bu araçlarla
           tepe noktasını geç.
@@ -454,6 +455,7 @@ export function CravingScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '800',
