@@ -15,6 +15,7 @@ import { AppProvider, useApp } from './src/context/AppContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { I18nProvider, useI18n } from './src/i18n';
 import { CravingScreen } from './src/screens/CravingScreen';
+import { FutureOnboardingScreen } from './src/screens/FutureOnboardingScreen';
 import { HealthScreen } from './src/screens/HealthScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { Onboarding } from './src/screens/Onboarding';
@@ -23,7 +24,7 @@ import { StatsScreen } from './src/screens/StatsScreen';
 import { TimerScreen } from './src/screens/TimerScreen';
 import { refreshWidgets } from './src/lib/widgetData';
 import { colors, fontSizes, radius, spacing } from './src/theme';
-import { TabKey } from './src/types';
+import { Plan, TabKey } from './src/types';
 
 class ErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -72,9 +73,10 @@ function I18nBridge({ children }: { children: React.ReactNode }) {
 function Root() {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const { data, ready, setPlan } = useApp();
+  const { data, ready, setPlan, markFutureOnboardingShown } = useApp();
   const [tab, setTab] = useState<TabKey>('home');
   const [editing, setEditing] = useState(false);
+  const [futurePlan, setFuturePlan] = useState<Plan | null>(null);
 
   // Uygulama açılırken ve arka plana geçerken widget'ları zorla yenile.
   useEffect(() => {
@@ -100,8 +102,24 @@ function Root() {
         initial={editing && data.plan ? data.plan : undefined}
         onCancel={editing ? () => setEditing(false) : undefined}
         onComplete={(plan) => {
+          const isFirstSetup = !data.plan && !editing;
           setPlan(plan);
           setEditing(false);
+          if (isFirstSetup && !data.futureOnboardingShown) {
+            setFuturePlan(plan);
+          }
+        }}
+      />
+    );
+  }
+
+  if (futurePlan && !data.futureOnboardingShown) {
+    return (
+      <FutureOnboardingScreen
+        plan={futurePlan}
+        onContinue={() => {
+          markFutureOnboardingShown();
+          setFuturePlan(null);
         }}
       />
     );

@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   Easing,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -28,13 +29,14 @@ type SosMode = 'breath' | 'game';
 type SosBreathingModalProps = {
   visible: boolean;
   onClose: () => void;
+  onGamePassed?: () => void;
 };
 
-export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) {
+export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathingModalProps) {
   const { colors } = useTheme();
   const { t, locale } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { logCraving } = useApp();
+  const { data, logCraving } = useApp();
 
   const triggers = locale === 'en' ? ['Coffee', 'Stress', 'Meal', 'Social'] : ['Kahve', 'Stres', 'Yemek', 'Sosyal'];
   const inhaleLabel = locale === 'en' ? 'Breathe in' : 'Nefes al';
@@ -131,7 +133,8 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
     setGameDone(true);
     setGameScore(score);
     logResistedOnce();
-  }, [logResistedOnce]);
+    onGamePassed?.();
+  }, [logResistedOnce, onGamePassed]);
 
   const switchMode = (next: SosMode) => {
     if (next === mode) return;
@@ -150,6 +153,23 @@ export function SosBreathingModal({ visible, onClose }: SosBreathingModalProps) 
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {data.quitMotivation && (data.quitMotivation.text || data.quitMotivation.photoUri) ? (
+              <View style={styles.motivationBox}>
+                <View style={styles.motivationHead}>
+                  {data.quitMotivation.photoUri ? (
+                    <Image source={{ uri: data.quitMotivation.photoUri }} style={styles.motivationPhoto} />
+                  ) : (
+                    <View style={styles.motivationIconWrap}><Text style={styles.motivationIcon}>💙</Text></View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.motivationTitle}>{t('motivation.sosTitle')}</Text>
+                    {data.quitMotivation.text ? (
+                      <Text style={styles.motivationBody}>{data.quitMotivation.text}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              </View>
+            ) : null}
             <Text style={styles.eyebrow}>{locale === 'en' ? 'CRAVING ALERT' : 'KRİZ GELDİ'}</Text>
             <Text style={styles.title}>{locale === 'en' ? 'Pause, breathe, carry on' : 'Dur, nefes al, devam et'}</Text>
             <Text style={styles.subtitle}>
@@ -268,6 +288,13 @@ const createStyles = (colors: any) =>
     backdrop: { flex: 1, backgroundColor: 'rgba(3,8,20,0.72)', justifyContent: 'center', padding: spacing.md },
     sheet: { backgroundColor: colors.card, borderRadius: radius.xl, maxHeight: '92%', ...shadows.card },
     content: { padding: spacing.lg, gap: spacing.sm },
+    motivationBox: { backgroundColor: colors.primarySoft, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.primary },
+    motivationHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    motivationPhoto: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.bg },
+    motivationIconWrap: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+    motivationIcon: { fontSize: 26 },
+    motivationTitle: { fontSize: fontSizes.xs, fontWeight: '800', color: colors.primaryDark, letterSpacing: 0.4, marginBottom: 2 },
+    motivationBody: { fontSize: fontSizes.md, fontWeight: '700', color: colors.text, lineHeight: 22 },
     eyebrow: { fontSize: fontSizes.xs, fontWeight: '800', letterSpacing: 1.2, color: colors.danger },
     title: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
     subtitle: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },

@@ -67,6 +67,17 @@ export type CrisisReminder = {
 
 export type AppLanguage = 'tr' | 'en';
 
+export type QuitMotivation = {
+  text?: string;
+  photoUri?: string;
+};
+
+export type HappinessPrompts = {
+  first24h?: boolean;
+  sosPassed?: boolean;
+  savings500?: boolean;
+};
+
 export type AppData = {
   plan: Plan | null;
   logs: DayRecord[];
@@ -85,6 +96,16 @@ export type AppData = {
   slipLogs?: SlipLog[];
   /** Bırakma koçu günlük mesaj kullanımı (günde 5 ücretsiz). */
   coachUsage?: CoachUsage;
+  /** Duygusal motivasyon çapası: bırakma sebebi notu ve/veya fotoğraf. */
+  quitMotivation?: QuitMotivation | null;
+  /** İlk kurulum sonrası "Gelecek Kazanım" şok/umut ekranı gösterildi mi? */
+  futureOnboardingShown?: boolean;
+  /** "Yolculuğun Nasıl Gidiyor?" 5 yıldız filtresi pencerelerinin gösterilme durumu. */
+  happinessPrompts?: HappinessPrompts;
+  /** Kullanıcıya özel davet kodu (arkadaş davet sistemi). */
+  inviteCode?: string;
+  /** Arkadaş davet kodu girilerek +7 gün PRO ödülü alındı mı? */
+  inviteRedeemed?: boolean;
 };
 
 export type TabKey = 'home' | 'craving' | 'timer' | 'stats' | 'health' | 'settings';

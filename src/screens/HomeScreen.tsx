@@ -5,9 +5,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -15,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CigaretteIcon } from '../components/CigaretteIcon';
 import { CoachChatModal } from '../components/CoachChatModal';
+import { HappinessPromptModal } from '../components/HappinessPromptModal';
 import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { ProScreen } from './ProScreen';
@@ -47,6 +50,7 @@ import {
 import { hasProAccess } from '../lib/proAccess';
 import { updateWidgetData } from '../lib/widgetData';
 import { fontSizes, radius, shadows, spacing } from '../theme';
+import { HappinessPrompts } from '../types';
 
 type HomeScreenProps = {
   onOpenCraving: () => void;
@@ -57,13 +61,14 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h } = useApp();
+  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
   const [sosOpen, setSosOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
+  const [happinessKey, setHappinessKey] = useState<keyof HappinessPrompts | null>(null);
 
   const [smokeNote, setSmokeNote] = useState<string | null>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,6 +150,50 @@ export function HomeScreen(_props: HomeScreenProps) {
     );
   }, [data, plan, lang]);
 
+  // Mutluluk anı (5 yıldız filtresi) tetikleyicileri: ilk 24 saat ve 500 birim tasarruf
+  useEffect(() => {
+    if (!plan || happinessKey) return;
+    const hp = data.happinessPrompts || {};
+    const saved = totalMoneySaved(plan, data.logs);
+    let next: keyof HappinessPrompts | null = null;
+    if (!hp.first24h && elapsedDays(plan) >= 1) next = 'first24h';
+    else if (!hp.savings500 && saved >= 500) next = 'savings500';
+    if (next) {
+      const t = setTimeout(() => setHappinessKey(next), 0);
+      return () => clearTimeout(t);
+    }
+  }, [plan, data.logs, data.happinessPrompts, happinessKey]);
+
+  const closeHappiness = () => {
+    if (happinessKey) markHappinessPrompt(happinessKey);
+    setHappinessKey(null);
+  };
+
+  const onSosGamePassed = () => {
+    const hp = data.happinessPrompts || {};
+    if (!hp.sosPassed) {
+      setHappinessKey('sosPassed');
+    }
+  };
+
+  const shareInvite = async () => {
+    const days = plan ? Math.max(0, Math.floor(elapsedDays(plan))) : 0;
+    const savedText = plan ? formatMoney(totalMoneySaved(plan, data.logs), plan.currency) : (lang === 'en' ? '$0' : '0 ₺');
+    const code = data.inviteCode || 'BG';
+    const msg = t('invite.shareMessage', { days, saved: savedText, code });
+    const waUrl = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+    try {
+      const canWa = await Linking.canOpenURL(waUrl);
+      if (canWa) {
+        await Linking.openURL(waUrl);
+        return;
+      }
+    } catch {}
+    try {
+      await Share.share({ message: msg });
+    } catch {}
+  };
+
   const today = todayKey();
   const record = plan ? getLog(data.logs, today) : null;
   const savedTotal = plan ? totalMoneySaved(plan, data.logs) : 0;
@@ -223,6 +272,22 @@ export function HomeScreen(_props: HomeScreenProps) {
             <Text style={styles.shareIcon}>⤴</Text>
           </Pressable>
         </View>
+
+        {data.quitMotivation && (data.quitMotivation.text || data.quitMotivation.photoUri) ? (
+          <View style={styles.motivationRibbon}>
+            {data.quitMotivation.photoUri ? (
+              <Image source={{ uri: data.quitMotivation.photoUri }} style={styles.motivationPhoto} />
+            ) : (
+              <View style={styles.motivationIconWrap}><Text style={styles.motivationIcon}>💙</Text></View>
+            )}
+            <View style={styles.motivationTextWrap}>
+              <Text style={styles.motivationLabel}>{t('motivation.ribbonLabel')}</Text>
+              {data.quitMotivation.text ? (
+                <Text style={styles.motivationText} numberOfLines={2}>{data.quitMotivation.text}</Text>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
 
         {/* Original Big Blue "Bugün İçtiklerin" Card */}
         <LinearGradient
@@ -351,7 +416,12 @@ export function HomeScreen(_props: HomeScreenProps) {
         </View>
       </ScrollView>
 
-      <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
+      <SosBreathingModal
+        visible={sosOpen}
+        onClose={() => setSosOpen(false)}
+        onGamePassed={onSosGamePassed}
+      />
+      <HappinessPromptModal visible={!!happinessKey} onClose={closeHappiness} />
       <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
 
@@ -361,6 +431,16 @@ export function HomeScreen(_props: HomeScreenProps) {
           <View style={styles.sharePickerCard}>
             <Text style={styles.sharePickerTitle}>{t('home.shareThemeTitle')}</Text>
             <Text style={styles.sharePickerSub}>{t('home.shareThemeSub')}</Text>
+            <Pressable
+              style={styles.inviteShareBtn}
+              onPress={() => {
+                setSharePickerOpen(false);
+                shareInvite();
+              }}
+            >
+              <Text style={styles.inviteShareBtnTitle}>{t('invite.title')}</Text>
+              <Text style={styles.inviteShareBtnSub}>{t('invite.shareWhatsApp')}</Text>
+            </Pressable>
             {localizedShareThemes.map((th) => {
               const locked = th.proOnly && !isPro;
               return (
@@ -438,6 +518,36 @@ const createStyles = (colors: any) =>
       ...shadows.card,
     },
     shareIcon: { fontSize: 20, color: colors.primaryDark, fontWeight: '700' },
+
+    motivationRibbon: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.primarySoft,
+      ...shadows.card,
+    },
+    motivationPhoto: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.bg,
+    },
+    motivationIconWrap: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    motivationIcon: { fontSize: 22 },
+    motivationTextWrap: { flex: 1, gap: 2 },
+    motivationLabel: { fontSize: fontSizes.xs, fontWeight: '800', color: colors.primaryDark, letterSpacing: 0.3 },
+    motivationText: { fontSize: fontSizes.sm, color: colors.text, fontWeight: '600', lineHeight: 18 },
 
     hero: {
       borderRadius: radius.xl,
@@ -632,4 +742,14 @@ const createStyles = (colors: any) =>
     shareThemeSwatchDot: { width: 14, height: 14, borderRadius: 7 },
     sharePickerClose: { marginTop: 4, paddingVertical: spacing.sm, alignItems: 'center' },
     sharePickerCloseText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+    inviteShareBtn: {
+      borderRadius: radius.md,
+      padding: spacing.md,
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      gap: 2,
+    },
+    inviteShareBtnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
+    inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
   });

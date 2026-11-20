@@ -42,13 +42,24 @@ const defaultData: AppData = {
   language: 'tr',
   slipLogs: [],
   coachUsage: { date: '', count: 0 },
+  quitMotivation: null,
+  futureOnboardingShown: false,
+  happinessPrompts: {},
+  inviteRedeemed: false,
 };
+
+export function generateInviteCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = 'BG';
+  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
 
 export async function loadData(): Promise<AppData> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const fresh = { ...defaultData, language: 'tr' as AppLanguage };
+      const fresh = { ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() };
       // İlk açılışta varsayılan dili (Türkçe) kalıcı sakla (widget/native senkronu için de).
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
@@ -66,15 +77,31 @@ export async function loadData(): Promise<AppData> {
         count: Number.isFinite((merged.coachUsage as any).count) ? Math.max(0, (merged.coachUsage as any).count) : 0,
       };
     }
+    if (merged.quitMotivation && typeof merged.quitMotivation !== 'object') {
+      merged.quitMotivation = null;
+    } else if (merged.quitMotivation) {
+      merged.quitMotivation = {
+        text: typeof merged.quitMotivation.text === 'string' ? merged.quitMotivation.text : '',
+        photoUri: typeof merged.quitMotivation.photoUri === 'string' ? merged.quitMotivation.photoUri : undefined,
+      };
+    }
+    if (!merged.happinessPrompts || typeof merged.happinessPrompts !== 'object') {
+      merged.happinessPrompts = {};
+    }
+    if (!merged.inviteCode || typeof merged.inviteCode !== 'string') {
+      merged.inviteCode = generateInviteCode();
+    }
+    merged.inviteRedeemed = !!merged.inviteRedeemed;
+    merged.futureOnboardingShown = !!merged.futureOnboardingShown;
     if (merged.language !== 'tr' && merged.language !== 'en') {
       merged.language = 'tr';
-      try {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-      } catch {}
     }
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    } catch {}
     return merged;
   } catch {
-    return { ...defaultData, language: 'tr' as AppLanguage };
+    return { ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() };
   }
 }
 

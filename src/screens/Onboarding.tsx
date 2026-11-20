@@ -1,22 +1,27 @@
 import { useTheme } from '../context/ThemeContext';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { Stepper } from '../components/Stepper';
 import { WindowEditor } from '../components/WindowEditor';
+import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import { currencySymbols, fontSizes, radius, spacing } from '../theme';
 import { CessationAid, Plan, SmokeWindow } from '../types';
 
-const STEPS = 5;
+const STEPS = 6;
 
 const defaultWindows: SmokeWindow[] = [
   { start: '08:00', end: '09:00' },
@@ -61,6 +66,8 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
+  const { data, setQuitMotivation } = useApp();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(() =>
     initial
@@ -78,11 +85,35 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
         }
       : defaultDraft,
   );
+  const [motivationText, setMotivationText] = useState(data.quitMotivation?.text || '');
+  const [motivationPhoto, setMotivationPhoto] = useState<string | undefined>(data.quitMotivation?.photoUri);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
 
+  const pickMotivationPhoto = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return;
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!res.canceled && res.assets?.[0]?.uri) {
+        setMotivationPhoto(res.assets[0].uri);
+      }
+    } catch {
+      // ignore picker errors
+    }
+  };
+
   const finish = () => {
+    setQuitMotivation({
+      text: motivationText.trim(),
+      photoUri: motivationPhoto,
+    });
     onComplete({
       startDate: initial?.startDate ?? new Date().toISOString().slice(0, 10),
       baselinePerDay: draft.baselinePerDay,
@@ -324,6 +355,42 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
         )}
         {step === 4 && (
           <Card>
+            <Text style={styles.title}>{t('motivation.title')}</Text>
+            <Text style={styles.paragraph}>{t('motivation.subtitle')}</Text>
+            <TextInput
+              style={styles.motivationInput}
+              value={motivationText}
+              onChangeText={setMotivationText}
+              placeholder={t('motivation.placeholder')}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              maxLength={200}
+            />
+            <View style={styles.motivationPhotoRow}>
+              {motivationPhoto ? (
+                <Image source={{ uri: motivationPhoto }} style={styles.motivationPhotoPreview} />
+              ) : (
+                <View style={styles.motivationPhotoPlaceholder}>
+                  <Text style={styles.motivationPhotoPlaceholderText}>💙</Text>
+                </View>
+              )}
+              <View style={{ flex: 1, gap: spacing.sm }}>
+                <Pressable style={styles.smallActionBtn} onPress={pickMotivationPhoto}>
+                  <Text style={styles.smallActionText}>
+                    {motivationPhoto ? t('motivation.changePhoto') : t('motivation.addPhoto')}
+                  </Text>
+                </Pressable>
+                {motivationPhoto ? (
+                  <Pressable style={styles.smallActionBtnGhost} onPress={() => setMotivationPhoto(undefined)}>
+                    <Text style={styles.smallActionTextGhost}>{t('motivation.removePhoto')}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+          </Card>
+        )}
+        {step === 5 && (
+          <Card>
             <Text style={styles.title}>Hangi yöntemle ilerlemek istersin?</Text>
             <Text style={styles.paragraph}>
               Planını seçtiğin yönteme göre şekillendireceğiz. İstediğin zaman
@@ -511,6 +578,58 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   nextBtnWide: { flex: 1 },
   nextText: { fontSize: fontSizes.md, color: colors.white, fontWeight: '700' },
+  motivationInput: {
+    marginTop: spacing.md,
+    minHeight: 90,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontSize: fontSizes.md,
+    color: colors.text,
+    backgroundColor: colors.bg,
+    textAlignVertical: 'top',
+  },
+  motivationPhotoRow: {
+    marginTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  motivationPhotoPreview: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: colors.bg,
+  },
+  motivationPhotoPlaceholder: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  motivationPhotoPlaceholderText: { fontSize: 34 },
+  smallActionBtn: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: 'center',
+  },
+  smallActionText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
+  smallActionBtnGhost: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  smallActionTextGhost: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
   modeToggle: {
     marginTop: spacing.md,
     padding: spacing.md,

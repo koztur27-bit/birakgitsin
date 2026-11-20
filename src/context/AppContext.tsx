@@ -17,13 +17,15 @@ import {
   AppLanguage,
   CrisisReminder,
   DayRecord,
+  HappinessPrompts,
   NrtKind,
   Plan,
+  QuitMotivation,
   SavingsGoal,
   TimerState,
   TimerStatus,
 } from '../types';
-import { clearData, loadData, persistData } from '../storage';
+import { clearData, generateInviteCode, loadData, persistData } from '../storage';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -60,9 +62,14 @@ type AppContextValue = {
   resetAll: () => void;
   setPremium: (value: boolean) => void;
   grantProUnlock24h: () => void;
+  grantProUnlockDays: (days: number) => void;
   setShowLockScreen: (value: boolean) => void;
   setLanguage: (language: AppLanguage) => void;
   incrementCoachUsage: () => void;
+  setQuitMotivation: (motivation: QuitMotivation | null) => void;
+  markFutureOnboardingShown: () => void;
+  markHappinessPrompt: (key: keyof HappinessPrompts) => void;
+  redeemInviteCode: (code: string) => { ok: boolean; message?: string };
   timer: TimerState;
   setTimerDuration: (minutes: number) => void;
   startTimer: (minutes?: number) => void;
@@ -209,6 +216,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showLockScreen: true,
     slipLogs: [],
     coachUsage: { date: '', count: 0 },
+    quitMotivation: null,
+    futureOnboardingShown: false,
+    happinessPrompts: {},
+    inviteRedeemed: false,
   });
   const [ready, setReady] = useState(false);
   const [timer, setTimer] = useState<TimerState>(defaultTimer);
@@ -669,7 +680,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         )
         .catch(() => {});
     }
-    setData({
+    const fresh: AppData = {
       plan: null,
       logs: [],
       cravings: [],
@@ -683,13 +694,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       language: data.language || 'tr',
       slipLogs: [],
       coachUsage: { date: '', count: 0 },
-    });
+      quitMotivation: null,
+      futureOnboardingShown: false,
+      happinessPrompts: {},
+      inviteCode: generateInviteCode(),
+      inviteRedeemed: false,
+    };
+    setData(fresh);
+    persistData(fresh).catch(() => {});
   };
 
   const setPremium = (value: boolean) => persist({ ...data, isPremium: value });
 
   const grantProUnlock24h = () =>
-    persist({ ...data, proUnlockUntil: Date.now() + 24 * 60 * 60 * 1000 });
+    persist({ ...data, proUnlockUntil: Math.max(Date.now(), data.proUnlockUntil || 0) + 24 * 60 * 60 * 1000 });
+
+  const grantProUnlockDays = (days: number) => {
+    const ms = Math.max(1, Math.floor(days)) * 24 * 60 * 60 * 1000;
+    persist({ ...data, proUnlockUntil: Math.max(Date.now(), data.proUnlockUntil || 0) + ms });
+  };
 
   const setShowLockScreen = (value: boolean) => persist({ ...data, showLockScreen: value });
 
@@ -700,6 +723,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const prev = data.coachUsage;
     const count = prev && prev.date === today ? Math.max(0, prev.count) + 1 : 1;
     persist({ ...data, coachUsage: { date: today, count } });
+  };
+
+  const setQuitMotivation = (motivation: QuitMotivation | null) => {
+    const clean = motivation
+      ? {
+          text: typeof motivation.text === 'string' ? motivation.text.trim().slice(0, 200) : '',
+          photoUri: typeof motivation.photoUri === 'string' && motivation.photoUri ? motivation.photoUri : undefined,
+        }
+      : null;
+    persist({ ...data, quitMotivation: clean && (clean.text || clean.photoUri) ? clean : null });
+  };
+
+  const markFutureOnboardingShown = () => {
+    if (data.futureOnboardingShown) return;
+    persist({ ...data, futureOnboardingShown: true });
+  };
+
+  const markHappinessPrompt = (key: keyof HappinessPrompts) => {
+    const prev = data.happinessPrompts || {};
+    if (prev[key]) return;
+    persist({ ...data, happinessPrompts: { ...prev, [key]: true } });
+  };
+
+  const redeemInviteCode = (code: string): { ok: boolean; message?: string } => {
+    const normalized = (code || '').trim().toUpperCase().replace(/\s+/g, '');
+    if (!normalized) return { ok: false, message: 'empty' };
+    if (data.inviteRedeemed) return { ok: false, message: 'already' };
+    if (normalized === (data.inviteCode || '').trim().toUpperCase()) {
+      return { ok: false, message: 'self' };
+    }
+    if (!/^BG[A-Z0-9]{4,10}$/.test(normalized)) {
+      return { ok: false, message: 'invalid' };
+    }
+    const ms = 7 * 24 * 60 * 60 * 1000;
+    const nextUntil = Math.max(Date.now(), data.proUnlockUntil || 0) + ms;
+    persist({ ...data, proUnlockUntil: nextUntil, inviteRedeemed: true });
+    return { ok: true };
   };
 
   const restoreData = (incoming: AppData) => {
@@ -745,6 +805,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               count: Number.isFinite((incoming as any).coachUsage.count) ? Math.max(0, (incoming as any).coachUsage.count) : 0,
             }
           : { date: '', count: 0 },
+      quitMotivation:
+        incoming.quitMotivation && typeof incoming.quitMotivation === 'object'
+          ? {
+              text: typeof (incoming.quitMotivation as any).text === 'string' ? (incoming.quitMotivation as any).text : '',
+              photoUri:
+                typeof (incoming.quitMotivation as any).photoUri === 'string'
+                  ? (incoming.quitMotivation as any).photoUri
+                  : undefined,
+            }
+          : null,
+      futureOnboardingShown: !!incoming.futureOnboardingShown,
+      happinessPrompts:
+        incoming.happinessPrompts && typeof incoming.happinessPrompts === 'object'
+          ? {
+              first24h: !!(incoming.happinessPrompts as any).first24h,
+              sosPassed: !!(incoming.happinessPrompts as any).sosPassed,
+              savings500: !!(incoming.happinessPrompts as any).savings500,
+            }
+          : {},
+      inviteCode: typeof incoming.inviteCode === 'string' && incoming.inviteCode ? incoming.inviteCode : (data.inviteCode || generateInviteCode()),
+      inviteRedeemed: !!incoming.inviteRedeemed,
     };
     persist(clean);
     if (Platform.OS !== 'web') {
@@ -802,9 +883,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     resetAll,
     setPremium,
     grantProUnlock24h,
+    grantProUnlockDays,
     setShowLockScreen,
     setLanguage,
     incrementCoachUsage,
+    setQuitMotivation,
+    markFutureOnboardingShown,
+    markHappinessPrompt,
+    redeemInviteCode,
     timer,
     setTimerDuration,
     startTimer,

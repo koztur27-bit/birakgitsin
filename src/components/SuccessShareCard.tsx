@@ -178,7 +178,10 @@ export const SuccessShareCard = forwardRef<SuccessShareCardHandle, SuccessShareC
             <View style={[styles.quoteBox, { borderColor: theme.border }]}>
               <Text style={styles.quote}>{theme.quote}</Text>
             </View>
-            <Text style={styles.footer}>{t('successCard.shareFooter')}</Text>
+            <View style={[styles.signatureBadge, { borderColor: theme.accent, backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+              <Text style={[styles.signatureTitle, { color: '#FFFFFF' }]}>{t('common.appName')}</Text>
+              <Text style={[styles.signatureCta, { color: theme.accent }]}>{t('successCard.storeBadge')}</Text>
+            </View>
           </LinearGradient>
         </ViewShot>
       </View>
@@ -280,10 +283,23 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
-  footer: {
-    marginTop: 12,
-    color: 'rgba(255,255,255,0.65)',
-    fontSize: 11,
-    textAlign: 'right',
+  signatureBadge: {
+    marginTop: 14,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+  },
+  signatureTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.2,
+  },
+  signatureCta: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
