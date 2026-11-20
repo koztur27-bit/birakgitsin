@@ -23,6 +23,7 @@ import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { WidgetGalleryScreen } from './WidgetGalleryScreen';
 import { ProScreen } from './ProScreen';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import { formatUnlockRemaining, hasProAccess, proUnlockRemainingMs } from '../lib/proAccess';
 import { CrisisReminder } from '../types';
 import { dailyGoal, formatMoney, todayKey } from '../lib/calculations';
@@ -43,11 +44,13 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const { colors, mode, setMode } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const {
     data,
     resetAll,
     setPlan,
     setShowLockScreen,
+    setLanguage,
     logCigarette,
     undoCigarette,
     logNrt,
@@ -224,7 +227,32 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Ayarlar</Text>
+        <Text style={styles.title}>{t('settings.title')}</Text>
+
+        <Card>
+          <Text style={styles.cardLabel}>{t('settings.languageTitle')}</Text>
+          <Text style={styles.planSub}>{t('settings.languageSub')}</Text>
+          <View style={styles.inlineRow}>
+            <Pressable
+              style={[styles.smallBtn, (data.language || 'tr') === 'tr' && styles.smallBtnFill]}
+              onPress={() => setLanguage('tr')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.smallBtnText, (data.language || 'tr') === 'tr' && styles.smallBtnTextActive]}>
+                {t('settings.turkish')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.smallBtn, data.language === 'en' && styles.smallBtnFill]}
+              onPress={() => setLanguage('en')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.smallBtnText, data.language === 'en' && styles.smallBtnTextActive]}>
+                {t('settings.english')}
+              </Text>
+            </Pressable>
+          </View>
+        </Card>
 
         <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
           <Text style={styles.cardLabel}>Ana Ekran Widget&apos;ları</Text>

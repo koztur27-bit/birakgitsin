@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import {
   FALLBACK_PRODUCTS,
   ProductId,
@@ -30,88 +31,73 @@ type Props = {
   onClose: () => void;
 };
 
-const FEATURES = [
-  'Gelişmiş Gelecek Birikim Simülatörü senaryoları',
-  'Özel Başarı Kartı temaları',
-  'PRO rozetin ve destekçi ayrıcalığın',
-  'Gelecek güncellemelerdeki tüm PRO özellikler',
-];
-
-const FREE_FEATURES = [
-  'Sayaç, plan ve günlük kayıtlar',
-  'Widget’lar ve hızlı erişim',
-  'Nefes egzersizi ve SOS araçları',
-  'Sağlık ve yoksunluk rehberi',
-];
-
 export function ProScreen({ visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const { t, ta } = useI18n();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data, setPremium } = useApp();
   const [products, setProducts] = useState<ProductInfo[]>(FALLBACK_PRODUCTS);
   const [loading, setLoading] = useState(false);
-  const [buying, setBuying] = useState<ProductId | null>(null);
+  const [busyId, setBusyId] = useState<ProductId | null>(null);
   const [restoring, setRestoring] = useState(false);
 
   const isPro = hasProAccess(data);
-  const remainingMs = proUnlockRemainingMs(data);
+  const unlockMs = proUnlockRemainingMs(data);
 
   useEffect(() => {
     if (!visible) return;
-    let alive = true;
+    let cancelled = false;
     (async () => {
       setLoading(true);
-      try {
-        await initBilling();
-        const list = await fetchProProducts();
-        if (alive) setProducts(list);
-      } finally {
-        if (alive) setLoading(false);
-      }
+      await initBilling();
+      const fetched = await fetchProProducts();
+      if (!cancelled) setProducts(fetched);
+      if (!cancelled) setLoading(false);
     })();
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [visible]);
 
-  const statusText = useMemo(() => {
-    if (data.isPremium) return 'PRO aktif (kalıcı). Teşekkürler!';
-    if (isPro && remainingMs > 0) {
-      return `Geçici PRO açık: ${formatUnlockRemaining(remainingMs)} kaldı.`;
-    }
-    return 'PRO ile gelişmiş özelliklerin kilidini aç.';
-  }, [data.isPremium, isPro, remainingMs]);
+  const localizedProducts = useMemo(() => {
+    return products.map((p) => {
+      const tProd = (t(`pro.products.${p.id}.title`) !== `pro.products.${p.id}.title`) ? t(`pro.products.${p.id}.title`) : p.title;
+      const tPrice = (t(`pro.products.${p.id}.priceLabel`) !== `pro.products.${p.id}.priceLabel`) ? t(`pro.products.${p.id}.priceLabel`) : p.priceLabel;
+      const tDesc = (t(`pro.products.${p.id}.description`) !== `pro.products.${p.id}.description`) ? t(`pro.products.${p.id}.description`) : p.description;
+      return { ...p, title: tProd, priceLabel: tPrice, description: tDesc };
+    });
+  }, [products, t]);
 
-  const onBuy = async (id: ProductId) => {
-    if (buying) return;
-    setBuying(id);
+  const features = ta<string[]>('pro.features') || [];
+  const freeFeatures = ta<string[]>('pro.freeFeatures') || [];
+
+  const handleBuy = async (id: ProductId) => {
+    if (busyId) return;
+    setBusyId(id);
     try {
       const res = await purchasePro(id);
       if (res.ok) {
-        // Satın alma güncellemesi dinleyicisiyle de gelebilir; iyimser aktivasyon.
         setPremium(true);
-        Alert.alert('Bırak Gitsin PRO', 'Satın alma işlemi başlatıldı. Onaylandığında PRO aktif olur.');
+        Alert.alert(t('alerts.success'), t('pro.active'));
       } else if (res.message) {
-        Alert.alert('Satın alma', res.message);
+        Alert.alert(t('alerts.error'), res.message);
       }
     } finally {
-      setBuying(null);
+      setBusyId(null);
     }
   };
 
-  const onRestore = async () => {
+  const handleRestore = async () => {
     if (restoring) return;
     setRestoring(true);
     try {
       const res = await restorePurchases();
       if (res.ok && res.hasPro) {
         setPremium(true);
-        Alert.alert('Satın alımlar', 'PRO erişimin geri yüklendi.');
-      } else if (res.ok) {
-        Alert.alert('Satın alımlar', 'Geri yüklenecek PRO satın alımı bulunamadı.');
-      } else if (res.message) {
-        Alert.alert('Satın alımlar', res.message);
+        Alert.alert(t('alerts.success'), t('pro.restoreOk'));
+      } else {
+        Alert.alert(t('pro.restore'), res.message || t('pro.restoreNone'));
       }
     } finally {
       setRestoring(false);
@@ -119,113 +105,80 @@ export function ProScreen({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={[styles.root, { paddingTop: insets.top + spacing.sm }]}>
-        <View style={styles.topBar}>
-          <Pressable style={styles.closeBtn} onPress={onClose} accessibilityRole="button">
-            <Text style={styles.closeText}>Kapat</Text>
+        <View style={styles.header}>
+          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button">
+            <Text style={styles.closeText}>{t('common.close')}</Text>
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <LinearGradient
-            colors={['#0B3D2E', '#14532D', '#0B1F33']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.hero}
-          >
-            <View style={styles.proBadge}>
-              <Text style={styles.proBadgeText}>PRO</Text>
-            </View>
-            <Text style={styles.heroTitle}>Bırak Gitsin PRO</Text>
-            <Text style={styles.heroQuote}>
-              “Günde yarım paket sigara fiyatına kendi sağlığına ve geleceğine yatırım yap.”
-            </Text>
-            <Text style={styles.heroStatus}>{statusText}</Text>
-          </LinearGradient>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Paketini seç</Text>
-            {loading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color={colors.primary} />
-                <Text style={styles.loadingText}>Paketler hazırlanıyor…</Text>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <LinearGradient colors={['#5A3B00', '#2A1A00']} style={styles.hero}>
+            <Text style={styles.heroBadge}>PRO</Text>
+            <Text style={styles.heroTitle}>{t('pro.title')}</Text>
+            <Text style={styles.heroSub}>{t('pro.subtitle')}</Text>
+            {isPro ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>
+                  {data.isPremium ? t('pro.active') : t('pro.unlockedFor', { time: formatUnlockRemaining(unlockMs) })}
+                </Text>
               </View>
             ) : null}
-            <View style={styles.cards}>
-              {products.map((p) => (
+          </LinearGradient>
+
+          <Text style={styles.sectionTitle}>{t('pro.featuresTitle')}</Text>
+          <View style={styles.card}>
+            {features.map((f, i) => (
+              <View key={`${f}-${i}`} style={styles.featureRow}>
+                <Text style={styles.featureIcon}>✦</Text>
+                <Text style={styles.featureText}>{f}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.sectionTitle}>{t('pro.freeTitle')}</Text>
+          <View style={styles.cardMuted}>
+            {freeFeatures.map((f, i) => (
+              <View key={`${f}-${i}`} style={styles.featureRow}>
+                <Text style={styles.featureIconMuted}>•</Text>
+                <Text style={styles.featureTextMuted}>{f}</Text>
+              </View>
+            ))}
+          </View>
+
+          {loading ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} /> : null}
+
+          <View style={styles.products}>
+            {localizedProducts.map((p) => (
+              <View key={p.id} style={[styles.productCard, p.popular && styles.productPopular]}>
+                {p.popular ? (
+                  <View style={styles.popularBadge}>
+                    <Text style={styles.popularText}>{t('pro.popular')}</Text>
+                  </View>
+                ) : null}
+                <Text style={styles.productTitle}>{p.title}</Text>
+                <Text style={styles.productPrice}>{p.priceLabel}</Text>
+                <Text style={styles.productDesc}>{p.description}</Text>
                 <Pressable
-                  key={p.id}
-                  style={[styles.planCard, p.popular && styles.planCardPopular]}
-                  onPress={() => onBuy(p.id)}
-                  disabled={buying !== null}
+                  style={[styles.buyBtn, p.popular && styles.buyBtnPopular, busyId === p.id && { opacity: 0.7 }]}
+                  onPress={() => handleBuy(p.id)}
+                  disabled={!!busyId}
                 >
-                  {p.popular ? (
-                    <View style={styles.popularTag}>
-                      <Text style={styles.popularTagText}>En Popüler</Text>
-                    </View>
-                  ) : null}
-                  <View style={styles.planHead}>
-                    <Text style={styles.planTitle}>{p.title}</Text>
-                    <Text style={styles.planPrice}>{p.priceLabel}</Text>
-                  </View>
-                  <Text style={styles.planDesc}>{p.description}</Text>
-                  <View style={[styles.buyBtn, p.popular && styles.buyBtnPopular]}>
-                    {buying === p.id ? (
-                      <ActivityIndicator color={p.popular ? '#0B3D2E' : colors.white} />
-                    ) : (
-                      <Text style={[styles.buyBtnText, p.popular && styles.buyBtnTextPopular]}>
-                        {data.isPremium ? 'PRO Aktif' : 'Satın Al'}
-                      </Text>
-                    )}
-                  </View>
+                  {busyId === p.id ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buyText}>{t('pro.buy')}</Text>
+                  )}
                 </Pressable>
-              ))}
-            </View>
-            <Pressable style={styles.restoreBtn} onPress={onRestore} disabled={restoring}>
-              <Text style={styles.restoreBtnText}>
-                {restoring ? 'Geri yükleniyor…' : 'Satın alımları geri yükle'}
-              </Text>
-            </Pressable>
-            <Text style={styles.billingNote}>
-              Satın alma altyapısı Google Play Billing (react-native-iap) test kimlikleriyle hazırdır.
-              Play Console ürün kimliklerini ve AdMob kimliklerini eklediğinde yayına hazır olur.
-            </Text>
+              </View>
+            ))}
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>PRO ile neler açılır?</Text>
-            <View style={styles.featureList}>
-              {FEATURES.map((f) => (
-                <View key={f} style={styles.featureRow}>
-                  <Text style={styles.featureIcon}>✓</Text>
-                  <Text style={styles.featureText}>{f}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
+          <Pressable style={styles.restoreBtn} onPress={handleRestore} disabled={restoring}>
+            {restoring ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.restoreText}>{t('pro.restore')}</Text>}
+          </Pressable>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Herkes için ücretsiz</Text>
-            <View style={styles.featureList}>
-              {FREE_FEATURES.map((f) => (
-                <View key={f} style={styles.featureRow}>
-                  <Text style={styles.featureIconFree}>•</Text>
-                  <Text style={styles.featureText}>{f}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.freeNote}>
-              Temel sayaç, widget’lar, nefes egzersizi ve sağlık rehberi her zaman ücretsiz kalır.
-            </Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.smallNote}>
-              PRO olmayan kullanıcılar, kilitli PRO özelliklerini “Kısa Reklam İzle ve 24 Saat Aç”
-              seçeneğiyle geçici olarak deneyimleyebilir. Reklam altyapısı AdMob test kimliğiyle
-              yapılandırılmıştır.
-            </Text>
-          </View>
+          <View style={{ height: insets.bottom + 24 }} />
         </ScrollView>
       </View>
     </Modal>
@@ -235,84 +188,35 @@ export function ProScreen({ visible, onClose }: Props) {
 const createStyles = (colors: any) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    topBar: { paddingHorizontal: spacing.md, paddingBottom: spacing.xs, alignItems: 'flex-end' },
-    closeBtn: {
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-      borderRadius: radius.md,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    closeText: { color: colors.text, fontWeight: '700', fontSize: fontSizes.sm },
-    scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
-    hero: {
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      gap: spacing.sm,
-      overflow: 'hidden',
-    },
-    proBadge: {
-      alignSelf: 'flex-start',
-      backgroundColor: '#7CFFB2',
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 999,
-    },
-    proBadgeText: { color: '#0B3D2E', fontWeight: '900', fontSize: fontSizes.sm },
+    header: { paddingHorizontal: spacing.md, paddingBottom: spacing.xs, alignItems: 'flex-end' },
+    closeBtn: { padding: 8 },
+    closeText: { color: colors.primary, fontWeight: '700', fontSize: fontSizes.md },
+    content: { padding: spacing.md, paddingBottom: 40 },
+    hero: { borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.lg },
+    heroBadge: { color: '#FFD700', fontWeight: '900', fontSize: fontSizes.sm, marginBottom: 4 },
     heroTitle: { color: '#FFFFFF', fontSize: 28, fontWeight: '900' },
-    heroQuote: { color: '#EAFBF3', fontSize: fontSizes.md, lineHeight: 24, fontWeight: '600' },
-    heroStatus: { color: '#7CFFB2', fontSize: fontSizes.sm, fontWeight: '700', marginTop: 4 },
-    section: { gap: spacing.sm },
-    sectionTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-    loadingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    loadingText: { color: colors.textMuted, fontSize: fontSizes.sm },
-    cards: { gap: spacing.md },
-    planCard: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
-      padding: spacing.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: 6,
-    },
-    planCardPopular: {
-      borderColor: '#2ECC71',
-      borderWidth: 2,
-      backgroundColor: colors.card,
-    },
-    popularTag: {
-      position: 'absolute',
-      top: -12,
-      right: 16,
-      backgroundColor: '#2ECC71',
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 999,
-    },
-    popularTagText: { color: '#062814', fontWeight: '900', fontSize: fontSizes.xs },
-    planHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-    planTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-    planPrice: { fontSize: fontSizes.md, fontWeight: '800', color: colors.primaryDark },
-    planDesc: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
-    buyBtn: {
-      marginTop: 6,
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing.sm + 2,
-      alignItems: 'center',
-    },
-    buyBtnPopular: { backgroundColor: '#7CFFB2' },
-    buyBtnText: { color: colors.white, fontWeight: '800', fontSize: fontSizes.md },
-    buyBtnTextPopular: { color: '#0B3D2E' },
-    restoreBtn: { alignItems: 'center', paddingVertical: spacing.sm },
-    restoreBtnText: { color: colors.primaryDark, fontWeight: '700', fontSize: fontSizes.sm },
-    billingNote: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18 },
-    featureList: { gap: 8 },
-    featureRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-    featureIcon: { color: '#2ECC71', fontWeight: '900', fontSize: fontSizes.md, width: 18 },
-    featureIconFree: { color: colors.textMuted, fontWeight: '900', fontSize: fontSizes.md, width: 18 },
-    featureText: { flex: 1, color: colors.text, fontSize: fontSizes.sm, lineHeight: 20 },
-    freeNote: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20 },
-    smallNote: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18 },
+    heroSub: { color: 'rgba(255,255,255,0.85)', marginTop: 6, fontSize: fontSizes.md },
+    activePill: { alignSelf: 'flex-start', marginTop: spacing.md, backgroundColor: 'rgba(255,215,0,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.round },
+    activePillText: { color: '#FFD700', fontWeight: '700' },
+    sectionTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text, marginBottom: spacing.sm, marginTop: spacing.sm },
+    card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
+    cardMuted: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, opacity: 0.9 },
+    featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
+    featureIcon: { color: '#FFD700', fontSize: 16, marginTop: 1 },
+    featureIconMuted: { color: colors.textMuted, fontSize: 16, marginTop: 1 },
+    featureText: { flex: 1, color: colors.text, fontSize: fontSizes.md, lineHeight: 22 },
+    featureTextMuted: { flex: 1, color: colors.textMuted, fontSize: fontSizes.md, lineHeight: 22 },
+    products: { gap: spacing.sm, marginTop: spacing.sm },
+    productCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+    productPopular: { borderColor: '#FFD700', borderWidth: 2 },
+    popularBadge: { alignSelf: 'flex-start', backgroundColor: '#FFD700', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.round, marginBottom: 8 },
+    popularText: { color: '#3A2600', fontWeight: '800', fontSize: fontSizes.xs },
+    productTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+    productPrice: { fontSize: fontSizes.xl, fontWeight: '900', color: colors.primary, marginTop: 4 },
+    productDesc: { color: colors.textMuted, marginTop: 4, marginBottom: spacing.md },
+    buyBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 12, alignItems: 'center' },
+    buyBtnPopular: { backgroundColor: '#C99700' },
+    buyText: { color: '#FFFFFF', fontWeight: '800', fontSize: fontSizes.md },
+    restoreBtn: { alignItems: 'center', paddingVertical: spacing.md, marginTop: spacing.sm },
+    restoreText: { color: colors.primary, fontWeight: '700' },
   });

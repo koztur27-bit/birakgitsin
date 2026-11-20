@@ -76,21 +76,33 @@ open class BirakGitsinWidget : AppWidgetProvider() {
             refreshRequestCode: Int = 0,
         ) {
             val prefs = context.getSharedPreferences("BirakGitsinWidget", Context.MODE_PRIVATE)
+            val lang = try {
+                val raw = WidgetStorage.readRawData(context)
+                val fromData = if (raw != null) org.json.JSONObject(raw).optString("language", "") else ""
+                if (fromData == "en" || fromData == "tr") fromData else (prefs.getString("language", "tr") ?: "tr")
+            } catch (_: Exception) {
+                prefs.getString("language", "tr") ?: "tr"
+            }
+            val isEn = lang == "en"
             val computed = WidgetStorage.readWidgetData(context)
+            val defaultQuit = if (isEn) "0 days 00 hrs" else "0 gün 00 saat"
             val quitText = computed?.quitText
-                ?: prefs.getString("quitText", "0 gün 00 saat")
-                ?: "0 gün 00 saat"
+                ?: prefs.getString("quitText", null)?.takeIf { it.isNotBlank() }
+                ?: defaultQuit
             val savingsText = computed?.savingsText
                 ?: WidgetStorage.readSavingsText(context)
                 ?: prefs.getString("savingsText", "0 ₺")
                 ?: "0 ₺"
             val nextWindow = prefs.getString("nextWindow", "--:--") ?: "--:--"
+            val savingsLabel = if (isEn) "Saved" else "Tasarruf"
+            val nextLabel = if (isEn) "Next window" else "Sıradaki pencere"
 
             // Hesaplanan değerleri prefs'e de yaz ki sonraki okumalar tutarlı kalsın.
             try {
                 prefs.edit()
                     .putString("quitText", quitText)
                     .putString("savingsText", savingsText)
+                    .putString("language", if (isEn) "en" else "tr")
                     .apply()
             } catch (_: Exception) {
             }
@@ -124,10 +136,10 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, layoutRes)
                 views.setTextViewText(R.id.widget_counter, quitText)
                 if (showSavings) {
-                    views.setTextViewText(R.id.widget_savings, "Tasarruf: $savingsText")
+                    views.setTextViewText(R.id.widget_savings, "$savingsLabel: $savingsText")
                 }
                 if (showNext) {
-                    views.setTextViewText(R.id.widget_next, "Sıradaki pencere $nextWindow")
+                    views.setTextViewText(R.id.widget_next, "$nextLabel $nextWindow")
                 }
                 if (pending != null) {
                     views.setOnClickPendingIntent(R.id.widget_root, pending)
@@ -164,7 +176,9 @@ open class BirakGitsinWidget : AppWidgetProvider() {
 
         fun showRefreshFeedback(context: Context) {
             try {
-                Toast.makeText(context, "Yenilendi", Toast.LENGTH_SHORT).show()
+                val lang = WidgetStorage.readLanguage(context)
+                val msg = if (lang == "en") "Refreshed" else "Yenilendi"
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             } catch (_: Exception) {
             }
             try {

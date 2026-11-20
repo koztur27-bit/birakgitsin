@@ -19,9 +19,11 @@ class BirakGitsinWidgetDataModule(reactContext: ReactApplicationContext) : React
         streak: Int,
         nextWindow: String,
         quitText: String,
-        savingsText: String
+        savingsText: String,
+        language: String?
     ) {
         val context = reactApplicationContext
+        val lang = if (language == "en") "en" else "tr"
         // JS hesabını da AsyncStorage'dan okunan gerçek değerle doğrula.
         val resolvedSavings = WidgetStorage.readSavingsText(context) ?: savingsText
         val prefs = context.getSharedPreferences("BirakGitsinWidget", Context.MODE_PRIVATE)
@@ -33,6 +35,7 @@ class BirakGitsinWidgetDataModule(reactContext: ReactApplicationContext) : React
             .putString("nextWindow", nextWindow)
             .putString("quitText", quitText)
             .putString("savingsText", resolvedSavings)
+            .putString("language", lang)
             .apply()
 
         forceRefresh()

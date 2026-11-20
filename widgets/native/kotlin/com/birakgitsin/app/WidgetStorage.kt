@@ -40,6 +40,25 @@ object WidgetStorage {
         val savingsText: String,
     )
 
+    fun readLanguage(context: Context): String {
+        val raw = readRawData(context)
+        if (raw != null) {
+            try {
+                val root = JSONObject(raw)
+                val lang = root.optString("language", "")
+                if (lang == "tr" || lang == "en") return lang
+            } catch (_: Exception) {
+            }
+        }
+        return try {
+            val prefs = context.getSharedPreferences("BirakGitsinWidget", Context.MODE_PRIVATE)
+            val lang = prefs.getString("language", "tr") ?: "tr"
+            if (lang == "en") "en" else "tr"
+        } catch (_: Exception) {
+            "tr"
+        }
+    }
+
     /** AsyncStorage'da saklanan ham uygulama verisi (JSON). */
     fun readRawData(context: Context): String? {
         for (spec in STORAGES) {
@@ -103,7 +122,8 @@ object WidgetStorage {
             val plan = root.optJSONObject("plan") ?: return null
             val startDate = plan.optString("startDate", "")
             if (startDate.isBlank()) return null
-            val quitText = computeQuitText(startDate) ?: return null
+            val lang = root.optString("language", readLanguage(context))
+            val quitText = computeQuitText(startDate, lang) ?: return null
             val savingsText = computeSavingsText(plan, root) ?: return null
             WidgetData(quitText, savingsText)
         } catch (_: Exception) {
@@ -113,7 +133,6 @@ object WidgetStorage {
 
     /**
      * Plan başlangıcından bugüne geçen süre (gün/saat) - JS elapsedDays ile uyumlu.
-     * Format: "X gün HH saat"
      */
     fun readQuitText(context: Context): String? {
         val raw = readRawData(context) ?: return null
@@ -122,7 +141,8 @@ object WidgetStorage {
             val plan = root.optJSONObject("plan") ?: return null
             val startDate = plan.optString("startDate", "")
             if (startDate.isBlank()) return null
-            computeQuitText(startDate)
+            val lang = root.optString("language", readLanguage(context))
+            computeQuitText(startDate, lang)
         } catch (_: Exception) {
             null
         }
@@ -162,13 +182,19 @@ object WidgetStorage {
         }
     }
 
-    private fun computeQuitText(startDate: String): String? {
+    private fun computeQuitText(startDate: String, language: String = "tr"): String? {
         val startMidnight = parseStartMidnight(startDate) ?: return null
         val now = System.currentTimeMillis()
         val elapsedMs = maxOf(0L, now - startMidnight)
         val days = (elapsedMs / MS_DAY).toInt()
         val hours = ((elapsedMs % MS_DAY) / MS_HOUR).toInt()
-        return "$days gün ${String.format(Locale.US, "%02d", hours)} saat"
+        val hh = String.format(Locale.US, "%02d", hours)
+        return if (language == "en") "$days days $hh hrs" else "$days gün $hh saat"
+    }
+
+    fun formatQuitText(days: Int, hours: Int, language: String): String {
+        val hh = String.format(Locale.US, "%02d", hours)
+        return if (language == "en") "$days days $hh hrs" else "$days gün $hh saat"
     }
 
     private fun computeSavingsText(plan: JSONObject, root: JSONObject): String? {

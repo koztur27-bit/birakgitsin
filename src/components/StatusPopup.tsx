@@ -1,4 +1,5 @@
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../i18n';
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useApp } from '../context/AppContext';
@@ -11,6 +12,7 @@ import {
   nextWindowInfo,
   riskiestHours,
   todayKey,
+  totalMoneySaved,
 } from '../lib/calculations';
 import { fontSizes, radius, shadows, spacing } from '../theme';
 
@@ -19,94 +21,77 @@ type StatusPopupProps = {
   onClose: () => void;
 };
 
-function formatMinutes(min: number): string {
-  if (min >= 60) {
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return m ? `${h} sa ${m} dk` : `${h} sa`;
-  }
-  return `${min} dk`;
-}
-
 export function StatusPopup({ visible, onClose }: StatusPopupProps) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const { data, timer } = useApp();
   const plan = data.plan;
+  if (!plan) return null;
 
   const today = todayKey();
-  const rec = plan ? getLog(data.logs, today) : null;
-  const goal = plan ? dailyGoal(plan, today, data.logs) : 0;
-  const left = rec ? Math.max(0, goal - rec.smoked) : 0;
-  const next = plan ? nextWindowInfo(plan) : null;
+  const rec = getLog(data.logs, today);
+  const goal = dailyGoal(plan, today, data.logs);
+  const left = Math.max(0, goal - rec.smoked);
+  const next = nextWindowInfo(plan);
+  const risks = riskiestHours(data.cravings, 1);
 
   const timerText =
     timer.status === 'idle'
-      ? 'Başlatılmadı'
-      : timer.status === 'done'
-        ? 'Tamamlandı'
-        : formatCountdown(timer.remaining);
-
-  const nextWindow = next && plan ? plan.windows[next.index] : null;
-  const risk = riskiestHours(data.cravings, 1)[0];
+      ? t('statusPopup.timerIdle')
+      : timer.status === 'running'
+      ? `${t('statusPopup.timerRunning')} · ${formatCountdown(timer.remaining)}`
+      : timer.status === 'paused'
+      ? `${t('statusPopup.timerPaused')} · ${formatCountdown(timer.remaining)}`
+      : t('statusPopup.timerDone');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>Durum</Text>
-          <Text style={styles.sub}>Şu ana kadar içtiğin ve kalan süreler</Text>
+          <Text style={styles.title}>{t('statusPopup.title')}</Text>
 
-          <View style={styles.bigRow}>
-            <View style={styles.bigBox}>
-              <Text style={styles.bigValue}>{rec?.smoked ?? 0}</Text>
-              <Text style={styles.bigLabel}>içilen sigara</Text>
+          <View style={styles.grid}>
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.smoked')}</Text>
+              <Text style={styles.value}>{rec.smoked}</Text>
             </View>
-            <View style={styles.bigBox}>
-              <Text style={styles.bigValue}>{left}</Text>
-              <Text style={styles.bigLabel}>kalan hakkın</Text>
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.goal')}</Text>
+              <Text style={styles.value}>{goal}</Text>
             </View>
-          </View>
-
-          <View style={styles.rows}>
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Dayanma sayacı</Text>
-              <Text style={styles.rowValue}>{timerText}</Text>
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.left')}</Text>
+              <Text style={[styles.value, { color: left > 0 ? colors.success : colors.danger }]}>{left}</Text>
             </View>
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Sıradaki izinli pencere</Text>
-              <Text style={styles.rowValue}>
-                {next ? `${formatMinutes(next.minutes)} sonra` : '—'}
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.nextWindow')}</Text>
+              <Text style={styles.value}>
+                {next ? `${Math.floor(next.minutes / 60)}h ${next.minutes % 60}m` : t('statusPopup.noWindow')}
               </Text>
             </View>
-            {nextWindow ? (
-              <View style={styles.row}>
-                <Text style={styles.rowLabel}>Pencere saati</Text>
-                <Text style={styles.rowValue}>
-                  {nextWindow.start}–{nextWindow.end}
-                </Text>
-              </View>
-            ) : null}
-            {plan && rec ? (
-              <View style={styles.row}>
-                <Text style={styles.rowLabel}>Bugün kazandın</Text>
-                <Text style={styles.rowValue}>
-                  {formatMoney(moneySavedOnDay(plan, rec), plan.currency)}
-                </Text>
-              </View>
-            ) : null}
-            {risk ? (
-              <View style={styles.row}>
-                <Text style={styles.rowLabel}>En riskli saat</Text>
-                <Text style={styles.rowValue}>
-                  {String(risk.hour).padStart(2, '0')}:00 · {risk.count}×
-                </Text>
-              </View>
-            ) : null}
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.timer')}</Text>
+              <Text style={styles.valueSmall}>{timerText}</Text>
+            </View>
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.savedToday')}</Text>
+              <Text style={styles.valueSmall}>{formatMoney(moneySavedOnDay(plan, rec), plan.currency)}</Text>
+            </View>
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.savedTotal')}</Text>
+              <Text style={styles.valueSmall}>{formatMoney(totalMoneySaved(plan, data.logs), plan.currency)}</Text>
+            </View>
+            <View style={styles.item}>
+              <Text style={styles.label}>{t('statusPopup.risk')}</Text>
+              <Text style={styles.valueSmall}>
+                {risks.length ? `${String(risks[0].hour).padStart(2, '0')}:00` : t('statusPopup.riskNone')}
+              </Text>
+            </View>
           </View>
 
           <Pressable style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeText}>Kapat</Text>
+            <Text style={styles.closeText}>{t('common.close')}</Text>
           </Pressable>
         </View>
       </View>
@@ -114,50 +99,38 @@ export function StatusPopup({ visible, onClose }: StatusPopupProps) {
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  sheet: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    ...shadows.card,
-  },
-  title: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-  sub: { fontSize: fontSizes.sm, color: colors.textMuted, marginTop: spacing.xs },
-  bigRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
-  bigBox: {
-    flex: 1,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  bigValue: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.primaryDark },
-  bigLabel: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
-  rows: { marginTop: spacing.md, gap: spacing.sm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  rowLabel: { fontSize: fontSizes.sm, color: colors.textMuted, fontWeight: '600', flex: 1 },
-  rowValue: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
-  closeBtn: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  closeText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'center',
+      padding: spacing.md,
+    },
+    sheet: {
+      backgroundColor: colors.card,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      ...shadows.card,
+    },
+    title: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.text, marginBottom: spacing.md },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    item: {
+      width: '48%',
+      backgroundColor: colors.bg,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+    },
+    label: { fontSize: fontSizes.xs, color: colors.textMuted, marginBottom: 2 },
+    value: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+    valueSmall: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.text },
+    closeBtn: {
+      alignSelf: 'center',
+      marginTop: spacing.md,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.round,
+    },
+    closeText: { color: '#FFFFFF', fontWeight: '700' },
+  });

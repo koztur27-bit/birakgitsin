@@ -1,19 +1,9 @@
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../i18n';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TabKey } from '../types';
 import { fontSizes, spacing } from '../theme';
-
-type TabDef = { key: TabKey; label: string };
-
-const TABS: TabDef[] = [
-  { key: 'home', label: 'Ana Sayfa' },
-  { key: 'craving', label: 'Kriz' },
-  { key: 'timer', label: 'Sayaç' },
-  { key: 'stats', label: 'İstatistik' },
-  { key: 'health', label: 'Sağlık' },
-  { key: 'settings', label: 'Ayarlar' },
-];
 
 type TabBarProps = {
   active: TabKey;
@@ -22,10 +12,19 @@ type TabBarProps = {
 
 export function TabBar({ active, onChange }: TabBarProps) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: 'home', label: t('tabs.home') },
+    { key: 'craving', label: t('tabs.craving') },
+    { key: 'timer', label: t('tabs.timer') },
+    { key: 'stats', label: t('tabs.stats') },
+    { key: 'health', label: t('tabs.health') },
+    { key: 'settings', label: t('tabs.settings') },
+  ];
   return (
     <View style={styles.bar}>
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const isActive = tab.key === active;
         return (
           <Pressable

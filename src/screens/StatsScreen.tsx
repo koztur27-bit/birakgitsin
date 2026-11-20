@@ -423,8 +423,8 @@ export function StatsScreen() {
       </ScrollView>
       <SuccessShareCard
         ref={shareCardRef}
-        durationText={`${Math.floor(elapsedDays(plan) * 24 / 24)} gün ${Math.floor(elapsedDays(plan) * 24) % 24} saat`}
-        avoidedTotal={avoided}
+        days={Math.max(0, Math.floor(elapsedDays(plan)))}
+        avoided={Math.max(0, Math.round(avoided))}
         savedText={formatMoney(saved, plan.currency)}
       />
     </View>

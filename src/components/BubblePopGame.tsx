@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useI18n } from '../i18n';
 import { fontSizes, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -20,13 +21,14 @@ type BubblePopGameProps = {
 
 export function BubblePopGame({ durationSec = 60, active = true, onComplete }: BubblePopGameProps) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
   const [left, setLeft] = useState(durationSec);
   const [score, setScore] = useState(0);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
-  const [area, setArea] = useState({ w: 0, h: 0 });
+  const [, setArea] = useState({ w: 0, h: 0 });
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const spawnRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -42,15 +44,18 @@ export function BubblePopGame({ durationSec = 60, active = true, onComplete }: B
     spawnRef.current = null;
   }, []);
 
-  useEffect(() => () => clearTimers(), [clearTimers]);
-
-  useEffect(() => {
-    if (!active) {
-      clearTimers();
-      const t = setTimeout(() => setRunning(false), 0);
-      return () => clearTimeout(t);
-    }
-  }, [active, clearTimers]);
+  const spawnBubble = useCallback(() => {
+    setArea((a) => {
+      if (a.w <= 0 || a.h <= 0) return a;
+      const size = 34 + Math.floor(Math.random() * 28);
+      const x = Math.max(0, Math.floor(Math.random() * Math.max(1, a.w - size)));
+      const y = Math.max(0, Math.floor(Math.random() * Math.max(1, a.h - size)));
+      const hue = Math.floor(Math.random() * 360);
+      const bubble: Bubble = { id: idRef.current++, x, y, size, hue };
+      setBubbles((prev) => [...prev.slice(-10), bubble]);
+      return a;
+    });
+  }, []);
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -59,41 +64,17 @@ export function BubblePopGame({ durationSec = 60, active = true, onComplete }: B
     setRunning(false);
     setDone(true);
     setLeft(0);
-    setBubbles([]);
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     onComplete?.(scoreRef.current);
   }, [clearTimers, onComplete]);
-
-  const spawnBubble = useCallback(() => {
-    setBubbles((prev) => {
-      if (prev.length >= 7) return prev;
-      const w = area.w || 280;
-      const h = area.h || 260;
-      const size = 46 + Math.floor(Math.random() * 28);
-      const pad = 6;
-      const maxX = Math.max(pad, w - size - pad);
-      const maxY = Math.max(pad, h - size - pad);
-      const b: Bubble = {
-        id: idRef.current++,
-        x: pad + Math.floor(Math.random() * maxX),
-        y: pad + Math.floor(Math.random() * maxY),
-        size,
-        hue: Math.floor(Math.random() * 4),
-      };
-      // keep short lifetime feel by replacing oldest if many
-      const next = [...prev, b];
-      return next.length > 8 ? next.slice(next.length - 8) : next;
-    });
-  }, [area.h, area.w]);
 
   const start = useCallback(() => {
     clearTimers();
     doneRef.current = false;
     scoreRef.current = 0;
     setScore(0);
-    setLeft(durationSec);
     setBubbles([]);
     setDone(false);
+    setLeft(durationSec);
     setRunning(true);
     endAtRef.current = Date.now() + durationSec * 1000;
 
@@ -103,108 +84,79 @@ export function BubblePopGame({ durationSec = 60, active = true, onComplete }: B
       if (remain <= 0) finish();
     }, 250);
 
-    // initial burst + periodic spawn
-    setTimeout(spawnBubble, 0);
-    setTimeout(spawnBubble, 120);
-    setTimeout(spawnBubble, 240);
-    spawnRef.current = setInterval(() => {
-      spawnBubble();
-      // occasionally spawn extra
-      if (Math.random() > 0.55) setTimeout(spawnBubble, 180);
-    }, 700);
+    spawnRef.current = setInterval(spawnBubble, 700);
+    spawnBubble();
   }, [clearTimers, durationSec, finish, spawnBubble]);
 
-  const pop = useCallback((id: number) => {
+  useEffect(() => {
+    if (!active && running) {
+      clearTimers();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRunning(false);
+    }
+  }, [active, running, clearTimers]);
+
+  useEffect(() => () => clearTimers(), [clearTimers]);
+
+  const pop = (id: number) => {
+    if (!running) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setBubbles((prev) => prev.filter((b) => b.id !== id));
     scoreRef.current += 1;
     setScore(scoreRef.current);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  }, []);
-
-  const bubbleColors = [
-    ['rgba(124,255,178,0.35)', '#7CFFB2'],
-    ['rgba(120,200,255,0.35)', '#78C8FF'],
-    ['rgba(255,214,130,0.35)', '#FFD682'],
-    ['rgba(255,160,160,0.32)', '#FFA0A0'],
-  ];
+  };
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>Baloncuk Patlatma · Dikkat Dağıt</Text>
-      <Text style={styles.hint}>
-        60 saniye boyunca ekrandaki stres baloncuklarına dokunup patlat. Her dokunuşta hafif
-        titreşim hissedersin.
-      </Text>
-
-      <View style={styles.statsRow}>
-        <View style={styles.statPill}>
-          <Text style={styles.statLabel}>Süre</Text>
-          <Text style={styles.statValue}>{left} sn</Text>
-        </View>
-        <View style={styles.statPill}>
-          <Text style={styles.statLabel}>Puan</Text>
-          <Text style={styles.statValue}>{score}</Text>
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('craving.gameTitle')}</Text>
+        <Text style={styles.timer}>{left}s</Text>
       </View>
+      <Text style={styles.sub}>{t('craving.gameSub')}</Text>
 
       <View
-        style={styles.arena}
-        onLayout={(e) => {
-          const { width, height } = e.nativeEvent.layout;
-          setArea({ w: width, h: height });
-        }}
+        style={styles.area}
+        onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
       >
         {!running && !done ? (
-          <View style={styles.centerBox}>
-            <Text style={styles.bigEmoji}>🫧</Text>
-            <Text style={styles.centerText}>Nikotin dalgası gelince baloncukları patlat, 60 saniyede krizi atlat.</Text>
-            <Pressable style={styles.primaryBtn} onPress={start}>
-              <Text style={styles.primaryBtnText}>60 Saniyeyi Başlat</Text>
-            </Pressable>
-          </View>
+          <Pressable style={styles.centerBtn} onPress={start}>
+            <Text style={styles.centerBtnText}>{t('craving.gameStart')}</Text>
+          </Pressable>
         ) : null}
-
-        {running ? (
-          <>
-            {bubbles.map((b) => {
-              const c = bubbleColors[b.hue % bubbleColors.length];
-              return (
-                <Pressable
-                  key={b.id}
-                  onPress={() => pop(b.id)}
-                  hitSlop={6}
-                  style={[
-                    styles.bubble,
-                    {
-                      left: b.x,
-                      top: b.y,
-                      width: b.size,
-                      height: b.size,
-                      borderRadius: b.size / 2,
-                      backgroundColor: c[0],
-                      borderColor: c[1],
-                    },
-                  ]}
-                >
-                  <Text style={styles.bubbleText}>•</Text>
-                </Pressable>
-              );
-            })}
-          </>
-        ) : null}
-
         {done ? (
-          <View style={styles.centerBox}>
-            <Text style={styles.bigEmoji}>🏅</Text>
-            <Text style={styles.doneTitle}>Krizi Başarıyla Atlattın!</Text>
-            <Text style={styles.centerText}>
-              60 saniyeyi tamamladın ve {score} baloncuk patlattın. Bu dalga geçti — sen daha güçlüsün.
-            </Text>
-            <Pressable style={styles.primaryBtn} onPress={start}>
-              <Text style={styles.primaryBtnText}>Tekrar Oyna</Text>
+          <View style={styles.doneBox}>
+            <Text style={styles.doneTitle}>{t('craving.actionDone')}</Text>
+            <Text style={styles.doneScore}>{score}</Text>
+            <Pressable style={styles.centerBtn} onPress={start}>
+              <Text style={styles.centerBtnText}>{t('common.start')}</Text>
             </Pressable>
           </View>
         ) : null}
+        {running
+          ? bubbles.map((b) => (
+              <Pressable
+                key={b.id}
+                onPress={() => pop(b.id)}
+                style={[
+                  styles.bubble,
+                  {
+                    left: b.x,
+                    top: b.y,
+                    width: b.size,
+                    height: b.size,
+                    borderRadius: b.size / 2,
+                    backgroundColor: `hsla(${b.hue}, 80%, 60%, 0.35)`,
+                    borderColor: `hsla(${b.hue}, 80%, 55%, 0.8)`,
+                  },
+                ]}
+              />
+            ))
+          : null}
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={styles.scoreLabel}>{t('stats.goal')}: 60s</Text>
+        <Text style={styles.scoreValue}>{score}</Text>
       </View>
     </View>
   );
@@ -212,84 +164,33 @@ export function BubblePopGame({ durationSec = 60, active = true, onComplete }: B
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
-    wrap: {
-      gap: spacing.sm,
-      alignSelf: 'stretch',
-    },
-    title: {
-      fontSize: fontSizes.md,
-      fontWeight: '800',
-      color: colors.text,
-    },
-    hint: {
-      fontSize: fontSizes.xs,
-      color: colors.textMuted,
-      lineHeight: fontSizes.sm + 4,
-    },
-    statsRow: {
-      flexDirection: 'row',
-      gap: spacing.sm,
-      marginTop: spacing.xs,
-    },
-    statPill: {
-      flex: 1,
+    wrap: { gap: spacing.sm },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    title: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
+    timer: { fontSize: fontSizes.lg, fontWeight: '900', color: colors.primary },
+    sub: { fontSize: fontSizes.sm, color: colors.textMuted },
+    area: {
+      height: 260,
+      borderRadius: radius.lg,
       backgroundColor: colors.bg,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: radius.md,
-      paddingVertical: spacing.sm,
-      alignItems: 'center',
-    },
-    statLabel: { fontSize: fontSizes.xs, color: colors.textMuted, fontWeight: '700' },
-    statValue: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.primaryDark },
-    arena: {
-      marginTop: spacing.sm,
-      height: 280,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
       overflow: 'hidden',
-    },
-    centerBox: {
-      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      padding: spacing.md,
-      gap: spacing.sm,
     },
-    bigEmoji: { fontSize: 44 },
-    centerText: {
-      fontSize: fontSizes.sm,
-      color: colors.text,
-      textAlign: 'center',
-      lineHeight: fontSizes.md + 4,
-    },
-    doneTitle: {
-      fontSize: fontSizes.lg,
-      fontWeight: '800',
-      color: colors.success,
-      textAlign: 'center',
-    },
-    primaryBtn: {
-      marginTop: spacing.xs,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.lg,
-      borderRadius: radius.md,
+    bubble: { position: 'absolute', borderWidth: 2 },
+    centerBtn: {
       backgroundColor: colors.primary,
-      alignItems: 'center',
-      minWidth: 200,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.round,
     },
-    primaryBtnText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
-    bubble: {
-      position: 'absolute',
-      borderWidth: 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    bubbleText: {
-      color: 'rgba(255,255,255,0.9)',
-      fontSize: 18,
-      fontWeight: '800',
-    },
+    centerBtnText: { color: '#fff', fontWeight: '800' },
+    doneBox: { alignItems: 'center', gap: 8 },
+    doneTitle: { fontSize: fontSizes.md, fontWeight: '700', color: colors.text },
+    doneScore: { fontSize: 40, fontWeight: '900', color: colors.primary },
+    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    scoreLabel: { fontSize: fontSizes.sm, color: colors.textMuted },
+    scoreValue: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
   });

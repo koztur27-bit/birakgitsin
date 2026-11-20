@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import ViewShot, { captureRef } from 'react-native-view-shot';
+import { useI18n } from '../i18n';
 
 export type ShareThemeId = 'classic' | 'gold' | 'sunset';
 
@@ -42,128 +43,142 @@ export const SHARE_THEMES: ShareTheme[] = [
     name: 'Altın Zafer',
     proOnly: true,
     colors: ['#2A1A00', '#5A3B00', '#1A1206'],
-    glowTop: 'rgba(255, 215, 120, 0.22)',
-    glowBottom: 'rgba(255, 170, 40, 0.14)',
-    badgeBg: '#FFD36A',
+    glowTop: 'rgba(255, 215, 0, 0.22)',
+    glowBottom: 'rgba(255, 140, 0, 0.18)',
+    badgeBg: '#FFD700',
     badgeText: '#3A2600',
-    accent: '#FFD36A',
-    border: 'rgba(255, 211, 106, 0.35)',
-    subtitle: 'Azmin, en parlak zaferin.',
-    quote: '“Değerini bilen, geleceğini kazanır.”',
+    accent: '#FFE082',
+    border: 'rgba(255,215,0,0.32)',
+    subtitle: 'Her an daha güçlü bir irade.',
+    quote: '“Zafer, vazgeçmeyenindir.”',
   },
   {
     id: 'sunset',
     name: 'Gün Batımı',
     proOnly: true,
-    colors: ['#2B0A1F', '#5B1B3A', '#102A43'],
-    glowTop: 'rgba(255, 140, 105, 0.20)',
-    glowBottom: 'rgba(255, 94, 98, 0.16)',
-    badgeBg: '#FFB199',
-    badgeText: '#3A1020',
-    accent: '#FFB199',
-    border: 'rgba(255, 177, 153, 0.32)',
-    subtitle: 'Her gün, yeni bir başlangıç.',
-    quote: '“Bıraktığın her sigara, sana dönen bir hediye.”',
+    colors: ['#2B1035', '#7A1F3D', '#B23A48'],
+    glowTop: 'rgba(255, 166, 158, 0.22)',
+    glowBottom: 'rgba(255, 214, 165, 0.16)',
+    badgeBg: '#FFD6A5',
+    badgeText: '#5A1E2B',
+    accent: '#FFE0C2',
+    border: 'rgba(255,214,165,0.32)',
+    subtitle: 'Yeni bir gün, yeni bir sen.',
+    quote: '“Her gün yeniden başlayabilirsin.”',
   },
 ];
 
-export function getShareTheme(id: ShareThemeId): ShareTheme {
-  return SHARE_THEMES.find((t) => t.id === id) ?? SHARE_THEMES[0];
+export function useLocalizedShareThemes(): ShareTheme[] {
+  const { t } = useI18n();
+  return useMemo(
+    () =>
+      SHARE_THEMES.map((theme) => ({
+        ...theme,
+        name: t(`successCard.themes.${theme.id}`),
+        subtitle: t('successCard.subtitle'),
+        quote: t('successCard.quote'),
+      })),
+    [t],
+  );
 }
 
-export type SuccessShareCardProps = {
-  durationText: string;
-  avoidedTotal: number;
+type SuccessShareCardProps = {
+  days: number;
+  avoided: number;
   savedText: string;
-  theme?: ShareThemeId;
+  themeId?: ShareThemeId;
+  forCapture?: boolean;
 };
 
 export type SuccessShareCardHandle = {
-  share: () => Promise<void>;
+  share: () => Promise<boolean>;
+  capture: () => Promise<string | null>;
 };
 
-const CARD_W = 1080;
-const CARD_H = 1920;
-
 export const SuccessShareCard = forwardRef<SuccessShareCardHandle, SuccessShareCardProps>(
-  function SuccessShareCard({ durationText, avoidedTotal, savedText, theme = 'classic' }, ref) {
-    const shotRef = useRef<ViewShot>(null);
-    const t = useMemo(() => getShareTheme(theme), [theme]);
+  function SuccessShareCard({ days, avoided, savedText, themeId = 'classic', forCapture = false }, ref) {
+    const viewRef = useRef<ViewShot>(null);
+    const { t } = useI18n();
+    const themes = useLocalizedShareThemes();
+    const theme = themes.find((x) => x.id === themeId) || themes[0];
+
+    const doCapture = async (): Promise<string | null> => {
+      try {
+        if (!viewRef.current) return null;
+        const uri = await captureRef(viewRef, { format: 'png', quality: 1, result: 'tmpfile' });
+        return uri || null;
+      } catch {
+        return null;
+      }
+    };
 
     useImperativeHandle(ref, () => ({
-      async share() {
-        if (Platform.OS === 'web') {
-          Alert.alert('Paylaşım', 'Başarı kartı paylaşımı mobil uygulamada kullanılabilir.');
-          return;
-        }
+      capture: doCapture,
+      share: async () => {
         try {
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          const uri = await captureRef(shotRef, {
-            format: 'png',
-            quality: 1,
-            result: 'tmpfile',
-            width: CARD_W,
-            height: CARD_H,
-          });
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          const uri = await doCapture();
+          if (!uri) {
+            Alert.alert(t('home.shareErrorTitle'), t('home.shareErrorMsg'));
+            return false;
+          }
+          if (Platform.OS === 'web') {
+            Alert.alert(t('home.shareErrorTitle'), t('home.shareErrorMsg'));
+            return false;
+          }
           const available = await Sharing.isAvailableAsync();
           if (!available) {
-            Alert.alert('Paylaşım', 'Bu cihazda paylaşım menüsü kullanılamıyor.');
-            return;
+            Alert.alert(t('home.shareErrorTitle'), t('home.shareErrorMsg'));
+            return false;
           }
           await Sharing.shareAsync(uri, {
             mimeType: 'image/png',
-            dialogTitle: 'Bırak Gitsin Başarı Kartı',
-            UTI: 'public.png',
+            dialogTitle: t('home.shareDialog'),
           });
-        } catch (e: any) {
-          Alert.alert('Paylaşım', e?.message || 'Başarı kartı oluşturulamadı.');
+          return true;
+        } catch {
+          Alert.alert(t('home.shareErrorTitle'), t('home.shareErrorMsg'));
+          return false;
         }
       },
     }));
 
     return (
-      <View pointerEvents="none" style={styles.offscreen} collapsable={false}>
-        <ViewShot ref={shotRef} options={{ format: 'png', quality: 1 }}>
-          <LinearGradient
-            colors={t.colors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.card}
-          >
-            <View style={[styles.glowTop, { backgroundColor: t.glowTop }]} />
-            <View style={[styles.glowBottom, { backgroundColor: t.glowBottom }]} />
-
-            <View style={styles.header}>
-              <Text style={[styles.brand, { color: '#F8FFF9' }]}>Bırak Gitsin</Text>
-              <Text style={[styles.badge, { color: t.badgeText, backgroundColor: t.badgeBg }]}>
-                BAŞARI KARTI
-              </Text>
+      <View style={[styles.wrapper, forCapture && styles.captureWrapper]}>
+        <ViewShot ref={viewRef} options={{ format: 'png', quality: 1 }}>
+          <LinearGradient colors={theme.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
+            <View style={[styles.glowTop, { backgroundColor: theme.glowTop }]} />
+            <View style={[styles.glowBottom, { backgroundColor: theme.glowBottom }]} />
+            <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
+              <Text style={[styles.badgeText, { color: theme.badgeText }]}>{t('successCard.badge')}</Text>
             </View>
 
-            <Text style={styles.heroTitle}>İlerlemem</Text>
-            <Text style={[styles.heroSub, { color: 'rgba(248,255,249,0.88)' }]}>{t.subtitle}</Text>
+            <Text style={styles.appName}>{t('common.appName')}</Text>
+            <Text style={styles.subtitle}>{theme.subtitle}</Text>
 
-            <View style={[styles.statsBox, { borderColor: t.border }]}>
-              <View style={styles.statBlock}>
-                <Text style={styles.statLabel}>Bırakma serisi</Text>
-                <Text style={styles.statValue}>{durationText}</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: theme.accent }]}>{days}</Text>
+                <Text style={styles.statLabel}>{t('successCard.daysLabel')}</Text>
               </View>
-              <View style={styles.divider} />
-              <View style={styles.statBlock}>
-                <Text style={styles.statLabel}>İçmediğim sigara</Text>
-                <Text style={styles.statValue}>{avoidedTotal} adet</Text>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: theme.accent }]}>{avoided}</Text>
+                <Text style={styles.statLabel}>{t('successCard.avoidedLabel')}</Text>
               </View>
-              <View style={styles.divider} />
-              <View style={styles.statBlock}>
-                <Text style={styles.statLabel}>Biriktirdiğim para</Text>
-                <Text style={[styles.statValueMoney, { color: t.accent }]}>{savedText}</Text>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: theme.accent }]} numberOfLines={1} adjustsFontSizeToFit>
+                  {savedText}
+                </Text>
+                <Text style={styles.statLabel}>{t('successCard.savedLabel')}</Text>
               </View>
             </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerQuote}>{t.quote}</Text>
-              <Text style={[styles.footerApp, { color: t.accent }]}>#BirakGitsin</Text>
+            <View style={[styles.quoteBox, { borderColor: theme.border }]}>
+              <Text style={styles.quote}>{theme.quote}</Text>
             </View>
+            <Text style={styles.footer}>{t('successCard.shareFooter')}</Text>
           </LinearGradient>
         </ViewShot>
       </View>
@@ -172,102 +187,103 @@ export const SuccessShareCard = forwardRef<SuccessShareCardHandle, SuccessShareC
 );
 
 const styles = StyleSheet.create({
-  offscreen: {
-    position: 'absolute',
-    left: -9999,
-    top: 0,
-    width: CARD_W,
-    height: CARD_H,
-    opacity: 0,
+  wrapper: {
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  captureWrapper: {
+    width: 360,
   },
   card: {
-    width: CARD_W,
-    height: CARD_H,
-    paddingHorizontal: 96,
-    paddingVertical: 120,
-    justifyContent: 'space-between',
+    borderRadius: 24,
+    padding: 22,
+    overflow: 'hidden',
   },
   glowTop: {
     position: 'absolute',
-    top: -120,
-    right: -80,
-    width: 520,
-    height: 520,
-    borderRadius: 260,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    top: -70,
+    right: -50,
   },
   glowBottom: {
     position: 'absolute',
-    bottom: -140,
-    left: -100,
-    width: 560,
-    height: 560,
-    borderRadius: 280,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  brand: {
-    fontSize: 64,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    bottom: -60,
+    left: -40,
   },
   badge: {
-    fontSize: 34,
-    fontWeight: '800',
-    paddingHorizontal: 28,
-    paddingVertical: 14,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 999,
-    overflow: 'hidden',
+    marginBottom: 14,
   },
-  heroTitle: {
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  appName: {
     color: '#FFFFFF',
-    fontSize: 118,
+    fontSize: 30,
     fontWeight: '900',
-    marginTop: 40,
+    letterSpacing: 0.3,
   },
-  heroSub: {
-    fontSize: 46,
-    fontWeight: '600',
-    marginTop: 8,
+  subtitle: {
+    color: 'rgba(255,255,255,0.86)',
+    fontSize: 14,
+    marginTop: 4,
+    marginBottom: 18,
   },
-  statsBox: {
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 2,
-    borderRadius: 48,
-    paddingHorizontal: 56,
-    paddingVertical: 44,
-    gap: 28,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
   },
-  statBlock: { gap: 10 },
-  statLabel: {
-    color: 'rgba(234,251,243,0.78)',
-    fontSize: 40,
-    fontWeight: '700',
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 4,
   },
   statValue: {
-    color: '#FFFFFF',
-    fontSize: 72,
+    fontSize: 22,
     fontWeight: '900',
   },
-  statValueMoney: {
-    fontSize: 80,
-    fontWeight: '900',
-  },
-  divider: {
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-  },
-  footer: { alignItems: 'center', gap: 16 },
-  footerQuote: {
-    color: '#EAFBF3',
-    fontSize: 44,
-    fontWeight: '700',
+  statLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 11,
+    marginTop: 4,
     textAlign: 'center',
   },
-  footerApp: {
-    fontSize: 40,
-    fontWeight: '800',
+  divider: {
+    width: 1,
+    height: 36,
+  },
+  quoteBox: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+  },
+  quote: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  footer: {
+    marginTop: 12,
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 11,
+    textAlign: 'right',
   },
 });

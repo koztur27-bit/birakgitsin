@@ -10,6 +10,7 @@ export function updateWidgetData(
   nextWindow: string,
   quitText: string,
   savingsText: string,
+  language: 'tr' | 'en' = 'tr',
 ) {
   if (Platform.OS !== 'android' || !BirakGitsinWidgetData) return;
   try {
@@ -21,6 +22,7 @@ export function updateWidgetData(
       nextWindow,
       quitText,
       savingsText,
+      language,
     );
   } catch {
     // ignore

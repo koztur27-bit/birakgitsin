@@ -55,6 +55,8 @@ export type CrisisReminder = {
   enabled: boolean;
 };
 
+export type AppLanguage = 'tr' | 'en';
+
 export type AppData = {
   plan: Plan | null;
   logs: DayRecord[];
@@ -67,6 +69,8 @@ export type AppData = {
   /** Ödüllü reklamla açılan geçici PRO erişiminin bitiş zamanı (ms). */
   proUnlockUntil?: number;
   showLockScreen: boolean;
+  /** Uygulama dili. İlk açılışta sistem dilinden algılanır ve kalıcı saklanır. */
+  language?: AppLanguage;
 };
 
 export type TabKey = 'home' | 'craving' | 'timer' | 'stats' | 'health' | 'settings';

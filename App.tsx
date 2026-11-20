@@ -13,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TabBar } from './src/components/TabBar';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { I18nProvider, useI18n } from './src/i18n';
 import { CravingScreen } from './src/screens/CravingScreen';
 import { HealthScreen } from './src/screens/HealthScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -51,20 +52,26 @@ function ErrorView({
 }) {
   return (
     <View style={styles.splash}>
-      <Text style={styles.errorTitle}>Bir sorun oluştu</Text>
+      <Text style={styles.errorTitle}>Bir sorun oluştu / Something went wrong</Text>
       <ScrollView style={styles.errorScroll}>
         <Text style={styles.errorMessage}>{error.message}</Text>
         {error.stack ? <Text style={styles.errorStack}>{error.stack}</Text> : null}
       </ScrollView>
       <Pressable style={styles.errorBtn} onPress={onReload}>
-        <Text style={styles.errorBtnText}>Yeniden Dene</Text>
+        <Text style={styles.errorBtnText}>Tekrar Dene / Retry</Text>
       </Pressable>
     </View>
   );
 }
 
+function I18nBridge({ children }: { children: React.ReactNode }) {
+  const { data } = useApp();
+  return <I18nProvider locale={data.language || 'tr'}>{children}</I18nProvider>;
+}
+
 function Root() {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const { data, ready, setPlan } = useApp();
   const [tab, setTab] = useState<TabKey>('home');
   const [editing, setEditing] = useState(false);
@@ -82,6 +89,7 @@ function Root() {
     return (
       <View style={[styles.splash, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.textMuted, marginTop: 12 }}>{t('app.loading')}</Text>
       </View>
     );
   }
@@ -132,8 +140,10 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AppProvider>
-            <StatusBar style="auto" />
-            <Root />
+            <I18nBridge>
+              <StatusBar style="auto" />
+              <Root />
+            </I18nBridge>
           </AppProvider>
         </ThemeProvider>
       </SafeAreaProvider>

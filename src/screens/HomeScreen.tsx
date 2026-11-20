@@ -24,6 +24,7 @@ import { SosBreathingModal } from '../components/SosBreathingModal';
 import { SHARE_THEMES, ShareThemeId, SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
 import { StatusPopup } from '../components/StatusPopup';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import { hasProAccess } from '../lib/proAccess';
 import { updateWidgetData } from '../lib/widgetData';
 import { ProScreen } from './ProScreen';
@@ -65,6 +66,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const {
     data,
     logCigarette,
@@ -80,6 +82,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     grantProUnlock24h,
   } = useApp();
   const plan = data.plan;
+  const lang = data.language || 'tr';
   const [smokeNote, setSmokeNote] = useState<string | null>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
@@ -127,7 +130,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       'Özel Tema (PRO)',
       'Özel başarı kartı temaları PRO özelliğidir. İstersen kısa bir reklam izleyerek bu temayı 24 saat ücretsiz kullanabilirsin.',
       [
-        { text: 'Vazgeç', style: 'cancel' },
+        { text: t('home.goalCancel'), style: 'cancel' },
         {
           text: 'Kısa Reklam İzle ve 24 Saat Aç',
           onPress: async () => {
@@ -164,7 +167,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     setUpdating(true);
     const result = await downloadAndInstallUpdate();
     setUpdating(false);
-    Alert.alert('Güncelleme', result.message);
+    Alert.alert(t('home.updateTitle'), result.message);
   };
 
   const showSmokeNote = (text: string) => {
@@ -176,11 +179,11 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
   const handleSlip = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     const { avoided } = logSlip({ windowIndex });
-    const msg = `Sorun değil, şu ana kadar içmediğin ${avoided} sigara hâlâ senin büyük başarın. Kaldığımız yerden devam ediyoruz!`;
+    const msg = t('home.slipMsg', { count: avoided });
     if (Platform.OS === 'web') {
       (globalThis as any).alert?.(msg);
     } else {
-      Alert.alert('1 Dal İçtim', msg);
+      Alert.alert(t('home.slipTitle'), msg);
     }
   };
 
@@ -193,10 +196,11 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
     const currentStreak = goalStreak(plan, data.logs);
     const upcoming = nextWindowInfo(plan);
     const upcomingStr = upcoming ? fromMin((nowMin() + upcoming.minutes) % 1440) : '--:--';
-    const elapsedMs = elapsedDays(plan) * 24 * 60 * 60 * 1000;
+    const elapsedMs = Math.max(0, Date.now() - new Date(plan.startDate).getTime());
     const quitDays = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
     const quitHours = Math.floor((elapsedMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-    const quitText = `${quitDays} gün ${String(quitHours).padStart(2, '0')} saat`;
+    const hh = String(quitHours).padStart(2, '0');
+    const quitText = lang === 'en' ? `${quitDays} days ${hh} hrs` : `${quitDays} gün ${hh} saat`;
     const savingsText = formatMoneyShort(savedTotal, plan.currency);
     updateWidgetData(
       todayRecord.smoked,
@@ -206,8 +210,9 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       upcomingStr,
       quitText,
       savingsText,
+      lang,
     );
-  }, [data, plan]);
+  }, [data, plan, lang]);
 
   if (!plan) return null;
 
@@ -297,7 +302,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
                 onPress={() => setProOpen(true)}
                 hitSlop={6}
               >
-                <Text style={[styles.proBadgeText, isPro && styles.proBadgeTextActive]}>PRO</Text>
+                <Text style={[styles.proBadgeText, isPro && styles.proBadgeTextActive]}>{t('home.pro')}</Text>
               </Pressable>
             </View>
             <Text style={styles.date}>{dateText}</Text>
@@ -314,7 +319,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             hitSlop={8}
           >
             <Text style={[styles.reloadChipText, mapNumbers && styles.reloadChipTextActive]}>
-              {mapNumbers ? 'Harita ✓' : 'Harita'}
+              {mapNumbers ? 'Harita ✓' : t('home.map')}
             </Text>
           </Pressable>
           <Pressable style={styles.reloadChip} onPress={() => setStatusOpen(true)} hitSlop={8}>
@@ -394,7 +399,7 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
             {todayTimes.length === 0 ? (
               <Text style={styles.cigLogEmpty}>
                 {record.smoked === 0
-                  ? 'Bugün henüz sigara içmedin 🎉'
+                  ? t('home.noSmokingToday')
                   : `${record.smoked} sigara · (saat kaydı yok)`}
               </Text>
             ) : (
@@ -805,9 +810,9 @@ export function HomeScreen({ onOpenCraving }: HomeScreenProps) {
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
       <SuccessShareCard
         ref={shareCardRef}
-        theme={shareTheme}
-        durationText={`${Math.floor(elapsedDays(plan) * 24 / 24)} gün ${Math.floor(elapsedDays(plan) * 24) % 24} saat`}
-        avoidedTotal={avoided}
+        themeId={shareTheme}
+        days={Math.max(0, Math.floor(elapsedDays(plan)))}
+        avoided={Math.max(0, Math.round(avoided))}
         savedText={formatMoney(savedTotal, plan.currency)}
       />
     </View>

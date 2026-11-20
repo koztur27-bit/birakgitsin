@@ -14,6 +14,7 @@ import {
 } from '../lib/statusNotification';
 import {
   AppData,
+  AppLanguage,
   CrisisReminder,
   DayRecord,
   NrtKind,
@@ -22,7 +23,7 @@ import {
   TimerState,
   TimerStatus,
 } from '../types';
-import { clearData, loadData, persistData } from '../storage';
+import { clearData, detectSystemLanguage, loadData, persistData } from '../storage';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -60,6 +61,7 @@ type AppContextValue = {
   setPremium: (value: boolean) => void;
   grantProUnlock24h: () => void;
   setShowLockScreen: (value: boolean) => void;
+  setLanguage: (language: AppLanguage) => void;
   timer: TimerState;
   setTimerDuration: (minutes: number) => void;
   startTimer: (minutes?: number) => void;
@@ -635,9 +637,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       badges: [],
       savingsGoal: null,
       crisisReminders: [],
+      nrtLogs: [],
       isPremium: false,
       proUnlockUntil: 0,
       showLockScreen: true,
+      language: data.language || detectSystemLanguage(),
     });
   };
 
@@ -647,6 +651,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     persist({ ...data, proUnlockUntil: Date.now() + 24 * 60 * 60 * 1000 });
 
   const setShowLockScreen = (value: boolean) => persist({ ...data, showLockScreen: value });
+
+  const setLanguage = (language: AppLanguage) => persist({ ...data, language });
 
   const restoreData = (incoming: AppData) => {
     const clean: AppData = {
@@ -678,6 +684,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? incoming.proUnlockUntil
           : 0,
       showLockScreen: incoming.showLockScreen !== false,
+      language: incoming.language === 'tr' || incoming.language === 'en' ? incoming.language : (data.language || detectSystemLanguage()),
     };
     persist(clean);
     if (Platform.OS !== 'web') {
@@ -728,6 +735,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setPremium,
     grantProUnlock24h,
     setShowLockScreen,
+    setLanguage,
     timer,
     setTimerDuration,
     startTimer,

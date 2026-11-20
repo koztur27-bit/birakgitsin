@@ -1,8 +1,15 @@
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../i18n';
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { fontSizes, radius, shadows, spacing } from '../theme';
-import { SCREEN_MAP } from '../lib/screenMap';
+
+type ScreenMapItem = {
+  code: string;
+  name: string;
+  desc: string;
+  indent?: boolean;
+};
 
 type ScreenMapModalProps = {
   visible: boolean;
@@ -18,49 +25,43 @@ export function ScreenMapModal({
   onToggleNumbers,
 }: ScreenMapModalProps) {
   const { colors } = useTheme();
+  const { t, ta } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const items = ta<ScreenMapItem[]>('screenMap.items') || [];
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>Ekran Haritası</Text>
-          <Text style={styles.sub}>
-            Bir bölgeyi anlatmak için sadece numarasını yaz. Örnek: “3a’yı büyüt”.
-          </Text>
+          <Text style={styles.title}>{t('screenMap.title')}</Text>
+          <Text style={styles.sub}>{t('screenMap.sub')}</Text>
 
           {onToggleNumbers ? (
             <View style={styles.toggleRow}>
               <View style={styles.toggleText}>
-                <Text style={styles.toggleTitle}>Numaraları ana sayfada göster</Text>
-                <Text style={styles.toggleSub}>
-                  Açıkken her bölümün yanında numara balonu görünür.
-                </Text>
+                <Text style={styles.toggleTitle}>{t('screenMap.showNumbers')}</Text>
+                <Text style={styles.toggleSub}>{t('screenMap.showNumbersSub')}</Text>
               </View>
-              <Switch
-                value={!!showNumbers}
-                onValueChange={onToggleNumbers}
-                trackColor={{ true: colors.primary, false: colors.border }}
-                thumbColor={colors.white}
-              />
+              <Switch value={!!showNumbers} onValueChange={onToggleNumbers} />
             </View>
           ) : null}
 
-          <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-            {SCREEN_MAP.map((item) => (
+          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+            {items.map((item) => (
               <View key={item.code} style={[styles.row, item.indent && styles.rowIndent]}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.code}</Text>
+                <View style={styles.codeBadge}>
+                  <Text style={styles.codeText}>{item.code}</Text>
                 </View>
-                <View style={styles.rowText}>
-                  <Text style={styles.rowName}>{item.name}</Text>
-                  <Text style={styles.rowDesc}>{item.desc}</Text>
+                <View style={styles.textCol}>
+                  <Text style={styles.name}>{item.name}</Text>
+                  <Text style={styles.desc}>{item.desc}</Text>
                 </View>
               </View>
             ))}
           </ScrollView>
 
-          <Pressable style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeText}>Kapat</Text>
+          <Pressable style={styles.closeBtn} onPress={onClose} accessibilityRole="button">
+            <Text style={styles.closeText}>{t('common.close')}</Text>
           </Pressable>
         </View>
       </View>
@@ -68,69 +69,72 @@ export function ScreenMapModal({
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  sheet: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    maxHeight: '82%',
-    ...shadows.card,
-  },
-  title: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
-  sub: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-    lineHeight: fontSizes.md + 4,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginTop: spacing.md,
-  },
-  toggleText: { flex: 1 },
-  toggleTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text },
-  toggleSub: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
-  list: { marginTop: spacing.md },
-  listContent: { gap: spacing.sm, paddingBottom: spacing.sm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-  },
-  rowIndent: { marginLeft: spacing.md, backgroundColor: colors.primarySoft },
-  badge: {
-    minWidth: 34,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 4,
-    borderRadius: radius.round,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  badgeText: { fontSize: fontSizes.xs, fontWeight: '800', color: colors.white },
-  rowText: { flex: 1 },
-  rowName: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text },
-  rowDesc: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
-  closeBtn: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  closeText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'center',
+      padding: spacing.md,
+    },
+    sheet: {
+      backgroundColor: colors.card,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      maxHeight: '85%',
+      ...shadows.card,
+    },
+    title: {
+      fontSize: fontSizes.xl,
+      fontWeight: '800',
+      color: colors.text,
+    },
+    sub: {
+      fontSize: fontSizes.sm,
+      color: colors.textMuted,
+      marginTop: 4,
+      marginBottom: spacing.md,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.sm,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+      marginBottom: spacing.sm,
+      gap: spacing.sm,
+    },
+    toggleText: { flex: 1 },
+    toggleTitle: { fontSize: fontSizes.md, fontWeight: '700', color: colors.text },
+    toggleSub: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
+    list: { marginBottom: spacing.md },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      paddingVertical: 8,
+    },
+    rowIndent: { paddingLeft: spacing.md },
+    codeBadge: {
+      minWidth: 34,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: radius.round,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+    },
+    codeText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primary },
+    textCol: { flex: 1 },
+    name: { fontSize: fontSizes.md, fontWeight: '700', color: colors.text },
+    desc: { fontSize: fontSizes.sm, color: colors.textMuted, marginTop: 2 },
+    closeBtn: {
+      alignSelf: 'center',
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.round,
+    },
+    closeText: { color: '#FFFFFF', fontWeight: '700', fontSize: fontSizes.md },
+  });
