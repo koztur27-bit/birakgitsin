@@ -13,8 +13,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CigaretteIcon } from '../components/CigaretteIcon';
 import { CoachChatModal } from '../components/CoachChatModal';
 import { MapBadge } from '../components/MapBadge';
+import { ProgressBar } from '../components/ProgressBar';
 import { ProScreen } from './ProScreen';
 import { SosBreathingModal } from '../components/SosBreathingModal';
 import {
@@ -55,13 +57,16 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, logCigarette, logSlip, grantProUnlock24h } = useApp();
+  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
   const [sosOpen, setSosOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
+
+  const [smokeNote, setSmokeNote] = useState<string | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const shareCardRef = useRef<SuccessShareCardHandle>(null);
   const isPro = hasProAccess(data);
@@ -70,11 +75,11 @@ export function HomeScreen(_props: HomeScreenProps) {
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
   const [shareUnlocking, setShareUnlocking] = useState(false);
 
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+  const showSmokeNote = (text: string) => {
+    setSmokeNote(text);
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(() => setSmokeNote(null), 2600);
+  };
 
   const triggerShareWithTheme = (theme: ShareThemeId) => {
     setShareTheme(theme);
@@ -144,54 +149,44 @@ export function HomeScreen(_props: HomeScreenProps) {
   const record = plan ? getLog(data.logs, today) : null;
   const savedTotal = plan ? totalMoneySaved(plan, data.logs) : 0;
   const avoided = plan ? cigarettesAvoided(plan, data.logs) : 0;
-  const avoidedTotalCount = Math.max(0, Math.floor(avoided));
-  const elapsedMs = plan ? Math.max(0, now - new Date(plan.startDate).getTime()) : 0;
-  const smokeFreeDays = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
-  const smokeFreeHours = Math.floor((elapsedMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  const smokeFreeText = lang === 'en'
-    ? `${smokeFreeDays} ${smokeFreeDays === 1 ? 'Day' : 'Days'} ${smokeFreeHours} ${smokeFreeHours === 1 ? 'Hour' : 'Hours'}`
-    : `${smokeFreeDays} Gün ${smokeFreeHours} Saat`;
-
-  const activeWindow = plan ? currentWindowIndex(plan) : -1;
-  const windowIndex = activeWindow >= 0 ? activeWindow : null;
-  const allowances = plan ? windowAllowances(dailyGoal(plan, today, data.logs), plan.windows) : [];
-  const nextWindow = plan ? nextWindowInfo(plan) : null;
-  const nextWindowStr = nextWindow ? fromMin((nowMin() + nextWindow.minutes) % 1440) : '--:--';
-  const heavyMode = !!plan && !!plan.heavySmokerMode && plan.baselinePerDay >= 20;
 
   if (!plan || !record) return null;
 
+  const goal = dailyGoal(plan, today, data.logs);
   const smokedCount = record.smoked;
-  const todayGoalCount = dailyGoal(plan, today, data.logs);
-  const todayStatusText =
-    smokedCount === 0
-      ? (lang === 'en' ? 'No cigarettes today yet 🎉' : 'Bugün henüz sigara içmedin 🎉')
-      : lang === 'en'
-        ? `You've smoked ${smokedCount} today`
-        : `Bugün ${smokedCount} sigara içtin`;
+  const remaining = Math.max(0, goal - smokedCount);
+  const underGoal = smokedCount <= goal;
+  const progress = goal > 0 ? smokedCount / goal : smokedCount > 0 ? 1 : 0;
+  const todayTimes = record.times ?? [];
 
-  let windowCompact: string | null = null;
-  if (heavyMode) {
-    if (plan.windows.length > 0) {
-      if (activeWindow >= 0) {
-        const left = Math.max(0, (allowances[activeWindow] ?? 0) - windowSmokedOn(record, activeWindow));
-        windowCompact = t('home.inWindow', {
+  const activeWindow = currentWindowIndex(plan);
+  const windowIndex = activeWindow >= 0 ? activeWindow : null;
+  const allowances = windowAllowances(goal, plan.windows);
+  const nextWindow = nextWindowInfo(plan);
+  const nextWindowStr = nextWindow ? fromMin((nowMin() + nextWindow.minutes) % 1440) : '--:--';
+  const heavyMode = !!plan.heavySmokerMode && plan.baselinePerDay >= 20;
+
+  const heroStatus =
+    plan.windows.length > 0 && activeWindow >= 0
+      ? t('home.inWindow', {
           start: plan.windows[activeWindow].start,
           end: plan.windows[activeWindow].end,
-          count: left,
-        });
-      } else {
-        windowCompact = t('home.outOfWindow', { time: nextWindowStr });
-      }
-    } else {
-      const left = Math.max(0, todayGoalCount - smokedCount);
-      windowCompact = lang === 'en' ? `Allowed today: ${left} left` : `Bugün kalan hak: ${left}`;
-    }
-  }
+          count: Math.max(0, (allowances[activeWindow] ?? 0) - windowSmokedOn(record, activeWindow)),
+        })
+      : plan.windows.length > 0
+        ? t('home.outOfWindow', { time: nextWindowStr })
+        : underGoal
+          ? heavyMode
+            ? t('home.underGoalHeavy', { count: remaining })
+            : t('home.underGoal', { count: remaining })
+          : heavyMode
+            ? t('home.overGoalHeavy')
+            : t('home.overGoal');
 
   const onHadOne = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     logCigarette({ windowIndex });
+    showSmokeNote(lang === 'en' ? 'Logged. Keep going gently.' : 'Kaydedildi. Nazikçe devam et.');
   };
 
   const onSlipPress = () => {
@@ -202,7 +197,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header: left brand+pro, right share only */}
+        {/* Header: Bırak Gitsin + maskot + Paylaş */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <MapBadge code="1" />
@@ -229,121 +224,131 @@ export function HomeScreen(_props: HomeScreenProps) {
           </Pressable>
         </View>
 
-        {/* Center Focus Card */}
+        {/* Original Big Blue "Bugün İçtiklerin" Card */}
         <LinearGradient
           colors={[colors.primary, colors.primaryDarker]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.focusCard}
+          style={styles.hero}
         >
-          <View style={styles.mapTitleRow}>
-            <MapBadge code="2" />
-            <Text style={styles.focusLabel}>
-              {lang === 'en' ? 'Smoke-Free Time' : 'Sigarasız Süre'}
-            </Text>
-          </View>
-          <Text style={styles.focusTime}>{smokeFreeText}</Text>
+          <MapBadge code="2" style={styles.heroMapBadge} />
 
-          <View style={styles.focusStatsRow}>
-            <View style={styles.focusStatBox}>
-              <Text style={styles.focusStatLabel}>
-                {lang === 'en' ? 'Cigarettes Avoided' : 'Kurtarılan Sigara'}
+          <View style={styles.cigLogBox}>
+            <View style={styles.cigLogHead}>
+              <Text style={styles.cigLogTitle}>
+                {lang === 'en' ? "Today's cigarettes" : 'Bugün içtiklerin'}
               </Text>
-              <Text style={styles.focusStatValue}>{avoidedTotalCount}</Text>
-              <Text style={styles.focusStatUnit}>{lang === 'en' ? 'cigarettes' : 'adet'}</Text>
+              <Text style={styles.cigLogCount}>{smokedCount}</Text>
             </View>
-            <View style={styles.focusStatBox}>
-              <Text style={styles.focusStatLabel}>
-                {lang === 'en' ? 'Money Saved' : 'Biriken Para'}
+            {todayTimes.length === 0 ? (
+              <Text style={styles.cigLogEmpty}>
+                {smokedCount === 0
+                  ? (lang === 'en' ? "You haven't smoked today 🎉" : 'Bugün henüz sigara içmedin 🎉')
+                  : (lang === 'en' ? `${smokedCount} cigarettes · (no time log)` : `${smokedCount} sigara · (saat kaydı yok)`)}
               </Text>
-              <Text style={styles.focusStatValue} numberOfLines={1} adjustsFontSizeToFit>
-                {formatMoney(savedTotal, plan.currency)}
-              </Text>
-              <Text style={styles.focusStatUnit}>
-                {lang === 'en' ? 'total' : 'toplam'}
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
-
-        {/* Quick Support Row */}
-        <View style={styles.supportSection}>
-          <MapBadge code="3" style={styles.mapBadgeInline} />
-          <View style={styles.supportRow}>
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.supportBtn, styles.supportBtnSOS, pressed && styles.pressed]}
-            onPress={() => setSosOpen(true)}
-          >
-            <Text style={styles.supportEmoji}>🆘</Text>
-            <Text style={[styles.supportTitle, { color: colors.danger }]}>
-              {lang === 'en' ? 'SOS – Craving' : 'Kriz Geldi (SOS)'}
-            </Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.supportBtn, styles.supportBtnCoach, pressed && styles.pressed]}
-            onPress={() => setCoachOpen(true)}
-          >
-            <Text style={styles.supportEmoji}>💬</Text>
-            <Text style={[styles.supportTitle, { color: colors.white }]}>
-              {lang === 'en' ? 'Quit Coach' : 'Bırakma Koçu'}
-            </Text>
-          </Pressable>
-          </View>
-        </View>
-
-        {/* Big Blue Today & Goal Card */}
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDarker]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.todayCard}
-        >
-          <View style={styles.todayDashedBox}>
-            <View style={styles.todayDashedLeft}>
-              <View style={styles.mapTitleRow}>
-                <MapBadge code="6" />
-                <Text style={styles.todayCardTitle}>
-                  {lang === 'en' ? 'Cigarettes today' : 'Bugün içtiklerin'}
-                </Text>
+            ) : (
+              <View style={styles.cigLogList}>
+                {todayTimes.map((time, i) => (
+                  <View key={`${time}-${i}`} style={styles.cigLogItem}>
+                    <CigaretteIcon size={20} />
+                    <Text style={styles.cigLogTime}>
+                      {new Date(time).toLocaleTimeString(lang === 'en' ? 'en-US' : 'tr-TR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                  </View>
+                ))}
               </View>
-              <Text style={styles.todayCardStatus}>{todayStatusText}</Text>
-              {windowCompact ? <Text style={styles.todayCardWindow}>{windowCompact}</Text> : null}
-            </View>
-            <Text style={styles.todayCardCount}>{smokedCount}</Text>
+            )}
           </View>
 
-          <View style={styles.todayGoalBlock}>
-            <Text style={styles.todayGoalWhite}>
-              {lang === 'en'
-                ? `Today's goal: ${todayGoalCount} 🚬 cigarettes`
-                : `Bugünkü hedefin: ${todayGoalCount} 🚬 sigara`}
-            </Text>
-            <Text style={styles.todayGoalYellow}>
-              {lang === 'en'
-                ? `Smoked today: ${smokedCount} 🚬`
-                : `Bugün içtiğin: ${smokedCount} 🚬`}
-            </Text>
+          <Text style={styles.heroTitle}>
+            {lang === 'en' ? "Today's goal" : 'Bugünkü hedefin'}
+          </Text>
+          <View style={styles.heroGoalRow}>
+            <Text style={styles.heroGoal}>{goal}</Text>
+            <CigaretteIcon size={22} style={styles.heroGoalIcon} />
+            <Text style={styles.heroGoalUnit}>{lang === 'en' ? 'cigarettes' : 'sigara'}</Text>
           </View>
 
-          <View style={styles.todayActionsRow}>
+          <Text style={[styles.heroLabel, styles.heroSpacer]}>
+            {lang === 'en' ? "You've smoked today" : 'Bugün içtiğin'}
+          </Text>
+          <View style={styles.smokedRow}>
+            <Text style={styles.heroCount}>{smokedCount}</Text>
+            <CigaretteIcon size={30} style={styles.smokedIcon} />
+          </View>
+
+          <View style={styles.heroProgress}>
+            <ProgressBar progress={progress} color={colors.accent} height={8} />
+          </View>
+
+          <Text style={styles.heroStatus}>{heroStatus}</Text>
+
+          {smokeNote ? <Text style={styles.smokeNote}>{smokeNote}</Text> : null}
+
+          <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
-              style={({ pressed }) => [styles.hadOneBtn, pressed && styles.pressed]}
+              accessibilityLabel={lang === 'en' ? 'Log one cigarette' : 'Bir sigara içtim olarak kaydet'}
+              style={({ pressed }) => [styles.logBtn, pressed && styles.pressed]}
               onPress={onHadOne}
             >
-              <Text style={styles.hadOneBtnText}>
-                {lang === 'en' ? 'Smoked 1' : '1 Dal İçtim'}
-              </Text>
+              <Text style={styles.logBtnText}>{lang === 'en' ? '+1 Smoked' : '+1 Sigara içtim'}</Text>
             </Pressable>
-            <Pressable onPress={onSlipPress} hitSlop={8} style={styles.slipLinkWrap}>
-              <Text style={styles.slipLinkOnBlue}>
-                {lang === 'en' ? 'Had a slip-up? Log gently' : 'Kaçamak oldu mu? Nazikçe kaydet'}
-              </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={lang === 'en' ? 'Undo last cigarette' : 'Son sigara kaydını geri al'}
+              style={({ pressed }) => [
+                styles.undoBtn,
+                smokedCount === 0 && styles.undoDisabled,
+                pressed && styles.pressed,
+              ]}
+              disabled={smokedCount === 0}
+              onPress={() => undoCigarette({ windowIndex })}
+            >
+              <Text style={styles.undoText}>{lang === 'en' ? 'Undo' : 'Geri al'}</Text>
             </Pressable>
           </View>
         </LinearGradient>
+
+        {/* Quick Access Buttons */}
+        <View style={styles.quickSection}>
+          <MapBadge code="3" style={styles.mapBadgeInline} />
+          <View style={styles.supportRow}>
+            <Pressable
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.supportBtn, styles.supportBtnSOS, pressed && styles.pressed]}
+              onPress={() => setSosOpen(true)}
+            >
+              <Text style={styles.supportEmoji}>🆘</Text>
+              <Text style={[styles.supportTitle, { color: colors.danger }]}>
+                {lang === 'en' ? 'SOS – Craving' : 'Kriz Geldi (SOS)'}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.supportBtn, styles.supportBtnCoach, pressed && styles.pressed]}
+              onPress={() => setCoachOpen(true)}
+            >
+              <Text style={styles.supportEmoji}>💬</Text>
+              <Text style={[styles.supportTitle, { color: colors.white }]}>
+                {lang === 'en' ? 'Quit Coach' : 'Bırakma Koçu'}
+              </Text>
+            </Pressable>
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.slipBtn, pressed && styles.pressed]}
+            onPress={onSlipPress}
+          >
+            <Text style={styles.slipBtnText}>
+              {lang === 'en' ? 'Smoked 1 (slip)' : '1 Dal İçtim (kaçamak)'}
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
 
       <SosBreathingModal visible={sosOpen} onClose={() => setSosOpen(false)} />
@@ -399,10 +404,8 @@ export function HomeScreen(_props: HomeScreenProps) {
 const createStyles = (colors: any) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    scroll: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
-    mapTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    supportSection: { gap: spacing.xs },
-    mapBadgeInline: { alignSelf: 'flex-start' },
+    scroll: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.md },
+
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -436,37 +439,119 @@ const createStyles = (colors: any) =>
     },
     shareIcon: { fontSize: 20, color: colors.primaryDark, fontWeight: '700' },
 
-    focusCard: {
+    hero: {
       borderRadius: radius.xl,
-      padding: spacing.xl,
-      gap: spacing.md,
+      padding: spacing.lg,
+      gap: 2,
       ...shadows.card,
     },
-    focusLabel: {
-      fontSize: fontSizes.sm,
-      fontWeight: '700',
-      color: 'rgba(255,255,255,0.85)',
-      letterSpacing: 0.3,
-      textTransform: 'uppercase',
+    heroMapBadge: { alignSelf: 'flex-start', marginBottom: spacing.xs },
+    cigLogBox: {
+      marginBottom: spacing.md,
+      minHeight: 132,
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderColor: 'rgba(255,255,255,0.4)',
+      borderStyle: 'dashed',
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      padding: spacing.lg,
+      justifyContent: 'center',
     },
-    focusTime: {
+    cigLogHead: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    cigLogTitle: { color: 'rgba(255,255,255,0.9)', fontSize: fontSizes.md, fontWeight: '700' },
+    cigLogCount: { color: colors.white, fontSize: fontSizes.xl, fontWeight: '800' },
+    cigLogEmpty: {
+      color: 'rgba(255,255,255,0.85)',
+      fontSize: fontSizes.sm,
+      marginTop: spacing.sm,
+    },
+    cigLogList: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    cigLogItem: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 2,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+      minWidth: 56,
+    },
+    cigLogTime: { color: colors.white, fontSize: fontSizes.md, fontWeight: '700' },
+
+    heroTitle: { fontSize: fontSizes.sm, color: 'rgba(255,255,255,0.85)' },
+    heroGoal: {
       fontSize: fontSizes.xxl,
       fontWeight: '800',
       color: colors.white,
-      lineHeight: 46,
     },
-    focusStatsRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
-    focusStatBox: {
+    heroGoalRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    heroGoalIcon: { marginTop: 4 },
+    heroGoalUnit: { fontSize: fontSizes.md, fontWeight: '600', color: colors.white },
+    heroLabel: {
+      fontSize: fontSizes.sm,
+      color: 'rgba(255,255,255,0.85)',
+    },
+    heroSpacer: { marginTop: spacing.sm },
+    smokedRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    smokedIcon: { marginBottom: spacing.xs },
+    heroCount: {
+      fontSize: fontSizes.huge,
+      fontWeight: '800',
+      color: colors.accent,
+    },
+    heroProgress: { marginTop: spacing.xs, marginBottom: spacing.sm },
+    heroStatus: {
+      fontSize: fontSizes.sm,
+      color: 'rgba(255,255,255,0.95)',
+      fontWeight: '600',
+      lineHeight: fontSizes.md + 4,
+    },
+    smokeNote: {
+      marginTop: spacing.sm,
+      fontSize: fontSizes.sm,
+      fontWeight: '800',
+      color: colors.accent,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    logBtn: {
       flex: 1,
-      backgroundColor: 'rgba(255,255,255,0.14)',
-      borderRadius: radius.lg,
-      padding: spacing.md,
-      gap: 4,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      backgroundColor: colors.white,
+      alignItems: 'center',
     },
-    focusStatLabel: { fontSize: fontSizes.xs, fontWeight: '700', color: 'rgba(255,255,255,0.85)' },
-    focusStatValue: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.white },
-    focusStatUnit: { fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.75)' },
+    logBtnText: {
+      fontSize: fontSizes.md,
+      fontWeight: '800',
+      color: colors.primaryDark,
+    },
+    undoBtn: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.5)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    undoDisabled: { opacity: 0.4 },
+    undoText: { fontSize: fontSizes.md, fontWeight: '700', color: colors.white },
 
+    quickSection: { gap: spacing.sm },
+    mapBadgeInline: { alignSelf: 'flex-start' },
     supportRow: { flexDirection: 'row', gap: spacing.md },
     supportBtn: {
       flex: 1,
@@ -491,83 +576,17 @@ const createStyles = (colors: any) =>
     supportEmoji: { fontSize: 28 },
     supportTitle: { fontSize: fontSizes.md, fontWeight: '800', textAlign: 'center' },
 
-    todayCard: {
-      borderRadius: radius.xl,
-      padding: spacing.lg,
-      gap: spacing.md,
-      ...shadows.card,
-    },
-    todayDashedBox: {
-      borderWidth: 1.5,
-      borderStyle: 'dashed',
-      borderColor: 'rgba(255,255,255,0.55)',
-      borderRadius: radius.lg,
-      padding: spacing.md,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: spacing.md,
-    },
-    todayDashedLeft: { flex: 1, gap: 4 },
-    todayCardTitle: {
-      fontSize: fontSizes.md,
-      fontWeight: '800',
-      color: colors.white,
-    },
-    todayCardStatus: {
-      fontSize: fontSizes.sm,
-      color: 'rgba(255,255,255,0.92)',
-      lineHeight: 20,
-    },
-    todayCardWindow: {
-      fontSize: fontSizes.xs,
-      color: 'rgba(255,255,255,0.8)',
-      marginTop: 2,
-    },
-    todayCardCount: {
-      fontSize: 48,
-      fontWeight: '800',
-      color: colors.white,
-      lineHeight: 52,
-      minWidth: 56,
-      textAlign: 'right',
-    },
-    todayGoalBlock: { gap: 6, marginTop: 2 },
-    todayGoalWhite: {
-      fontSize: fontSizes.xl,
-      fontWeight: '800',
-      color: colors.white,
-      lineHeight: 30,
-    },
-    todayGoalYellow: {
-      fontSize: fontSizes.xl,
-      fontWeight: '800',
-      color: colors.accent,
-      lineHeight: 30,
-    },
-    todayActionsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: spacing.md,
-      marginTop: 4,
-    },
-    hadOneBtn: {
-      backgroundColor: colors.white,
+    slipBtn: {
       borderRadius: radius.md,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
-    hadOneBtnText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
-    slipLinkWrap: { flex: 1, alignItems: 'flex-end' },
-    slipLinkOnBlue: {
-      fontSize: fontSizes.xs,
-      color: 'rgba(255,255,255,0.9)',
-      textDecorationLine: 'underline',
-      textAlign: 'right',
-    },
+    slipBtnText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.primaryDark },
 
     pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
     hiddenShareCard: { position: 'absolute', left: -9999, top: 0, opacity: 0 },
