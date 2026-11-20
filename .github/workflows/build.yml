@@ -1,4 +1,3 @@
-# Bırak Gitsin - CI: dev ve user (Play) APK üretimi
 name: Build APK
 
 on:
@@ -25,19 +24,22 @@ jobs:
           java-version: '17'
 
       - name: Setup Node 22
+        if: ${{ hashFiles('package.json') != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install JS dependencies
+        if: ${{ hashFiles('package.json') != '' }}
         run: npm ci
 
-      - name: Expo prebuild (android yoksa)
-        if: hashFiles('android/gradlew') == ''
+      - name: Expo prebuild
+        if: ${{ hashFiles('package.json') != '' && hashFiles('android/gradlew') == '' }}
         run: CI=1 npx expo prebuild --platform android --clean --no-install
 
       - name: aapt2 ayari
+        if: ${{ hashFiles('android/**') != '' }}
         run: |
           mkdir -p android
           touch android/gradle.properties
@@ -57,9 +59,7 @@ jobs:
 
       - name: Build flag DEV
         run: |
-          echo '// Build-time flag.' > src/lib/buildFlags.ts
-          echo '// false = developer build, true = user/Play build' >> src/lib/buildFlags.ts
-          echo 'export const IS_USER_RELEASE = false;' >> src/lib/buildFlags.ts
+          echo "export const IS_USER_RELEASE = false;" > src/lib/buildFlags.ts
           cat src/lib/buildFlags.ts
 
       - name: Gradle release APK DEV
@@ -68,8 +68,10 @@ jobs:
           cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
       - name: DEV APK topla
+        id: devapk
+        shell: bash
         run: |
-          APK="$(find . -type f -name 'app-release.apk' -path '*android/app/build/outputs/apk/release/*' -print -quit 2>/dev/null)"
+          APK="$(find android -type f -name 'app-release.apk' -print -quit 2>/dev/null)"
           if [ -z "$APK" ]; then
             APK="$(find . -type f -name 'app-release.apk' -print -quit 2>/dev/null)"
           fi
@@ -82,25 +84,25 @@ jobs:
 
       - name: Build flag USER
         run: |
-          echo '// Build-time flag.' > src/lib/buildFlags.ts
-          echo '// false = developer build, true = user/Play build' >> src/lib/buildFlags.ts
-          echo 'export const IS_USER_RELEASE = true;' >> src/lib/buildFlags.ts
+          echo "export const IS_USER_RELEASE = true;" > src/lib/buildFlags.ts
           cat src/lib/buildFlags.ts
 
       - name: JS bundle ara ciktilari temizle
         run: |
-          rm -rf android/app/build/generated/assets || true
-          rm -rf android/app/build/intermediates/assets || true
-          rm -rf android/app/build/intermediates/react || true
-          rm -rf android/app/build/outputs/apk/release || true
+          rm -rf android/app/build/generated/assets
+          rm -rf android/app/build/intermediates/assets
+          rm -rf android/app/build/intermediates/react
+          rm -rf android/app/build/outputs/apk/release
 
       - name: Gradle release APK USER
         run: |
           cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
       - name: USER APK topla
+        id: userapk
+        shell: bash
         run: |
-          APK="$(find . -type f -name 'app-release.apk' -path '*android/app/build/outputs/apk/release/*' -print -quit 2>/dev/null)"
+          APK="$(find android -type f -name 'app-release.apk' -print -quit 2>/dev/null)"
           if [ -z "$APK" ]; then
             APK="$(find . -type f -name 'app-release.apk' -print -quit 2>/dev/null)"
           fi
@@ -115,8 +117,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
-          name: ${{ format('APK - son surum (v{0})', steps.ver.outputs.version) }}
-          body: ${{ format('Guncel APK v{0} (dev + user). Dev: gelistirici araclari acik. User: temiz musteri/Play surumu.', steps.ver.outputs.version) }}
+          name: APK - son surum (v${{ steps.ver.outputs.version }})
+          body: Guncel APK v${{ steps.ver.outputs.version }} - dev ve user surumleri.
           files: |
             ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk
             ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk
