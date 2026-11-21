@@ -97,7 +97,7 @@ export type SuccessShareCardHandle = {
 
 export const SuccessShareCard = forwardRef<SuccessShareCardHandle, SuccessShareCardProps>(
   function SuccessShareCard({ days, avoided, savedText, themeId = 'classic', forCapture = false }, ref) {
-    const viewRef = useRef<ViewShot>(null);
+    const viewRef = useRef<React.ComponentRef<typeof ViewShot>>(null);
     const { t } = useI18n();
     const themes = useLocalizedShareThemes();
     const theme = themes.find((x) => x.id === themeId) || themes[0];

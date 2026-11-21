@@ -71,7 +71,8 @@
           "color": "#2563EB"
         }
       ],
-      "./plugins/withNotificationIcon.js"
+      "./plugins/withNotificationIcon.js",
+      "./plugins/withProguardRules.js"
     ],
     "extra": {
       "eas": {
