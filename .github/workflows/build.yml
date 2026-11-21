@@ -51,14 +51,16 @@ jobs:
             echo "Release keystore secret yok, debug signing ile devam."
             exit 0
           fi
-          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > android/app/birakgitsin-release.jks
+          KEYSTORE_PATH="$GITHUB_WORKSPACE/android/app/birakgitsin-release.jks"
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
           cat > android/keystore.properties <<EOF
-          storeFile=birakgitsin-release.jks
+          storeFile=$KEYSTORE_PATH
           storePassword=$RELEASE_STORE_PASSWORD
           keyAlias=$RELEASE_KEY_ALIAS
           keyPassword=$RELEASE_KEY_PASSWORD
           EOF
-          ls -lh android/app/birakgitsin-release.jks
+          ls -lh "$KEYSTORE_PATH"
+          echo "RELEASE_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
 
       - name: Gradle hizlandirma ve aapt2 ayari
         if: ${{ hashFiles('android/**') != '' }}
@@ -93,6 +95,11 @@ jobs:
           cat src/lib/buildFlags.ts
 
       - name: Gradle release APK DEV
+        env:
+          RELEASE_KEYSTORE_PATH: ${{ env.RELEASE_KEYSTORE_PATH }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
           chmod +x android/gradlew
           cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
@@ -125,6 +132,11 @@ jobs:
           rm -rf android/app/build/outputs/apk/release
 
       - name: Gradle release APK USER
+        env:
+          RELEASE_KEYSTORE_PATH: ${{ env.RELEASE_KEYSTORE_PATH }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
           cd android && ./gradlew :app:assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
@@ -151,6 +163,11 @@ jobs:
           rm -rf android/app/build/outputs/bundle/release
 
       - name: Gradle release AAB USER
+        env:
+          RELEASE_KEYSTORE_PATH: ${{ env.RELEASE_KEYSTORE_PATH }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
           cd android && ./gradlew :app:bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
@@ -168,6 +185,21 @@ jobs:
           fi
           cp "$AAB" ./birakgitsin-user-v${{ steps.ver.outputs.version }}.aab
           ls -lh ./birakgitsin-user-v${{ steps.ver.outputs.version }}.aab
+
+      - name: Imza dogrulama (debug imza yasak)
+        shell: bash
+        run: |
+          set -e
+          for f in ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk ./birakgitsin-user-v${{ steps.ver.outputs.version }}.aab; do
+            echo "=== Verifying $f ==="
+            jarsigner -verify -verbose -certs "$f" > /tmp/jarsigner.out 2>&1 || true
+            tail -20 /tmp/jarsigner.out
+            if grep -q "CN=Android Debug" /tmp/jarsigner.out; then
+              echo "HATA: $f Android Debug sertifikasi ile imzalanmis!"
+              exit 1
+            fi
+            echo "OK: $f debug imza icermiyor"
+          done
 
       - name: APKleri Release olarak yayinla
         uses: softprops/action-gh-release@v2

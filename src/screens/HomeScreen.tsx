@@ -1,11 +1,9 @@
 import { useTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import * as Notifications from 'expo-notifications';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  AppState,
   Image,
   Linking,
   Modal,
@@ -82,8 +80,6 @@ export function HomeScreen(_props: HomeScreenProps) {
   const [shareTheme, setShareTheme] = useState<ShareThemeId>('classic');
   const [sharePickerOpen, setSharePickerOpen] = useState(false);
   const [shareUnlocking, setShareUnlocking] = useState(false);
-  const [notifGranted, setNotifGranted] = useState(true);
-
   const showSmokeNote = (text: string) => {
     setSmokeNote(text);
     if (noteTimer.current) clearTimeout(noteTimer.current);
