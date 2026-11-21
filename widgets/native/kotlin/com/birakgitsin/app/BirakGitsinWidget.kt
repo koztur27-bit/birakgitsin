@@ -167,7 +167,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                 try { views.setTextViewText(R.id.widget_today, todayText) } catch (_: Exception) {}
                 if (pending != null) {
                     views.setOnClickPendingIntent(R.id.widget_root, pending)
-                    views.setOnClickPendingIntent(R.id.widget_open, pending)
+                    try { views.setOnClickPendingIntent(R.id.widget_open, pending) } catch (_: Exception) {}
                 }
                 if (refreshPending != null) {
                     try {
