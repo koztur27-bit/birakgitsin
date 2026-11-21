@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bırak Gitsin",
     "slug": "birakgitsin",
-    "version": "2.2.7",
+    "version": "2.2.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 42,
+      "versionCode": 43,
       "adaptiveIcon": {
         "backgroundColor": "#14B8A6",
         "foregroundImage": "./assets/android-icon-foreground.png",
