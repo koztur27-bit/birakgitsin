@@ -78,20 +78,24 @@ async function handleAction(actionIdentifier: string) {
   }
 }
 
-TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => {
-  if (error) return;
-  const payload: any = data;
-  if (payload && typeof payload.actionIdentifier === 'string') {
-    const actionId = payload.actionIdentifier;
-    if (actionId === 'action_add_smoked' || actionId === 'snooze30') {
-      await handleAction(actionId);
-      try {
-        const notifId = payload?.notification?.request?.identifier;
-        if (notifId) await Notifications.dismissNotificationAsync(notifId);
-      } catch {}
+try {
+  TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => {
+    if (error) return;
+    const payload: any = data;
+    if (payload && typeof payload.actionIdentifier === 'string') {
+      const actionId = payload.actionIdentifier;
+      if (actionId === 'action_add_smoked' || actionId === 'snooze30') {
+        await handleAction(actionId);
+        try {
+          const notifId = payload?.notification?.request?.identifier;
+          if (notifId) await Notifications.dismissNotificationAsync(notifId);
+        } catch {}
+      }
     }
-  }
-});
+  });
+} catch {
+  // TaskManager unavailable in this environment
+}
 
 export async function registerBackgroundNotificationTask() {
   if (Platform.OS === 'web') return;

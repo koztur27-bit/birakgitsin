@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bırak Gitsin",
     "slug": "birakgitsin",
-    "version": "2.3.2",
+    "version": "2.3.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 47,
+      "versionCode": 48,
       "adaptiveIcon": {
         "backgroundColor": "#14B8A6",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -36,6 +36,7 @@
       "startUrl": "/"
     },
     "plugins": [
+      "expo-task-manager",
       "@react-native-community/datetimepicker",
       "expo-audio",
       "./plugins/withSilentSound",
