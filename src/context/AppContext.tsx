@@ -92,7 +92,7 @@ const BOOT_GRACE_MS = 30000;
 // modül yüklenirken bir kez hesaplanır.
 const BOOT_AT = Date.now();
 
-const CRISIS_CHANNEL = 'birakgitsin-crisis';
+const CRISIS_CHANNEL = 'birakgitsin-v2';
 
 async function ensureCrisisChannel() {
   if (Platform.OS !== 'android') return;
@@ -453,7 +453,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           title: 'Bırak Gitsin',
           body: 'Dayanma süren doldu. Harika iş çıkardın, devam et!',
           sound: 'default',
-          categoryIdentifier: 'birakgitsin-alarm',
+          categoryIdentifier: 'birakgitsin-smart',
+          ...(Platform.OS === 'android' ? { channelId: CRISIS_CHANNEL } : {}),
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,

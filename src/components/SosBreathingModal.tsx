@@ -1,5 +1,6 @@
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../i18n';
+import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -21,7 +22,8 @@ import { BubblePopGame } from './BubblePopGame';
 
 const DURATION = 60;
 const INHALE_MS = 4000;
-const EXHALE_MS = 6000;
+const HOLD_MS = 2000;
+const EXHALE_MS = 4000;
 
 type BreathPhase = 'idle' | 'running' | 'done';
 type SosMode = 'breath' | 'game';
@@ -53,6 +55,10 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
   const [breathLabel, setBreathLabel] = useState(inhaleLabel);
   const [gameDone, setGameDone] = useState(false);
   const [gameScore, setGameScore] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const inhalePlayer = useAudioPlayer(require('../../assets/sounds/inhale.wav'));
+  const holdPlayer = useAudioPlayer(require('../../assets/sounds/hold.wav'));
+  const exhalePlayer = useAudioPlayer(require('../../assets/sounds/exhale.wav'));
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -64,12 +70,29 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
   useEffect(() => { triggerRef.current = trigger; }, [trigger]);
   // breath label for idle/reset is handled by inhaleLabel at start/reset time
 
+  const stopSounds = useCallback(() => {
+    try { inhalePlayer.pause(); inhalePlayer.seekTo(0); } catch {}
+    try { holdPlayer.pause(); holdPlayer.seekTo(0); } catch {}
+    try { exhalePlayer.pause(); exhalePlayer.seekTo(0); } catch {}
+  }, [inhalePlayer, holdPlayer, exhalePlayer]);
+
+  const playPhaseSound = useCallback((phaseName: 'inhale' | 'hold' | 'exhale') => {
+    if (!soundEnabled) return;
+    stopSounds();
+    try {
+      const pl = phaseName === 'inhale' ? inhalePlayer : phaseName === 'hold' ? holdPlayer : exhalePlayer;
+      pl.seekTo(0);
+      pl.play();
+    } catch {}
+  }, [soundEnabled, stopSounds, inhalePlayer, holdPlayer, exhalePlayer]);
+
   const stopFx = useCallback(() => {
     runningRef.current = false;
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
     animRef.current?.stop();
     animRef.current = null;
-  }, []);
+    stopSounds();
+  }, [stopSounds]);
 
   useEffect(() => () => stopFx(), [stopFx]);
   useEffect(() => { if (!visible) stopFx(); }, [visible, stopFx]);
@@ -113,21 +136,29 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
     breath.setValue(0);
     runningRef.current = true;
     endAtRef.current = Date.now() + DURATION * 1000;
+    playPhaseSound('inhale');
 
     const inhale = Animated.timing(breath, { toValue: 1, duration: INHALE_MS, easing: Easing.inOut(Easing.sin), useNativeDriver: true });
+    const hold = Animated.timing(breath, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: true });
     const exhale = Animated.timing(breath, { toValue: 0, duration: EXHALE_MS, easing: Easing.inOut(Easing.sin), useNativeDriver: true });
-    animRef.current = Animated.loop(Animated.sequence([inhale, exhale]));
+    animRef.current = Animated.loop(Animated.sequence([inhale, hold, exhale]));
     animRef.current.start();
 
     intervalRef.current = setInterval(() => {
       const left = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000));
       setRemaining(left);
       const elapsedMs = DURATION * 1000 - left * 1000;
-      const nextLabel = elapsedMs % (INHALE_MS + EXHALE_MS) >= INHALE_MS ? exhaleLabel : inhaleLabel;
-      setBreathLabel((prev) => (prev === nextLabel ? prev : nextLabel));
+      const cycle = INHALE_MS + HOLD_MS + EXHALE_MS;
+      const pos = elapsedMs % cycle;
+      const nextPhase = pos < INHALE_MS ? 'inhale' : pos < INHALE_MS + HOLD_MS ? 'hold' : 'exhale';
+      const nextLabel = nextPhase === 'inhale' ? inhaleLabel : nextPhase === 'hold' ? (locale === 'en' ? 'Hold' : 'Tut') : exhaleLabel;
+      setBreathLabel((prev) => {
+        if (prev !== nextLabel) playPhaseSound(nextPhase);
+        return prev === nextLabel ? prev : nextLabel;
+      });
       if (left <= 0) finishBreath();
     }, 250);
-  }, [breath, exhaleLabel, finishBreath, inhaleLabel]);
+  }, [breath, exhaleLabel, finishBreath, inhaleLabel, locale, playPhaseSound]);
 
   const onGameComplete = useCallback((score: number) => {
     setGameDone(true);
@@ -215,9 +246,12 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
                     <Text style={styles.idleEmoji}>🫁</Text>
                     <Text style={styles.idleText}>
                       {locale === 'en'
-                        ? 'Breathe in for 4 seconds, out for 6 seconds. 60 seconds total.'
-                        : '4 saniye nefes al, 6 saniye nefes ver. Toplam 60 saniye.'}
+                        ? 'Breathe in for 4 seconds, hold for 2, exhale for 4 seconds. 60 seconds total.'
+                        : '4 saniye nefes al, 2 saniye tut, 4 saniye ver. Toplam 60 saniye.'}
                     </Text>
+                    <Pressable style={({ pressed }) => [styles.soundToggle, pressed && styles.pressed]} onPress={() => setSoundEnabled((v) => !v)}>
+                      <Text style={styles.soundToggleText}>{soundEnabled ? (locale === 'en' ? '🔊 Sound: On' : '🔊 Ses: Açık') : (locale === 'en' ? '🔇 Sound: Off' : '🔇 Ses: Kapalı')}</Text>
+                    </Pressable>
                     <Pressable style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]} onPress={startBreath}>
                       <Text style={styles.primaryBtnText}>{locale === 'en' ? 'Start 60 Seconds' : '60 Saniyeyi Başlat'}</Text>
                     </Pressable>
@@ -234,6 +268,9 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
                     <Text style={styles.breathHint}>
                       {locale === 'en' ? 'Inhale as the circle grows, exhale as it shrinks.' : 'Dairenin büyümesiyle nefes al, küçülmesiyle ver.'}
                     </Text>
+                    <Pressable style={({ pressed }) => [styles.soundToggle, pressed && styles.pressed]} onPress={() => { setSoundEnabled((v) => { const nv=!v; if(!nv) stopSounds(); return nv; }); }}>
+                      <Text style={styles.soundToggleText}>{soundEnabled ? (locale === 'en' ? '🔊 Sound: On' : '🔊 Ses: Açık') : (locale === 'en' ? '🔇 Sound: Off' : '🔇 Ses: Kapalı')}</Text>
+                    </Pressable>
                     <View style={styles.runningActions}>
                       <Pressable style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]} onPress={handleClose}>
                         <Text style={styles.ghostBtnText}>{locale === 'en' ? 'Cancel' : 'Vazgeç'}</Text>
@@ -331,5 +368,7 @@ const createStyles = (colors: any) =>
     gameWrap: { marginTop: spacing.sm },
     gameDoneNote: { marginTop: spacing.sm, alignItems: 'center', gap: spacing.sm },
     gameDoneText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.success, textAlign: 'center' },
+    soundToggle: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.round, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg },
+    soundToggleText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.text },
     pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   });

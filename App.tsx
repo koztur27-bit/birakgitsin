@@ -24,6 +24,9 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { StatsScreen } from './src/screens/StatsScreen';
 import { TimerScreen } from './src/screens/TimerScreen';
 import { refreshWidgets } from './src/lib/widgetData';
+import { registerBackgroundNotificationTask } from './src/lib/backgroundNotificationTask';
+import { registerNotificationCategories } from './src/lib/statusNotification';
+import './src/lib/backgroundNotificationTask';
 import { colors, fontSizes, radius, spacing } from './src/theme';
 import { Plan, TabKey } from './src/types';
 
@@ -82,18 +85,8 @@ function Root() {
   // Uygulama açılırken ve arka plana geçerken widget'ları zorla yenile.
   useEffect(() => {
     refreshWidgets();
-    Notifications.setNotificationCategoryAsync('birakgitsin-smart', [
-      {
-        identifier: 'action_add_smoked',
-        buttonTitle: '+1 İçtim',
-        options: { opensAppToForeground: false },
-      },
-      {
-        identifier: 'snooze30',
-        buttonTitle: 'Ertele',
-        options: { opensAppToForeground: false },
-      },
-    ]).catch(() => {});
+    registerNotificationCategories().catch(() => {});
+    registerBackgroundNotificationTask().catch(() => {});
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active' || state === 'background') refreshWidgets();
     });

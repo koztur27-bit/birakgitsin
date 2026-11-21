@@ -3,8 +3,8 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 
 const ID = 'birakgitsin-status';
-const CHANNEL_ID = 'birakgitsin-status-v7';
-const LEGACY_CHANNEL_ID = 'birakgitsin-status';
+const CHANNEL_ID = 'birakgitsin-v2';
+const LEGACY_CHANNEL_IDS = ['birakgitsin-status','birakgitsin-status-v2','birakgitsin-status-v3','birakgitsin-status-v4','birakgitsin-status-v5','birakgitsin-status-v6','birakgitsin-status-v7','birakgitsin-ongoing','birakgitsin-silent','birakgitsin-v1'];
 const MIN_INTERVAL_MS = 60000;
 
 type BgStatusNative = {
@@ -44,25 +44,18 @@ export async function ensureStatusChannel(): Promise<void> {
   if (Platform.OS === 'web') return;
   if (channelReady) return;
   try {
-    // Eski kanalları sil (kilit ekranında gizleniyorlardı).
-    await Notifications.deleteNotificationChannelAsync(LEGACY_CHANNEL_ID).catch(() => {});
-    await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v2').catch(() => {});
-    await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v3').catch(() => {});
-    await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v4').catch(() => {});
-    await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v5').catch(() => {});
-    await Notifications.deleteNotificationChannelAsync('birakgitsin-status-v6').catch(() => {});
-    // DİKKAT: "sound: null" (sessiz) kanalı MIUI kilit ekranında GİZLİYOR.
-    // Bu yüzden kanalı normal (varsayılan sistem sesli) bir kanal yapıyoruz;
-    // böylece bildirim kilit ekranında görünür. Saniyede bir güncellendiğinde
-    // tekrar ses çıkmaz (bildirimde onlyAlertOnce=true kullanılıyor).
+    // Eski kanalları sil (önbellek/ikon/kilit ekranı ayarlarını kır)
+    for (const ch of LEGACY_CHANNEL_IDS) {
+      await Notifications.deleteNotificationChannelAsync(ch).catch(() => {});
+    }
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: 'Kilit ekranı durumu',
-      description: 'İçilen sigara sayısı ve sayacı kilit ekranında gösterir.',
-      importance: Notifications.AndroidImportance.DEFAULT,
+      name: 'Bırak Gitsin Bildirimleri',
+      description: 'Sayaç, hatırlatıcı ve akıllı bildirimler',
+      importance: Notifications.AndroidImportance.MAX,
       sound: 'default',
-      enableVibrate: false,
+      enableVibrate: true,
       enableLights: false,
-      showBadge: false,
+      showBadge: true,
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
     channelReady = true;
@@ -196,6 +189,21 @@ export async function registerNotificationCategories(): Promise<void> {
         buttonTitle: 'Ertele',
         options: { opensAppToForeground: false },
       },
+      {
+        identifier: 'smoke',
+        buttonTitle: 'Sigara içtim',
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: 'snooze5',
+        buttonTitle: '5 dk ertele',
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: 'resisted',
+        buttonTitle: 'Dayandım',
+        options: { opensAppToForeground: true },
+      },
     ]);
   } catch {
     // categories unavailable
@@ -205,6 +213,7 @@ export async function registerNotificationCategories(): Promise<void> {
 export async function celebrate(title: string, body: string): Promise<void> {
   if (Platform.OS === 'web') return;
   try {
+    await ensureStatusChannel();
     await Notifications.dismissNotificationAsync('birakgitsin-party').catch(() => {});
     await Notifications.scheduleNotificationAsync({
       identifier: 'birakgitsin-party',
@@ -212,7 +221,9 @@ export async function celebrate(title: string, body: string): Promise<void> {
         title,
         body,
         sound: 'default',
+        categoryIdentifier: 'birakgitsin-smart',
         data: { badgeParty: true },
+        ...(Platform.OS === 'android' ? { channelId: CHANNEL_ID } : {}),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,

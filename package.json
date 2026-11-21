@@ -1,6 +1,6 @@
 {
   "name": "birakgitsin",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "main": "index.ts",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -20,6 +20,7 @@
     "expo-splash-screen": "~57.0.11",
     "expo-status-bar": "~57.0.1",
     "expo-store-review": "~57.0.3",
+    "expo-task-manager": "~14.0.0",
     "expo-updates": "~57.0.28",
     "react": "19.2.3",
     "react-dom": "19.2.3",
