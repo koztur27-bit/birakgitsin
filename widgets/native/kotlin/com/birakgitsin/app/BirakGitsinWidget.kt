@@ -167,14 +167,6 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                 try { views.setTextViewText(R.id.widget_today, todayText) } catch (_: Exception) {}
                 if (pending != null) {
                     views.setOnClickPendingIntent(R.id.widget_root, pending)
-                    try { views.setOnClickPendingIntent(R.id.widget_open, pending) } catch (_: Exception) {}
-                }
-                if (refreshPending != null) {
-                    try {
-                        views.setOnClickPendingIntent(R.id.widget_refresh, refreshPending)
-                    } catch (_: Exception) {
-                        // Eski layout'larda widget_refresh olmayabilir.
-                    }
                 }
                 if (addPending != null) {
                     try {
