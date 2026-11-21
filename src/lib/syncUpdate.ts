@@ -1,7 +1,7 @@
 import { Alert, Linking } from 'react-native';
 import { refreshWidgets } from './widgetData';
 
-export const APP_VERSION = '2.3.0';
+export const APP_VERSION = '2.3.1';
 const RELEASES_API = 'https://api.github.com/repos/koztur27-bit/birakgitsin/releases/tags/apk-latest';
 const RELEASES_PAGE = 'https://github.com/koztur27-bit/birakgitsin/releases/tag/apk-latest';
 
