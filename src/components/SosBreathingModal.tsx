@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../i18n';
 import { useAudioPlayer } from 'expo-audio';
@@ -5,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  AppState,
   Easing,
   Image,
   Modal,
@@ -59,6 +61,42 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
   const inhalePlayer = useAudioPlayer(require('../../assets/sounds/inhale.wav'));
   const holdPlayer = useAudioPlayer(require('../../assets/sounds/hold.wav'));
   const exhalePlayer = useAudioPlayer(require('../../assets/sounds/exhale.wav'));
+
+  useEffect(() => {
+    AsyncStorage.getItem('@birakgitsin/sosSoundEnabled').then((v) => {
+      if (v === '0') setSoundEnabled(false);
+      if (v === '1') setSoundEnabled(true);
+    }).catch(() => {});
+  }, []);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled((v) => {
+      const nv = !v;
+      if (!nv) {
+        try { inhalePlayer.pause(); inhalePlayer.seekTo(0); } catch {}
+        try { holdPlayer.pause(); holdPlayer.seekTo(0); } catch {}
+        try { exhalePlayer.pause(); exhalePlayer.seekTo(0); } catch {}
+      }
+      AsyncStorage.setItem('@birakgitsin/sosSoundEnabled', nv ? '1' : '0').catch(() => {});
+      return nv;
+    });
+  }, [exhalePlayer, holdPlayer, inhalePlayer]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        try { inhalePlayer.pause(); inhalePlayer.seekTo(0); } catch {}
+        try { holdPlayer.pause(); holdPlayer.seekTo(0); } catch {}
+        try { exhalePlayer.pause(); exhalePlayer.seekTo(0); } catch {}
+      }
+    });
+    return () => {
+      sub.remove();
+      try { inhalePlayer.pause(); inhalePlayer.seekTo(0); } catch {}
+      try { holdPlayer.pause(); holdPlayer.seekTo(0); } catch {}
+      try { exhalePlayer.pause(); exhalePlayer.seekTo(0); } catch {}
+    };
+  }, [exhalePlayer, holdPlayer, inhalePlayer]);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -249,7 +287,7 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
                         ? 'Breathe in for 4 seconds, hold for 2, exhale for 4 seconds. 60 seconds total.'
                         : '4 saniye nefes al, 2 saniye tut, 4 saniye ver. Toplam 60 saniye.'}
                     </Text>
-                    <Pressable style={({ pressed }) => [styles.soundToggle, pressed && styles.pressed]} onPress={() => setSoundEnabled((v) => !v)}>
+                    <Pressable style={({ pressed }) => [styles.soundToggle, pressed && styles.pressed]} onPress={toggleSound}>
                       <Text style={styles.soundToggleText}>{soundEnabled ? (locale === 'en' ? '🔊 Sound: On' : '🔊 Ses: Açık') : (locale === 'en' ? '🔇 Sound: Off' : '🔇 Ses: Kapalı')}</Text>
                     </Pressable>
                     <Pressable style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]} onPress={startBreath}>
@@ -268,7 +306,7 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
                     <Text style={styles.breathHint}>
                       {locale === 'en' ? 'Inhale as the circle grows, exhale as it shrinks.' : 'Dairenin büyümesiyle nefes al, küçülmesiyle ver.'}
                     </Text>
-                    <Pressable style={({ pressed }) => [styles.soundToggle, pressed && styles.pressed]} onPress={() => { setSoundEnabled((v) => { const nv=!v; if(!nv) stopSounds(); return nv; }); }}>
+                    <Pressable style={({ pressed }) => [styles.soundToggle, pressed && styles.pressed]} onPress={toggleSound}>
                       <Text style={styles.soundToggleText}>{soundEnabled ? (locale === 'en' ? '🔊 Sound: On' : '🔊 Ses: Açık') : (locale === 'en' ? '🔇 Sound: Off' : '🔇 Ses: Kapalı')}</Text>
                     </Pressable>
                     <View style={styles.runningActions}>
