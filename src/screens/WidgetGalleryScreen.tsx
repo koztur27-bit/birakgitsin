@@ -249,7 +249,7 @@ function WidgetPreview({
         ]}
       >
         <View style={styles.surfaceTopRow}>
-          <Text style={[styles.brand, { fontSize: (compact ? 12 : 13) * scale, flex: 1 }]} numberOfLines={1}>BIRAK GİTSİN</Text>
+          <Text style={[styles.brand, { fontSize: (compact ? 10 : 12) * scale, flex: 1 }]} numberOfLines={1}>BIRAK GİTSİN</Text>
           <View style={[styles.plusPill, { paddingHorizontal: (compact ? 8 : 10) * scale, paddingVertical: (compact ? 3 : 4) * scale, marginLeft: 6 * scale }]}>
             <Text style={[styles.plusPillText, { fontSize: (compact ? 10 : 11) * scale }]}>+1</Text>
           </View>
