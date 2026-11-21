@@ -90,7 +90,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
             }
             val isEn = lang == "en"
             val computed = WidgetStorage.readWidgetData(context)
-            val defaultQuit = if (isEn) "0 days 00 hrs" else "0 gün 00 saat"
+            val defaultQuit = if (isEn) "0d 0h" else "0g 0s"
             val quitText = computed?.quitText
                 ?: prefs.getString("quitText", null)?.takeIf { it.isNotBlank() }
                 ?: defaultQuit

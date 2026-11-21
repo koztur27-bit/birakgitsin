@@ -208,13 +208,11 @@ object WidgetStorage {
         val elapsedMs = maxOf(0L, now - startMidnight)
         val days = (elapsedMs / MS_DAY).toInt()
         val hours = ((elapsedMs % MS_DAY) / MS_HOUR).toInt()
-        val hh = String.format(Locale.US, "%02d", hours)
-        return if (language == "en") "$days days $hh hrs" else "$days gün $hh saat"
+        return formatQuitText(days, hours, language)
     }
 
     fun formatQuitText(days: Int, hours: Int, language: String): String {
-        val hh = String.format(Locale.US, "%02d", hours)
-        return if (language == "en") "$days days $hh hrs" else "$days gün $hh saat"
+        return if (language == "en") "${days}d ${hours}h" else "${days}g ${hours}s"
     }
 
     private fun computeSavingsText(plan: JSONObject, root: JSONObject): String? {

@@ -39,6 +39,7 @@
             android:id="@+id/widget_add"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
             android:minWidth="44dp"
             android:gravity="center"
             android:text="+1"
@@ -64,11 +65,11 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
         android:gravity="center_vertical"
-        android:text="0 gün 00 saat"
+        android:text="0g 0s"
         android:textColor="#F8FAFC"
-        android:textSize="22sp"
+        android:textSize="20sp"
         android:textStyle="bold"
         android:includeFontPadding="false"
         android:maxLines="1"
@@ -79,40 +80,34 @@
         android:id="@+id/widget_savings"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
         android:text="Tasarruf: 0 ₺"
         android:textColor="#34D399"
-        android:textSize="13sp"
+        android:textSize="12sp"
         android:textStyle="bold"
         android:singleLine="true"
         android:ellipsize="end" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/widget_today"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_marginTop="4dp"
+        android:text="Bugün: 0 / 0"
+        android:textColor="#E2E8F0"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/widget_today"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Bugün: 0 / 0"
-            android:textColor="#E2E8F0"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/widget_next"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sıradaki pencere --:--"
-            android:textColor="#CBD5E1"
-            android:textSize="11sp"
-            android:singleLine="true"
-            android:ellipsize="end" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/widget_next"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Sıradaki pencere --:--"
+        android:textColor="#CBD5E1"
+        android:textSize="11sp"
+        android:singleLine="true"
+        android:ellipsize="end" />
 </LinearLayout>

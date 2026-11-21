@@ -73,7 +73,7 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
   };
 
   const live = useMemo<LiveValues>(() => {
-    if (!plan) return { quitText: isEn ? '0 days 00 hrs' : '0 gün 00 saat', savingsText: '0 ₺', nextWindow: '--:--', todayText: isEn ? 'Today: 0 / 0' : 'Bugün: 0 / 0' };
+    if (!plan) return { quitText: isEn ? '0d 0h' : '0g 0s', savingsText: '0 ₺', nextWindow: '--:--', todayText: isEn ? 'Today: 0 / 0' : 'Bugün: 0 / 0' };
     // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     const elapsedMs = elapsedDays(plan, now) * 24 * 60 * 60 * 1000;
@@ -85,7 +85,7 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
     const todaySmoked = Math.max(0, rec?.smoked || 0);
     const goal = todayGoal(plan, data.logs || []);
     return {
-      quitText: isEn ? `${days} days ${String(hours).padStart(2, '0')} hrs` : `${days} gün ${String(hours).padStart(2, '0')} saat`,
+      quitText: isEn ? `${days}d ${hours}h` : `${days}g ${hours}s`,
       savingsText: formatMoneyShort(totalMoneySaved(plan, data.logs), plan.currency),
       nextWindow: upcoming ? fromMin((nowMin(new Date(now)) + upcoming.minutes) % 1440) : '--:--',
       todayText: isEn ? `Today: ${todaySmoked} / ${goal}` : `Bugün: ${todaySmoked} / ${goal}`,
@@ -257,11 +257,9 @@ function WidgetPreview({
           ) : (
             <Text style={[styles.brand, { fontSize: 10 * scale, flex: 1 }]}>BIRAK GİTSİN</Text>
           )}
-          {compact ? (
-            <View style={[styles.plusPill, { paddingHorizontal: 8 * scale, paddingVertical: 3 * scale, marginLeft: 6 * scale }]}>
-              <Text style={[styles.plusPillText, { fontSize: 10 * scale }]}>+1</Text>
-            </View>
-          ) : null}
+          <View style={[styles.plusPill, { paddingHorizontal: (compact ? 8 : 10) * scale, paddingVertical: (compact ? 3 : 4) * scale, marginLeft: 6 * scale }]}>
+            <Text style={[styles.plusPillText, { fontSize: (compact ? 10 : 11) * scale }]}>+1</Text>
+          </View>
         </View>
 
         {!compact ? (
@@ -289,23 +287,9 @@ function WidgetPreview({
           <View style={[styles.accentLine, { marginTop: 4 * scale, height: 2 }]} />
         )}
 
-        <View style={styles.surfaceBottom}>
-          {compact ? (
-            <View style={styles.todayRow}>
-              <Text style={[styles.savings, { fontSize: 9 * scale, flex: 1 }]} numberOfLines={1}>{live.savingsText}</Text>
-              <Text style={[styles.todayText, { fontSize: 9 * scale }]} numberOfLines={1}>{live.todayText}</Text>
-            </View>
-          ) : (
-            <>
-              <Text style={[styles.savings, { fontSize: (wide ? 12 : 11) * scale }]}>Tasarruf: {live.savingsText}</Text>
-              <View style={styles.todayRow}>
-                <Text style={[styles.todayText, { fontSize: 11 * scale }]} numberOfLines={1}>{live.todayText}</Text>
-                <View style={[styles.plusPill, { paddingHorizontal: 10 * scale, paddingVertical: 3 * scale }]}>
-                  <Text style={[styles.plusPillText, { fontSize: 11 * scale }]}>+1</Text>
-                </View>
-              </View>
-            </>
-          )}
+        <View style={[styles.surfaceBottom, { gap: 4 * scale }]}>
+          <Text style={[styles.savings, { fontSize: (compact ? 9 : wide ? 12 : 11) * scale }]} numberOfLines={1}>Tasarruf: {live.savingsText}</Text>
+          <Text style={[styles.todayText, { fontSize: (compact ? 9 : 11) * scale }]} numberOfLines={1}>{live.todayText}</Text>
         </View>
       </LinearGradient>
 
