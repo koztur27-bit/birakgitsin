@@ -40,13 +40,17 @@ jobs:
         run: CI=1 npx expo prebuild --platform android --clean --no-install
 
       - name: Release keystore hazirla
-        if: ${{ hashFiles('android/**') != '' && secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        if: ${{ hashFiles('android/**') != '' }}
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "Release keystore secret yok, debug signing ile devam."
+            exit 0
+          fi
           echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > android/app/birakgitsin-release.jks
           cat > android/keystore.properties <<EOF
           storeFile=birakgitsin-release.jks
