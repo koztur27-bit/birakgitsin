@@ -13,7 +13,7 @@ export const TEST_BANNER_AD_UNIT_ID =
     : 'ca-app-pub-3940256099942544/6300978111';
 
 export const ADS_CONFIG = {
-  rewardedAdUnitId: TEST_REWARDED_AD_UNIT_ID,
+  rewardedAdUnitId: 'BURAYA_GERCEK_REWARDED_AD_UNIT_ID_YAZIN',
   bannerAdUnitId: TEST_BANNER_AD_UNIT_ID,
   // Yayına geçerken AdMob App ID'lerini app.json içindeki
   // react-native-google-mobile-ads plugin alanına girin.
