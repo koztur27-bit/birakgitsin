@@ -20,6 +20,8 @@ import {
   fromMin,
   nextWindowInfo,
   nowMin,
+  todayGoal,
+  todayKey,
   totalMoneySaved,
 } from '../lib/calculations';
 import {
@@ -27,10 +29,9 @@ import {
   openWidgetPermissionSettings,
   requestPinHomeWidget,
 } from '../lib/pinWidget';
-import { syncWidgetsAndCheckUpdate } from '../lib/syncUpdate';
 import { fontSizes, radius, shadows, spacing } from '../theme';
 
-type WidgetSize = '4x2' | '2x2';
+type WidgetSize = '1x2' | '2x2' | '2x3' | '4x2';
 
 type WidgetGalleryScreenProps = {
   visible: boolean;
@@ -41,6 +42,7 @@ type LiveValues = {
   quitText: string;
   savingsText: string;
   nextWindow: string;
+  todayText: string;
 };
 
 export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenProps) {
@@ -50,12 +52,13 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
   const { width } = useWindowDimensions();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const plan = data.plan;
+  const lang = data.language || 'tr';
+  const isEn = lang === 'en';
 
   const [tick, setTick] = useState(0);
   const [canPin, setCanPin] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<WidgetSize | null>(null);
   const [pinned, setPinned] = useState<WidgetSize | null>(null);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -70,31 +73,25 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
   };
 
   const live = useMemo<LiveValues>(() => {
-    if (!plan) return { quitText: '0 gün 00 saat', savingsText: '0 ₺', nextWindow: '--:--' };
+    if (!plan) return { quitText: isEn ? '0 days 00 hrs' : '0 gün 00 saat', savingsText: '0 ₺', nextWindow: '--:--', todayText: isEn ? 'Today: 0 / 0' : 'Bugün: 0 / 0' };
     // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     const elapsedMs = elapsedDays(plan, now) * 24 * 60 * 60 * 1000;
     const days = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
     const hours = Math.floor((elapsedMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
     const upcoming = nextWindowInfo(plan, new Date(now));
+    const tk = todayKey();
+    const rec = (data.logs || []).find((l: any) => l.date === tk);
+    const todaySmoked = Math.max(0, rec?.smoked || 0);
+    const goal = todayGoal(plan, data.logs || []);
     return {
-      quitText: `${days} gün ${String(hours).padStart(2, '0')} saat`,
+      quitText: isEn ? `${days} days ${String(hours).padStart(2, '0')} hrs` : `${days} gün ${String(hours).padStart(2, '0')} saat`,
       savingsText: formatMoneyShort(totalMoneySaved(plan, data.logs), plan.currency),
       nextWindow: upcoming ? fromMin((nowMin(new Date(now)) + upcoming.minutes) % 1440) : '--:--',
+      todayText: isEn ? `Today: ${todaySmoked} / ${goal}` : `Bugün: ${todaySmoked} / ${goal}`,
     };
-    // `tick` yalnızca canlı değerleri yeniden hesaplamak için kullanılır.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, data.logs, tick]);
-
-  const handleSyncAndUpdate = async () => {
-    if (syncing) return;
-    setSyncing(true);
-    try {
-      await syncWidgetsAndCheckUpdate();
-    } finally {
-      setSyncing(false);
-    }
-  };
+  }, [plan, data.logs, tick, isEn]);
 
   const showPermissionHelp = (title: string, message: string) => {
     Alert.alert(title, message, [
@@ -168,27 +165,6 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
             </View>
           </View>
 
-          <View style={styles.syncCard}>
-            <Text style={styles.syncTitle}>Güncelle / Senkronize Et</Text>
-            <Text style={styles.syncText}>
-              Tüm ana ekran widget&apos;larını zorla yeniler ve GitHub üzerinden yeni
-              uygulama sürümü olup olmadığını kontrol eder.
-            </Text>
-            <Pressable
-              style={[styles.syncBtn, syncing && styles.addBtnBusy]}
-              onPress={handleSyncAndUpdate}
-              disabled={syncing}
-              accessibilityRole="button"
-              accessibilityLabel="Güncelle ve senkronize et"
-            >
-              {syncing ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.syncBtnText}>Güncelle / Senkronize Et</Text>
-              )}
-            </Pressable>
-          </View>
-
           {canPin === false ? (
             <View style={styles.warnCard}>
               <Text style={styles.warnTitle}>İzin gerekebilir</Text>
@@ -206,29 +182,10 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
             </View>
           ) : null}
 
-          <WidgetPreview
-            size="4x2"
-            title="4×2 Büyük Kart"
-            description="Sayaç, tasarruf ve sıradaki pencere"
-            live={live}
-            width={previewWidth}
-            busy={busy === '4x2'}
-            pinned={pinned === '4x2'}
-            onAdd={() => addWidget('4x2')}
-            styles={styles}
-          />
-
-          <WidgetPreview
-            size="2x2"
-            title="2×2 Kare Kart"
-            description="Sayaç ve tasarruf özeti"
-            live={live}
-            width={previewWidth}
-            busy={busy === '2x2'}
-            pinned={pinned === '2x2'}
-            onAdd={() => addWidget('2x2')}
-            styles={styles}
-          />
+          <WidgetPreview size="1x2" title="1×2 Kompakt" description="Sayaç ve bugün özeti" live={live} width={previewWidth} busy={busy === '1x2'} pinned={pinned === '1x2'} onAdd={() => addWidget('1x2')} styles={styles} />
+          <WidgetPreview size="2x2" title="2×2 Kare" description="Sayaç, tasarruf ve bugün" live={live} width={previewWidth} busy={busy === '2x2'} pinned={pinned === '2x2'} onAdd={() => addWidget('2x2')} styles={styles} />
+          <WidgetPreview size="2x3" title="2×3 Orta" description="Daha büyük sayaç ve günlük takip" live={live} width={previewWidth} busy={busy === '2x3'} pinned={pinned === '2x3'} onAdd={() => addWidget('2x3')} styles={styles} />
+          <WidgetPreview size="4x2" title="4×2 Geniş" description="Geniş sayaç, tasarruf ve günlük takip" live={live} width={previewWidth} busy={busy === '4x2'} pinned={pinned === '4x2'} onAdd={() => addWidget('4x2')} styles={styles} />
 
           <Text style={styles.footnote}>
             Widget&apos;lar telefonun ana ekranında canlı güncellenir. Aynı ekrandan dilediğin
@@ -264,8 +221,10 @@ function WidgetPreview({
   styles: PreviewStyles;
 }) {
   const wide = size === '4x2';
-  const surfaceWidth = width;
-  const surfaceHeight = wide ? surfaceWidth / 2.27 : surfaceWidth;
+  const compact = size === '1x2';
+  const tall = size === '2x3';
+  const surfaceWidth = compact ? width : width;
+  const surfaceHeight = compact ? Math.max(84, surfaceWidth / 3.2) : wide ? surfaceWidth / 2.27 : tall ? surfaceWidth * 1.05 : surfaceWidth;
   const scale = Math.max(0.86, Math.min(1.15, surfaceWidth / 320));
 
   return (
@@ -286,32 +245,25 @@ function WidgetPreview({
         end={{ x: 1, y: 1 }}
         style={[
           styles.surface,
-          { width: surfaceWidth, height: surfaceHeight, padding: 14 * scale },
+          { width: surfaceWidth, height: surfaceHeight, padding: (compact ? 10 : 14) * scale },
         ]}
       >
         <View style={styles.surfaceTopRow}>
-          <Text style={[styles.brand, { fontSize: 10 * scale }]}>BIRAK GİTSİN</Text>
-          <View style={[styles.openPill, { paddingHorizontal: 9 * scale, paddingVertical: 3 * scale }]}>
-            <Text style={[styles.openPillText, { fontSize: 10 * scale }]}>Aç →</Text>
-          </View>
+          <Text style={[styles.brand, { fontSize: (compact ? 8 : 10) * scale }]}>BIRAK GİTSİN</Text>
         </View>
 
         <LinearGradient
           colors={['#60A5FA', '#34D399']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={[styles.accentLine, { marginTop: 7 * scale }]}
+          style={[styles.accentLine, { marginTop: (compact ? 4 : 7) * scale }]}
         />
 
         <View style={styles.surfaceCenter}>
-          <View style={styles.liveRow}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>canlı</Text>
-          </View>
           <Text
             style={[
               styles.counter,
-              { fontSize: (wide ? 25 : 23) * scale, marginTop: 2 * scale },
+              { fontSize: (compact ? 16 : wide ? 25 : tall ? 28 : 23) * scale, marginTop: 2 * scale },
             ]}
             numberOfLines={1}
             adjustsFontSizeToFit
@@ -321,15 +273,15 @@ function WidgetPreview({
         </View>
 
         <View style={styles.surfaceBottom}>
-          <Text style={[styles.savings, { fontSize: (wide ? 12 : 11) * scale }]}>
-            Tasarruf: {live.savingsText}
-          </Text>
-          <Text
-            style={[styles.nextWindow, { fontSize: (wide ? 9 : 9) * scale, marginTop: 2 * scale }]}
-            numberOfLines={1}
-          >
-            Sıradaki pencere {live.nextWindow}
-          </Text>
+          {!compact ? (
+            <Text style={[styles.savings, { fontSize: (wide ? 12 : 11) * scale }]}>Tasarruf: {live.savingsText}</Text>
+          ) : null}
+          <View style={styles.todayRow}>
+            <Text style={[styles.todayText, { fontSize: (compact ? 9 : 11) * scale }]} numberOfLines={1}>{live.todayText}</Text>
+            <View style={[styles.plusPill, { paddingHorizontal: (compact ? 7 : 10) * scale, paddingVertical: (compact ? 2 : 3) * scale }]}>
+              <Text style={[styles.plusPillText, { fontSize: (compact ? 9 : 11) * scale }]}>+1</Text>
+            </View>
+          </View>
         </View>
       </LinearGradient>
 
@@ -361,9 +313,10 @@ const createStyles = (colors: any) =>
     header: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
       paddingHorizontal: spacing.md,
       paddingBottom: spacing.sm,
-      gap: spacing.md,
     },
     headerText: { flex: 1 },
     title: { fontSize: fontSizes.xl, fontWeight: '800', color: colors.text },
@@ -376,10 +329,11 @@ const createStyles = (colors: any) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
-    closeText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark },
+    closeText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.text },
     scroll: { padding: spacing.md, gap: spacing.md },
     heroCard: {
       flexDirection: 'row',
+      alignItems: 'flex-start',
       gap: spacing.md,
       backgroundColor: colors.card,
       borderRadius: radius.lg,
@@ -391,12 +345,12 @@ const createStyles = (colors: any) =>
     heroIcon: {
       width: 42,
       height: 42,
-      borderRadius: radius.md,
+      borderRadius: 21,
       backgroundColor: colors.primarySoft,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    heroIconText: { fontSize: 24, fontWeight: '800', color: colors.primaryDark },
+    heroIconText: { fontSize: 22, fontWeight: '700', color: colors.primaryDark },
     heroInfo: { flex: 1 },
     heroTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
     heroText: {
@@ -414,11 +368,7 @@ const createStyles = (colors: any) =>
       gap: 4,
     },
     warnTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
-    warnText: {
-      fontSize: fontSizes.sm,
-      lineHeight: fontSizes.md + 4,
-      color: colors.textMuted,
-    },
+    warnText: { fontSize: fontSizes.sm, lineHeight: fontSizes.md + 4, color: colors.textMuted },
     warnBtn: {
       alignSelf: 'flex-start',
       marginTop: spacing.sm,
@@ -459,17 +409,15 @@ const createStyles = (colors: any) =>
     },
     surfaceTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     brand: { color: '#93C5FD', fontWeight: '800', letterSpacing: 0.6, flexShrink: 1 },
-    openPill: { backgroundColor: '#1D4ED8', borderRadius: 8, marginLeft: 8 },
-    openPillText: { color: '#FFFFFF', fontWeight: '800' },
     accentLine: { height: 2, backgroundColor: '#2563EB', borderRadius: 2, opacity: 0.9 },
     surfaceCenter: { flex: 1, justifyContent: 'center' },
-    liveRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#4ADE80' },
-    liveText: { fontSize: 8, fontWeight: '700', color: '#4ADE80', textTransform: 'uppercase' },
     counter: { color: '#FFFFFF', fontWeight: '800' },
-    surfaceBottom: { gap: 1 },
+    surfaceBottom: { gap: 4 },
     savings: { color: '#86EFAC', fontWeight: '800' },
-    nextWindow: { color: '#CBD5E1' },
+    todayRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    todayText: { color: '#E2E8F0', fontWeight: '700', flex: 1 },
+    plusPill: { backgroundColor: '#2563EB', borderRadius: 8 },
+    plusPillText: { color: '#FFFFFF', fontWeight: '800' },
     addBtn: {
       backgroundColor: colors.primary,
       borderRadius: radius.md,
@@ -486,31 +434,6 @@ const createStyles = (colors: any) =>
       color: colors.success,
       textAlign: 'center',
     },
-    syncCard: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: spacing.md,
-      gap: spacing.sm,
-      ...shadows.card,
-    },
-    syncTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text },
-    syncText: {
-      fontSize: fontSizes.sm,
-      lineHeight: fontSizes.md + 4,
-      color: colors.textMuted,
-    },
-    syncBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 48,
-      marginTop: spacing.xs,
-    },
-    syncBtnText: { fontSize: fontSizes.md, fontWeight: '800', color: colors.white },
     footnote: {
       fontSize: fontSizes.xs,
       lineHeight: fontSizes.md + 2,

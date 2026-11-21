@@ -372,7 +372,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
           <Text style={styles.cardLabel}>Ana Ekran Widget&apos;ları</Text>
           <Text style={styles.planSub}>
-            MIUI widget menüsüne girmeden ekle. 4×2 ve 2×2 kartların canlı önizlemesini gör,
+            MIUI widget menüsüne girmeden ekle. 1×2, 2×2, 2×3 ve 4×2 kartların canlı önizlemesini gör,
             tek dokunuşla ana ekranına yerleştir.
           </Text>
           <Pressable style={styles.rowBtn} onPress={() => setWidgetsOpen(true)}>
@@ -793,7 +793,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v2.2.1</Text>
+        <Text style={styles.footer}>Bırak Gitsin v2.2.2</Text>
       </ScrollView>
 
       {!IS_USER_RELEASE && (
