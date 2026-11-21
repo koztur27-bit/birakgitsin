@@ -267,9 +267,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => sub.remove();
   }, []);
 
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   useEffect(() => {
     if (Platform.OS === 'web') return;
-    const sub = AppState.addEventListener('change', setAppState);
+    const sub = AppState.addEventListener('change', (next) => {
+      const prev = appStateRef.current;
+      appStateRef.current = next;
+      setAppState(next);
+      if ((prev === 'background' || prev === 'inactive') && next === 'active') {
+        void (async () => {
+          try {
+            const loaded = await loadData();
+            const have = loaded.badges ?? [];
+            const earned = evaluateBadges(loaded, have);
+            const enriched = earned.length > 0 ? { ...loaded, badges: [...have, ...earned] } : loaded;
+            setData(enriched);
+          } catch {}
+        })();
+      }
+    });
     return () => sub.remove();
   }, []);
 

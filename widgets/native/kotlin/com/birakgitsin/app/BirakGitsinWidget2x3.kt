@@ -16,14 +16,20 @@ class BirakGitsinWidget2x3 : AppWidgetProvider() {
             true,
             BirakGitsinWidget2x3::class.java,
             103,
+            203,
         )
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        if (intent.action == BirakGitsinWidget.ACTION_REFRESH) {
-            BirakGitsinWidget.renderProvider(context, BirakGitsinWidget2x3::class.java)
-            BirakGitsinWidget.showRefreshFeedback(context)
+        when (intent.action) {
+            BirakGitsinWidget.ACTION_REFRESH -> {
+                BirakGitsinWidget.renderProvider(context, BirakGitsinWidget2x3::class.java)
+                BirakGitsinWidget.showRefreshFeedback(context)
+            }
+            BirakGitsinWidget.ACTION_ADD_SMOKED -> {
+                BirakGitsinWidget.handleAddSmoked(context)
+            }
         }
     }
 }

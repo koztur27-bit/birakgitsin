@@ -19,6 +19,7 @@ internal data class WidgetSpec(
     val showSavings: Boolean,
     val showNext: Boolean,
     val refreshRequestCode: Int,
+    val addRequestCode: Int,
 )
 
 open class BirakGitsinWidget : AppWidgetProvider() {
@@ -32,17 +33,19 @@ open class BirakGitsinWidget : AppWidgetProvider() {
             true,
             BirakGitsinWidget2x2::class.java,
             102,
+            202,
         )
     }
 
     companion object {
         const val ACTION_REFRESH = "com.birakgitsin.app.ACTION_REFRESH_WIDGET"
+        const val ACTION_ADD_SMOKED = "com.birakgitsin.app.ACTION_ADD_SMOKED_WIDGET"
 
         internal fun specs() = listOf(
-            WidgetSpec(BirakGitsinWidget1x2::class.java, R.layout.birakgitsin_widget_1x2, false, false, 101),
-            WidgetSpec(BirakGitsinWidget2x2::class.java, R.layout.birakgitsin_widget_2x2, true, true, 102),
-            WidgetSpec(BirakGitsinWidget2x3::class.java, R.layout.birakgitsin_widget_2x3, true, true, 103),
-            WidgetSpec(BirakGitsinWidget4x2::class.java, R.layout.birakgitsin_widget_4x2, true, true, 104),
+            WidgetSpec(BirakGitsinWidget1x2::class.java, R.layout.birakgitsin_widget_1x2, false, false, 101, 201),
+            WidgetSpec(BirakGitsinWidget2x2::class.java, R.layout.birakgitsin_widget_2x2, true, true, 102, 202),
+            WidgetSpec(BirakGitsinWidget2x3::class.java, R.layout.birakgitsin_widget_2x3, true, true, 103, 203),
+            WidgetSpec(BirakGitsinWidget4x2::class.java, R.layout.birakgitsin_widget_4x2, true, true, 104, 204),
         )
 
         /** Ana ekrandaki tum widget'lari tek seferde gunceller (yayin yerine dogrudan). */
@@ -60,6 +63,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                         spec.showNext,
                         spec.cls,
                         spec.refreshRequestCode,
+                        spec.addRequestCode,
                     )
                 }
             }
@@ -74,6 +78,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
             showNext: Boolean,
             providerClass: Class<*>? = null,
             refreshRequestCode: Int = 0,
+            addRequestCode: Int = 0,
         ) {
             val prefs = context.getSharedPreferences("BirakGitsinWidget", Context.MODE_PRIVATE)
             val lang = try {
@@ -96,6 +101,11 @@ open class BirakGitsinWidget : AppWidgetProvider() {
             val nextWindow = prefs.getString("nextWindow", "--:--") ?: "--:--"
             val savingsLabel = if (isEn) "Saved" else "Tasarruf"
             val nextLabel = if (isEn) "Next window" else "Sıradaki pencere"
+            val todayInfo = computed?.let { WidgetStorage.TodayInfo(it.todaySmoked, it.todayGoal) }
+                ?: WidgetStorage.readTodayInfo(context)
+            val todaySmoked = todayInfo?.smoked ?: 0
+            val todayGoal = todayInfo?.goal ?: 0
+            val todayText = if (isEn) "Today: $todaySmoked / $todayGoal" else "Bugün: $todaySmoked / $todayGoal"
 
             // Hesaplanan değerleri prefs'e de yaz ki sonraki okumalar tutarlı kalsın.
             try {
@@ -131,6 +141,19 @@ open class BirakGitsinWidget : AppWidgetProvider() {
             } else {
                 null
             }
+            val addPending = if (providerClass != null) {
+                val addIntent = Intent(context, providerClass).apply {
+                    action = ACTION_ADD_SMOKED
+                }
+                PendingIntent.getBroadcast(
+                    context,
+                    addRequestCode,
+                    addIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+            } else {
+                null
+            }
 
             for (id in appWidgetIds) {
                 val views = RemoteViews(context.packageName, layoutRes)
@@ -141,6 +164,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                 if (showNext) {
                     views.setTextViewText(R.id.widget_next, "$nextLabel $nextWindow")
                 }
+                try { views.setTextViewText(R.id.widget_today, todayText) } catch (_: Exception) {}
                 if (pending != null) {
                     views.setOnClickPendingIntent(R.id.widget_root, pending)
                     views.setOnClickPendingIntent(R.id.widget_open, pending)
@@ -150,6 +174,13 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                         views.setOnClickPendingIntent(R.id.widget_refresh, refreshPending)
                     } catch (_: Exception) {
                         // Eski layout'larda widget_refresh olmayabilir.
+                    }
+                }
+                if (addPending != null) {
+                    try {
+                        views.setOnClickPendingIntent(R.id.widget_add, addPending)
+                    } catch (_: Exception) {
+                        // Eski layout'larda widget_add olmayabilir.
                     }
                 }
                 appWidgetManager.updateAppWidget(id, views)
@@ -170,6 +201,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                     spec.showNext,
                     spec.cls,
                     spec.refreshRequestCode,
+                    spec.addRequestCode,
                 )
             }
         }
@@ -181,6 +213,26 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             } catch (_: Exception) {
             }
+            vibrateShort(context, 40)
+        }
+
+        fun handleAddSmoked(context: Context) {
+            val res = WidgetStorage.addSmokedToday(context, 1)
+            renderAll(context)
+            try {
+                val lang = WidgetStorage.readLanguage(context)
+                val msg = if (res != null) {
+                    if (lang == "en") "Logged (${res.smoked} / ${res.goal})" else "Kaydedildi (${res.smoked} / ${res.goal})"
+                } else {
+                    if (lang == "en") "Could not log" else "Kaydedilemedi"
+                }
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+            }
+            vibrateShort(context, 50)
+        }
+
+        private fun vibrateShort(context: Context, ms: Long) {
             try {
                 val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -191,10 +243,10 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                 }
                 if (!vibrator.hasVibrator()) return
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
+                    vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
                 } else {
                     @Suppress("DEPRECATION")
-                    vibrator.vibrate(40)
+                    vibrator.vibrate(ms)
                 }
             } catch (_: Exception) {
             }
