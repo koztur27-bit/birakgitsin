@@ -174,11 +174,6 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                     } catch (_: Exception) {
                         // Eski layout'larda widget_add olmayabilir.
                     }
-                    try {
-                        views.setOnClickPendingIntent(R.id.widget_add_smoked, addPending)
-                    } catch (_: Exception) {
-                        // Eski layout'larda widget_add_smoked olmayabilir.
-                    }
                 }
                 appWidgetManager.updateAppWidget(id, views)
             }
