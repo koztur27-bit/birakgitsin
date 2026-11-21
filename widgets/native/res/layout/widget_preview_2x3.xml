@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:text="BIRAK GİTSİN"
         android:textColor="#93C5FD"
-        android:textSize="11sp"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:singleLine="true" />
 
@@ -20,18 +20,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="0 gün 00 sa"
-        android:textColor="#FFFFFF"
-        android:textSize="26sp"
-        android:textStyle="bold"
-        android:singleLine="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
         android:text="Tasarruf: 0 ₺"
-        android:textColor="#86EFAC"
+        android:textColor="#34D399"
         android:textSize="13sp"
         android:textStyle="bold"
         android:singleLine="true" />
@@ -40,8 +30,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Sıradaki pencere --:--"
-        android:textColor="#CBD5E1"
-        android:textSize="10sp"
+        android:text="Bugün: 0 / 0"
+        android:textColor="#E2E8F0"
+        android:textSize="12sp"
+        android:textStyle="bold"
         android:singleLine="true" />
 </LinearLayout>

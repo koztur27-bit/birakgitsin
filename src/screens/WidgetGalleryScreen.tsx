@@ -249,43 +249,13 @@ function WidgetPreview({
         ]}
       >
         <View style={styles.surfaceTopRow}>
-          {compact ? (
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.brand, { fontSize: 7 * scale }]}>BIRAK GİTSİN</Text>
-              <Text style={[styles.counter, { fontSize: 13 * scale, marginTop: 1 * scale }]} numberOfLines={1} adjustsFontSizeToFit>{live.quitText}</Text>
-            </View>
-          ) : (
-            <Text style={[styles.brand, { fontSize: 10 * scale, flex: 1 }]}>BIRAK GİTSİN</Text>
-          )}
+          <Text style={[styles.brand, { fontSize: (compact ? 12 : 13) * scale, flex: 1 }]} numberOfLines={1}>BIRAK GİTSİN</Text>
           <View style={[styles.plusPill, { paddingHorizontal: (compact ? 8 : 10) * scale, paddingVertical: (compact ? 3 : 4) * scale, marginLeft: 6 * scale }]}>
             <Text style={[styles.plusPillText, { fontSize: (compact ? 10 : 11) * scale }]}>+1</Text>
           </View>
         </View>
 
-        {!compact ? (
-          <>
-            <LinearGradient
-              colors={['#60A5FA', '#34D399']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.accentLine, { marginTop: 7 * scale }]}
-            />
-            <View style={styles.surfaceCenter}>
-              <Text
-                style={[
-                  styles.counter,
-                  { fontSize: (wide ? 25 : tall ? 28 : 23) * scale, marginTop: 2 * scale },
-                ]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {live.quitText}
-              </Text>
-            </View>
-          </>
-        ) : (
-          <View style={[styles.accentLine, { marginTop: 4 * scale, height: 2 }]} />
-        )}
+        {!compact ? <View style={styles.surfaceCenter} /> : null}
 
         <View style={[styles.surfaceBottom, { gap: 4 * scale }]}>
           <Text style={[styles.savings, { fontSize: (compact ? 9 : wide ? 12 : 11) * scale }]} numberOfLines={1}>Tasarruf: {live.savingsText}</Text>
@@ -419,7 +389,6 @@ const createStyles = (colors: any) =>
     brand: { color: '#93C5FD', fontWeight: '800', letterSpacing: 0.6, flexShrink: 1 },
     accentLine: { height: 2, backgroundColor: '#2563EB', borderRadius: 2, opacity: 0.9 },
     surfaceCenter: { flex: 1, justifyContent: 'center' },
-    counter: { color: '#FFFFFF', fontWeight: '800' },
     surfaceBottom: { gap: 4 },
     savings: { color: '#86EFAC', fontWeight: '800' },
     todayRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },

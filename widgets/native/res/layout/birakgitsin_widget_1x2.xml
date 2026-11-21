@@ -38,23 +38,10 @@
                 android:layout_height="wrap_content"
                 android:text="BIRAK GİTSİN"
                 android:textColor="#5EEAD4"
-                android:textSize="7sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:includeFontPadding="false"
                 android:singleLine="true"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/widget_counter"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="0g 0s"
-                android:textColor="#F8FAFC"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:maxLines="1"
                 android:ellipsize="end" />
         </LinearLayout>
 

@@ -29,7 +29,7 @@
             android:layout_weight="1"
             android:text="BIRAK GİTSİN"
             android:textColor="#5EEAD4"
-            android:textSize="11sp"
+            android:textSize="13sp"
             android:textStyle="bold"
             android:letterSpacing="0.04"
             android:singleLine="true"
@@ -56,25 +56,8 @@
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="3dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/widget_accent_line" />
-
-    <TextView
-        android:id="@+id/widget_counter"
-        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="6dp"
-        android:gravity="center_vertical"
-        android:text="0g 0s"
-        android:textColor="#F8FAFC"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:includeFontPadding="false"
-        android:maxLines="1"
-        android:singleLine="true"
-        android:ellipsize="end" />
+        android:layout_weight="1" />
 
     <TextView
         android:id="@+id/widget_savings"
