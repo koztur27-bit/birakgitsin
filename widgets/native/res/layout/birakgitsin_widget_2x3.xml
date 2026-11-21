@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_card_bg"
-    android:padding="14dp">
+    android:padding="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,8 +15,8 @@
 
         <ImageView
             android:id="@+id/widget_mascot"
-            android:layout_width="34dp"
-            android:layout_height="34dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_marginRight="8dp"
             android:src="@drawable/widget_mascot"
             android:scaleType="fitCenter"
@@ -24,25 +24,39 @@
 
         <TextView
             android:id="@+id/widget_brand"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="BIRAK GİTSİN"
             android:textColor="#5EEAD4"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textStyle="bold"
-            android:letterSpacing="0.06"
-            android:singleLine="true" />
+            android:letterSpacing="0.04"
+            android:singleLine="true"
+            android:ellipsize="end" />
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
+            android:id="@+id/widget_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="40dp"
+            android:gravity="center"
+            android:text="+1"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/widget_action_bg"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:singleLine="true" />
     </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="3dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="8dp"
         android:background="@drawable/widget_accent_line" />
 
     <TextView
@@ -50,13 +64,14 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:gravity="center_vertical"
         android:text="0 gün 00 sa"
         android:textColor="#F8FAFC"
-        android:textSize="28sp"
+        android:textSize="18sp"
         android:textStyle="bold"
         android:includeFontPadding="false"
+        android:maxLines="1"
         android:singleLine="true"
         android:ellipsize="end" />
 
@@ -66,54 +81,20 @@
         android:layout_height="wrap_content"
         android:text="Tasarruf: 0 ₺"
         android:textColor="#34D399"
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:textStyle="bold"
         android:singleLine="true"
         android:ellipsize="end" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:id="@+id/widget_today"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Bugün: 0 / 0"
-            android:textColor="#E2E8F0"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/widget_add"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="+1"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:background="@drawable/widget_action_bg"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:singleLine="true" />
-    </LinearLayout>
-
     <TextView
-        android:id="@+id/widget_next"
+        android:id="@+id/widget_today"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Sıradaki pencere --:--"
-        android:textColor="#CBD5E1"
-        android:textSize="11sp"
+        android:layout_marginTop="2dp"
+        android:text="Bugün: 0 / 0"
+        android:textColor="#E2E8F0"
+        android:textSize="12sp"
+        android:textStyle="bold"
         android:singleLine="true"
         android:ellipsize="end" />
 </LinearLayout>

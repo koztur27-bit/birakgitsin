@@ -43,8 +43,8 @@ open class BirakGitsinWidget : AppWidgetProvider() {
 
         internal fun specs() = listOf(
             WidgetSpec(BirakGitsinWidget1x2::class.java, R.layout.birakgitsin_widget_1x2, false, false, 101, 201),
-            WidgetSpec(BirakGitsinWidget2x2::class.java, R.layout.birakgitsin_widget_2x2, true, true, 102, 202),
-            WidgetSpec(BirakGitsinWidget2x3::class.java, R.layout.birakgitsin_widget_2x3, true, true, 103, 203),
+            WidgetSpec(BirakGitsinWidget2x2::class.java, R.layout.birakgitsin_widget_2x2, true, false, 102, 202),
+            WidgetSpec(BirakGitsinWidget2x3::class.java, R.layout.birakgitsin_widget_2x3, true, false, 103, 203),
             WidgetSpec(BirakGitsinWidget4x2::class.java, R.layout.birakgitsin_widget_4x2, true, true, 104, 204),
         )
 
@@ -159,10 +159,10 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                 val views = RemoteViews(context.packageName, layoutRes)
                 views.setTextViewText(R.id.widget_counter, quitText)
                 if (showSavings) {
-                    views.setTextViewText(R.id.widget_savings, "$savingsLabel: $savingsText")
+                    try { views.setTextViewText(R.id.widget_savings, "$savingsLabel: $savingsText") } catch (_: Exception) {}
                 }
                 if (showNext) {
-                    views.setTextViewText(R.id.widget_next, "$nextLabel $nextWindow")
+                    try { views.setTextViewText(R.id.widget_next, "$nextLabel $nextWindow") } catch (_: Exception) {}
                 }
                 try { views.setTextViewText(R.id.widget_today, todayText) } catch (_: Exception) {}
                 if (pending != null) {
@@ -173,6 +173,11 @@ open class BirakGitsinWidget : AppWidgetProvider() {
                         views.setOnClickPendingIntent(R.id.widget_add, addPending)
                     } catch (_: Exception) {
                         // Eski layout'larda widget_add olmayabilir.
+                    }
+                    try {
+                        views.setOnClickPendingIntent(R.id.widget_add_smoked, addPending)
+                    } catch (_: Exception) {
+                        // Eski layout'larda widget_add_smoked olmayabilir.
                     }
                 }
                 appWidgetManager.updateAppWidget(id, views)
