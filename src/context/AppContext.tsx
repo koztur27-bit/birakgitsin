@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Linking, Platform, Vibration } from 'react-native';
 import { badgeById, evaluateBadges } from '../lib/badges';
+import { maybeRequestStoreReview } from '../lib/storeReview';
 import { cigarettesAvoided, formatCountdown, formatMoney, getLog, todayKey, totalMoneySaved } from '../lib/calculations';
 import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
 import {
@@ -590,6 +591,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           celebrate(`Yeni rozet kazandın!`, `${def.title}\n${def.desc}`).catch(() => {});
         }
       });
+      maybeRequestStoreReview('badge').catch(() => {});
     }
     return { ...next, badges: [...have, ...earned] };
   };

@@ -56,15 +56,24 @@ function ErrorView({
   onReload: () => void;
 }) {
   return (
-    <View style={styles.splash}>
-      <Text style={styles.errorTitle}>Bir sorun oluştu / Something went wrong</Text>
-      <ScrollView style={styles.errorScroll}>
-        <Text style={styles.errorMessage}>{error.message}</Text>
-        {error.stack ? <Text style={styles.errorStack}>{error.stack}</Text> : null}
-      </ScrollView>
-      <Pressable style={styles.errorBtn} onPress={onReload}>
-        <Text style={styles.errorBtnText}>Tekrar Dene / Retry</Text>
-      </Pressable>
+    <View style={styles.errorRoot}>
+      <View style={styles.errorCard}>
+        <Text style={styles.errorIcon}>:(</Text>
+        <Text style={styles.errorTitle}>Bir şeyler ters gitti</Text>
+        <Text style={styles.errorSubtitle}>Something went wrong</Text>
+        <Text style={styles.errorHint}>
+          Beklenmeyen bir hata oluştu. Endişelenme, verilerin güvende. Uygulamayı yeniden dene.
+        </Text>
+        <Text style={styles.errorHintEn}>
+          An unexpected error occurred. Your data is safe. Please try again.
+        </Text>
+        <ScrollView style={styles.errorScroll}>
+          <Text style={styles.errorMessage}>{error.message}</Text>
+        </ScrollView>
+        <Pressable style={styles.errorBtn} onPress={onReload}>
+          <Text style={styles.errorBtnText}>Tekrar Dene / Try Again</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -195,40 +204,81 @@ const styles = StyleSheet.create({
   hidden: {
     display: 'none',
   },
+  errorRoot: {
+    flex: 1,
+    backgroundColor: '#F2F6FD',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  errorCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#12306B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  errorIcon: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: '#2563EB',
+    marginBottom: 8,
+  },
   errorTitle: {
-    color: '#C62828',
-    fontSize: fontSizes.xl,
-    fontWeight: '700',
-    marginBottom: spacing.md,
+    color: '#0F1B33',
+    fontSize: 28,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  errorSubtitle: {
+    color: '#64748B',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  errorHint: {
+    color: '#334155',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  errorHintEn: {
+    color: '#64748B',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
   },
   errorScroll: {
     alignSelf: 'stretch',
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    maxHeight: 320,
-    marginBottom: spacing.lg,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 12,
+    maxHeight: 140,
+    marginBottom: 20,
   },
   errorMessage: {
-    color: '#C62828',
-    fontSize: fontSizes.md,
+    color: '#B91C1C',
+    fontSize: 13,
     fontWeight: '600',
   },
-  errorStack: {
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
-    marginTop: spacing.sm,
-    fontFamily: 'monospace',
-  },
   errorBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   errorBtnText: {
-    color: colors.white,
-    fontSize: fontSizes.md,
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '700',
   },
 });
