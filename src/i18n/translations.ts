@@ -336,8 +336,6 @@ export const translations = {
       riskyHours: 'Riskli saatler',
       weeklyReport: 'Haftalık rapor',
       shareReport: 'Raporu paylaş',
-      doctorSummary: 'Doktor özeti',
-      shareDoctor: 'Doktorla paylaş',
       badges: 'Rozetler',
       noBadges: 'Henüz rozet yok. Devam et!',
       calendar: 'Takvim',
@@ -369,6 +367,7 @@ export const translations = {
       bodyMapProgress: 'İyileşme',
       bodyMapCurrent: 'Şu an ne oluyor?',
       bodyMapClose: 'Kapat',
+      disclaimer: 'Bu uygulama tıbbi tavsiye, teşhis veya tedavi yerine geçmez; genel motivasyon ve kişisel takip amaçlıdır.',
       bodyMapOrgans: {
         heart: {
           title: 'Kalp & Nabız',
@@ -468,6 +467,9 @@ export const translations = {
       buy: 'Satın Al',
       restore: 'Satın alımları geri yükle',
       restoreNone: 'Geri yüklenecek satın alım bulunamadı.',
+      subscriptionLegal: 'Abonelikler dönem bitiminden en az 24 saat önce iptal edilmezse otomatik yenilenir; Google Play Hesap Ayarları üzerinden istediğiniz zaman yönetebilir veya iptal edebilirsiniz.',
+      privacyPolicy: 'Gizlilik Politikası',
+      termsOfUse: 'Kullanım Koşulları',
       restoreOk: 'PRO erişimin geri yüklendi.',
       active: 'PRO aktif',
       unlockedFor: 'PRO {time} boyunca açık',
@@ -480,6 +482,7 @@ export const translations = {
     },
     withdrawal: {
       title: 'Yoksunluk Belirtisi Rehberi',
+      disclaimer: 'Bu uygulama tıbbi tavsiye, teşhis veya tedavi yerine geçmez; genel motivasyon ve kişisel takip amaçlıdır.',
       subtitle: 'Bıraktıktan sonra bedeninin verdiği tepkiler normaldir ve geçicidir.',
       items: [
         {
@@ -1055,8 +1058,6 @@ export const translations = {
       riskyHours: 'Risky hours',
       weeklyReport: 'Weekly report',
       shareReport: 'Share report',
-      doctorSummary: 'Doctor summary',
-      shareDoctor: 'Share with doctor',
       badges: 'Badges',
       noBadges: 'No badges yet. Keep going!',
       calendar: 'Calendar',
@@ -1088,6 +1089,7 @@ export const translations = {
       bodyMapProgress: 'Recovery',
       bodyMapCurrent: "What's happening now?",
       bodyMapClose: 'Close',
+      disclaimer: 'This app does not replace medical advice, diagnosis, or treatment; it is intended for general motivation and personal tracking.',
       bodyMapOrgans: {
         heart: {
           title: 'Heart & Pulse',
@@ -1187,6 +1189,9 @@ export const translations = {
       buy: 'Buy',
       restore: 'Restore purchases',
       restoreNone: 'No purchases found to restore.',
+      subscriptionLegal: 'Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. You can manage or cancel anytime in your Google Play account settings.',
+      privacyPolicy: 'Privacy Policy',
+      termsOfUse: 'Terms of Use',
       restoreOk: 'Your PRO access has been restored.',
       active: 'PRO active',
       unlockedFor: 'PRO unlocked for {time}',
@@ -1199,6 +1204,7 @@ export const translations = {
     },
     withdrawal: {
       title: 'Withdrawal Symptom Guide',
+      disclaimer: 'This app does not replace medical advice, diagnosis, or treatment; it is intended for general motivation and personal tracking.',
       subtitle: 'Your body’s reactions after quitting are normal and temporary.',
       items: [
         {

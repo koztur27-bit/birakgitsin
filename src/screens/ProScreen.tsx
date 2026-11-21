@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -178,6 +179,19 @@ export function ProScreen({ visible, onClose }: Props) {
             {restoring ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.restoreText}>{t('pro.restore')}</Text>}
           </Pressable>
 
+          <View style={styles.legalBox}>
+            <Text style={styles.legalText}>{t('pro.subscriptionLegal')}</Text>
+            <View style={styles.legalLinks}>
+              <Pressable onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/privacy-policy.html')}>
+                <Text style={styles.legalLink}>{t('pro.privacyPolicy')}</Text>
+              </Pressable>
+              <Text style={styles.legalSep}>•</Text>
+              <Pressable onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/terms-of-use.html')}>
+                <Text style={styles.legalLink}>{t('pro.termsOfUse')}</Text>
+              </Pressable>
+            </View>
+          </View>
+
           <View style={{ height: insets.bottom + 24 }} />
         </ScrollView>
       </View>
@@ -219,4 +233,9 @@ const createStyles = (colors: any) =>
     buyText: { color: '#FFFFFF', fontWeight: '800', fontSize: fontSizes.md },
     restoreBtn: { alignItems: 'center', paddingVertical: spacing.md, marginTop: spacing.sm },
     restoreText: { color: colors.primary, fontWeight: '700' },
+    legalBox: { marginTop: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+    legalText: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18, textAlign: 'center' },
+    legalLinks: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: spacing.sm, flexWrap: 'wrap' },
+    legalLink: { fontSize: fontSizes.xs, color: colors.primary, fontWeight: '700', textDecorationLine: 'underline' },
+    legalSep: { fontSize: fontSizes.xs, color: colors.textMuted },
   });

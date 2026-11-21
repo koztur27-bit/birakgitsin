@@ -35,14 +35,6 @@ export type CravingRecord = {
   trigger?: string;
 };
 
-export type NrtKind = 'gum' | 'patch' | 'pill';
-
-export type NrtLog = {
-  timestamp: string;
-  kind: NrtKind;
-  amount: number;
-};
-
 export type SlipLog = {
   timestamp: string;
   trigger?: string;
@@ -83,7 +75,6 @@ export type AppData = {
   logs: DayRecord[];
   cravings: CravingRecord[];
   badges: string[];
-  nrtLogs?: NrtLog[];
   savingsGoal?: SavingsGoal | null;
   crisisReminders?: CrisisReminder[];
   isPremium: boolean;

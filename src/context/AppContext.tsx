@@ -18,7 +18,6 @@ import {
   CrisisReminder,
   DayRecord,
   HappinessPrompts,
-  NrtKind,
   Plan,
   QuitMotivation,
   SavingsGoal,
@@ -56,7 +55,6 @@ type AppContextValue = {
   logSlip: (opts?: LogOptions) => { avoided: number };
   undoCigarette: (opts?: LogOptions) => void;
   logCraving: (resisted: boolean, meta?: { intensity?: number; trigger?: string }) => void;
-  logNrt: (kind: NrtKind, amount?: number) => void;
   setSavingsGoal: (goal: SavingsGoal | null) => void;
   setCrisisReminders: (reminders: CrisisReminder[]) => Promise<void>;
   resetAll: () => void;
@@ -650,11 +648,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ),
     );
 
-  const logNrt = (kind: NrtKind, amount = 1) =>
-    persist({
-      ...data,
-      nrtLogs: [...(data.nrtLogs ?? []), { timestamp: new Date().toISOString(), kind, amount }],
-    });
 
   const setSavingsGoal = (goal: SavingsGoal | null) => {
     const next = { ...data, savingsGoal: goal };
@@ -689,7 +682,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       badges: [],
       savingsGoal: null,
       crisisReminders: [],
-      nrtLogs: [],
       isPremium: false,
       proUnlockUntil: 0,
       showLockScreen: true,
@@ -778,7 +770,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       logs: Array.isArray(incoming.logs) ? incoming.logs : [],
       cravings: Array.isArray(incoming.cravings) ? incoming.cravings : [],
       badges: Array.isArray(incoming.badges) ? incoming.badges : [],
-      nrtLogs: Array.isArray(incoming.nrtLogs) ? incoming.nrtLogs : [],
       savingsGoal:
         incoming.savingsGoal && typeof incoming.savingsGoal.title === 'string'
           ? {
@@ -890,7 +881,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     logSlip,
     undoCigarette,
     logCraving,
-    logNrt,
     setSavingsGoal,
     setCrisisReminders,
     resetAll,

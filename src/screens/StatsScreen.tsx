@@ -22,7 +22,6 @@ import {
   cravingHours,
   dailyGoal,
   daysSinceStart,
-  doctorSummary,
   elapsedDays,
   formatDayShort,
   formatDuration,
@@ -174,16 +173,6 @@ export function StatsScreen() {
     }
   };
 
-  const shareDoctor = async () => {
-    try {
-      await Share.share({
-        title: isEn ? 'Quit & Let Go — Doctor/pharmacist summary' : 'Bırak Gitsin — doktor/eczacı özeti',
-        message: doctorSummary(plan, logs, cravings),
-      });
-    } catch {
-      Alert.alert(isEn ? 'Could not share' : 'Paylaşılamadı', isEn ? 'Sharing is unavailable right now.' : 'Şu anda paylaşım ekranı açılamadı.');
-    }
-  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
@@ -333,9 +322,6 @@ export function StatsScreen() {
               <Text style={[styles.shareBtnText, styles.shareBtnTextPrimary]}>
                 {isEn ? 'Share report' : 'Raporu paylaş'}
               </Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" onPress={shareDoctor} style={styles.shareBtn}>
-              <Text style={styles.shareBtnText}>{isEn ? 'Doctor summary' : 'Doktor özeti'}</Text>
             </Pressable>
           </View>
         </Card>

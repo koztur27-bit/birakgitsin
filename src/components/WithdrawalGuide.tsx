@@ -17,8 +17,8 @@ export function WithdrawalGuide() {
   const { t, ta, locale } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const items = ta<GuideItem[]>('withdrawal.items') || [];
-  const symptomsLabel = locale === 'en' ? 'Possible symptoms' : 'Olası belirtiler';
-  const tipsLabel = locale === 'en' ? 'Coping tips' : 'Başa çıkma önerileri';
+  const symptomsLabel = locale === 'en' ? 'What you may feel' : 'Neler hissedebilirsin';
+  const tipsLabel = locale === 'en' ? 'Helpful tips' : 'İyi gelebilecek öneriler';
 
   return (
     <Card>
@@ -60,12 +60,29 @@ export function WithdrawalGuide() {
           );
         })}
       </View>
+      <View style={styles.disclaimerBox}>
+        <Text style={styles.disclaimerText}>{t('withdrawal.disclaimer')}</Text>
+      </View>
     </Card>
   );
 }
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
+    disclaimerBox: {
+      marginTop: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+      borderRadius: 12,
+      padding: spacing.sm,
+    },
+    disclaimerText: {
+      fontSize: fontSizes.xs,
+      color: colors.textMuted,
+      lineHeight: 18,
+      fontWeight: '600',
+    },
     title: {
       fontSize: fontSizes.lg,
       fontWeight: '700',

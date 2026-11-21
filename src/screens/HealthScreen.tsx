@@ -166,8 +166,9 @@ export function HealthScreen() {
 
         <View style={styles.note}>
           <Text style={styles.noteText}>
-            Bu yüzdeler, uygulamadaki bırakma sürene göre hesaplanan tahmini ilerlemeyi
-            gösterir. Tıbbi bir ölçüm veya tanı değildir.
+            {isEn
+              ? 'These percentages show estimated progress based on your smoke-free time in the app. They are for general motivation and personal tracking, not a medical measurement or diagnosis.'
+              : 'Bu yüzdeler, uygulamadaki bırakma sürene göre hesaplanan tahmini ilerlemeyi gösterir. Genel motivasyon ve kişisel takip amaçlıdır; tıbbi ölçüm veya tanı değildir.'}
           </Text>
         </View>
 
@@ -175,6 +176,10 @@ export function HealthScreen() {
           <Text style={styles.sectionTitle}>Yoksunluk Belirtisi Rehberi</Text>
         </View>
         <WithdrawalGuide />
+
+        <View style={styles.disclaimerBox}>
+          <Text style={styles.disclaimerText}>{t('health.disclaimer')}</Text>
+        </View>
       </ScrollView>
 
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelectedOrgan(null)}>
@@ -311,6 +316,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: spacing.md,
   },
   noteText: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18 },
+  disclaimerBox: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  disclaimerText: { fontSize: fontSizes.xs, color: colors.textMuted, lineHeight: 18, fontWeight: '600' },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',

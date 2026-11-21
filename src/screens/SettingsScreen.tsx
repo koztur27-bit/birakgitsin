@@ -59,7 +59,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
     setLanguage,
     logCigarette,
     undoCigarette,
-    logNrt,
     restoreData,
     exportedJson,
     setCrisisReminders,
@@ -207,11 +206,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   if (!plan) return null;
 
   const goal = dailyGoal(plan, todayKey(), data.logs);
-  const nrtToday = (data.nrtLogs ?? []).filter((l) => l.timestamp.slice(0, 10) === todayKey());
-  const nrtCounts = {
-    gum: nrtToday.filter((l) => l.kind === 'gum').reduce((s, l) => s + l.amount, 0),
-    patch: nrtToday.filter((l) => l.kind === 'patch').reduce((s, l) => s + l.amount, 0),
-  };
 
   const handleSyncAndUpdate = async () => {
     if (syncing) return;
@@ -404,6 +398,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </Pressable>
         </Card>
 
+        {!IS_USER_RELEASE && (
         <Card>
           <Text style={styles.cardLabel}>Ekran Haritası</Text>
           <Text style={styles.planSub}>
@@ -414,6 +409,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             <Text style={styles.rowBtnText}>Haritayı Aç</Text>
           </Pressable>
         </Card>
+        )}
 
         <Card>
           <Text style={styles.cardLabel}>Görünüm</Text>
@@ -652,29 +648,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </View>
         </Card>
 
-        <Card>
-          <Text style={styles.cardLabel}>NRT / ilaç günlüğü</Text>
-          <Text style={styles.planSub}>
-            Nikotin sakızı, bant veya ilaç dozunu kaydet. Bu kayıt tıbbi öneri değildir;
-            doktorunun planına göre kullan.
-          </Text>
-          {plan.cessationAid && plan.cessationAid !== 'none' ? (
-            <Text style={styles.planSub}>
-              Onboarding tercihin: {plan.cessationAid === 'gum' ? 'sakız' : 'bant'}
-            </Text>
-          ) : null}
-          <View style={styles.inlineRow}>
-            <Pressable style={styles.smallBtn} onPress={() => logNrt('gum')}>
-              <Text style={styles.smallBtnText}>Sakız +1</Text>
-            </Pressable>
-            <Pressable style={styles.smallBtn} onPress={() => logNrt('patch')}>
-              <Text style={styles.smallBtnText}>Bant +1</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.planSub}>
-            Bugün: sakız {nrtCounts.gum}, bant {nrtCounts.patch}
-          </Text>
-        </Card>
 
         <Card>
           <Text style={styles.cardLabel}>Akıllı Kriz Bildirimleri</Text>
@@ -820,13 +793,17 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v2.0.2</Text>
+        <Text style={styles.footer}>Bırak Gitsin v2.1.0</Text>
       </ScrollView>
 
       {!IS_USER_RELEASE && (
         <>
-          <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
-          <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
+          {!IS_USER_RELEASE && (
+            <>
+              <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
+              <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
+            </>
+          )}
         </>
       )}
       <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
