@@ -42,7 +42,7 @@ open class BirakGitsinWidget : AppWidgetProvider() {
         const val ACTION_ADD_SMOKED = "com.birakgitsin.app.ACTION_ADD_SMOKED_WIDGET"
 
         internal fun specs() = listOf(
-            WidgetSpec(BirakGitsinWidget1x2::class.java, R.layout.birakgitsin_widget_1x2, false, false, 101, 201),
+            WidgetSpec(BirakGitsinWidget1x2::class.java, R.layout.birakgitsin_widget_1x2, true, false, 101, 201),
             WidgetSpec(BirakGitsinWidget2x2::class.java, R.layout.birakgitsin_widget_2x2, true, false, 102, 202),
             WidgetSpec(BirakGitsinWidget2x3::class.java, R.layout.birakgitsin_widget_2x3, true, false, 103, 203),
             WidgetSpec(BirakGitsinWidget4x2::class.java, R.layout.birakgitsin_widget_4x2, true, true, 104, 204),

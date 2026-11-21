@@ -182,7 +182,7 @@ export function WidgetGalleryScreen({ visible, onClose }: WidgetGalleryScreenPro
             </View>
           ) : null}
 
-          <WidgetPreview size="1x2" title="1×2 Kompakt" description="Sayaç ve bugün özeti" live={live} width={previewWidth} busy={busy === '1x2'} pinned={pinned === '1x2'} onAdd={() => addWidget('1x2')} styles={styles} />
+          <WidgetPreview size="1x2" title="1×2 Kompakt" description="Sayaç, tasarruf, bugün ve +1" live={live} width={previewWidth} busy={busy === '1x2'} pinned={pinned === '1x2'} onAdd={() => addWidget('1x2')} styles={styles} />
           <WidgetPreview size="2x2" title="2×2 Kare" description="Sayaç, tasarruf ve bugün" live={live} width={previewWidth} busy={busy === '2x2'} pinned={pinned === '2x2'} onAdd={() => addWidget('2x2')} styles={styles} />
           <WidgetPreview size="2x3" title="2×3 Orta" description="Daha büyük sayaç ve günlük takip" live={live} width={previewWidth} busy={busy === '2x3'} pinned={pinned === '2x3'} onAdd={() => addWidget('2x3')} styles={styles} />
           <WidgetPreview size="4x2" title="4×2 Geniş" description="Geniş sayaç, tasarruf ve günlük takip" live={live} width={previewWidth} busy={busy === '4x2'} pinned={pinned === '4x2'} onAdd={() => addWidget('4x2')} styles={styles} />
@@ -245,43 +245,67 @@ function WidgetPreview({
         end={{ x: 1, y: 1 }}
         style={[
           styles.surface,
-          { width: surfaceWidth, height: surfaceHeight, padding: (compact ? 10 : 14) * scale },
+          { width: surfaceWidth, height: surfaceHeight, padding: (compact ? 8 : 14) * scale },
         ]}
       >
         <View style={styles.surfaceTopRow}>
-          <Text style={[styles.brand, { fontSize: (compact ? 8 : 10) * scale }]}>BIRAK GİTSİN</Text>
+          {compact ? (
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.brand, { fontSize: 7 * scale }]}>BIRAK GİTSİN</Text>
+              <Text style={[styles.counter, { fontSize: 13 * scale, marginTop: 1 * scale }]} numberOfLines={1} adjustsFontSizeToFit>{live.quitText}</Text>
+            </View>
+          ) : (
+            <Text style={[styles.brand, { fontSize: 10 * scale, flex: 1 }]}>BIRAK GİTSİN</Text>
+          )}
+          {compact ? (
+            <View style={[styles.plusPill, { paddingHorizontal: 8 * scale, paddingVertical: 3 * scale, marginLeft: 6 * scale }]}>
+              <Text style={[styles.plusPillText, { fontSize: 10 * scale }]}>+1</Text>
+            </View>
+          ) : null}
         </View>
 
-        <LinearGradient
-          colors={['#60A5FA', '#34D399']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.accentLine, { marginTop: (compact ? 4 : 7) * scale }]}
-        />
-
-        <View style={styles.surfaceCenter}>
-          <Text
-            style={[
-              styles.counter,
-              { fontSize: (compact ? 16 : wide ? 25 : tall ? 28 : 23) * scale, marginTop: 2 * scale },
-            ]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            {live.quitText}
-          </Text>
-        </View>
+        {!compact ? (
+          <>
+            <LinearGradient
+              colors={['#60A5FA', '#34D399']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.accentLine, { marginTop: 7 * scale }]}
+            />
+            <View style={styles.surfaceCenter}>
+              <Text
+                style={[
+                  styles.counter,
+                  { fontSize: (wide ? 25 : tall ? 28 : 23) * scale, marginTop: 2 * scale },
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {live.quitText}
+              </Text>
+            </View>
+          </>
+        ) : (
+          <View style={[styles.accentLine, { marginTop: 4 * scale, height: 2 }]} />
+        )}
 
         <View style={styles.surfaceBottom}>
-          {!compact ? (
-            <Text style={[styles.savings, { fontSize: (wide ? 12 : 11) * scale }]}>Tasarruf: {live.savingsText}</Text>
-          ) : null}
-          <View style={styles.todayRow}>
-            <Text style={[styles.todayText, { fontSize: (compact ? 9 : 11) * scale }]} numberOfLines={1}>{live.todayText}</Text>
-            <View style={[styles.plusPill, { paddingHorizontal: (compact ? 7 : 10) * scale, paddingVertical: (compact ? 2 : 3) * scale }]}>
-              <Text style={[styles.plusPillText, { fontSize: (compact ? 9 : 11) * scale }]}>+1</Text>
+          {compact ? (
+            <View style={styles.todayRow}>
+              <Text style={[styles.savings, { fontSize: 9 * scale, flex: 1 }]} numberOfLines={1}>{live.savingsText}</Text>
+              <Text style={[styles.todayText, { fontSize: 9 * scale }]} numberOfLines={1}>{live.todayText}</Text>
             </View>
-          </View>
+          ) : (
+            <>
+              <Text style={[styles.savings, { fontSize: (wide ? 12 : 11) * scale }]}>Tasarruf: {live.savingsText}</Text>
+              <View style={styles.todayRow}>
+                <Text style={[styles.todayText, { fontSize: 11 * scale }]} numberOfLines={1}>{live.todayText}</Text>
+                <View style={[styles.plusPill, { paddingHorizontal: 10 * scale, paddingVertical: 3 * scale }]}>
+                  <Text style={[styles.plusPillText, { fontSize: 11 * scale }]}>+1</Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
       </LinearGradient>
 
