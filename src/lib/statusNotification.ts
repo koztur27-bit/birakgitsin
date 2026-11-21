@@ -264,7 +264,7 @@ export async function publishLockStatus(
         sound: true,
         sticky: true,
         priority: Notifications.AndroidNotificationPriority.MAX,
-        categoryIdentifier: 'birakgitsin-status',
+        categoryIdentifier: 'birakgitsin-smart',
         data: { statusPane: true },
       },
       trigger: { channelId: CHANNEL_ID },

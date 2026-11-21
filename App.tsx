@@ -1,4 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import React, { Component, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -81,6 +82,18 @@ function Root() {
   // Uygulama açılırken ve arka plana geçerken widget'ları zorla yenile.
   useEffect(() => {
     refreshWidgets();
+    Notifications.setNotificationCategoryAsync('birakgitsin-smart', [
+      {
+        identifier: 'action_add_smoked',
+        buttonTitle: '+1 İçtim',
+        options: { opensAppToForeground: false },
+      },
+      {
+        identifier: 'snooze30',
+        buttonTitle: 'Ertele',
+        options: { opensAppToForeground: false },
+      },
+    ]).catch(() => {});
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active' || state === 'background') refreshWidgets();
     });
