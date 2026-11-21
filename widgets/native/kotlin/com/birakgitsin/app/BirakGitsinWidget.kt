@@ -157,7 +157,6 @@ open class BirakGitsinWidget : AppWidgetProvider() {
 
             for (id in appWidgetIds) {
                 val views = RemoteViews(context.packageName, layoutRes)
-                try { views.setTextViewText(R.id.widget_counter, quitText) } catch (_: Exception) {}
                 if (showSavings) {
                     try { views.setTextViewText(R.id.widget_savings, "$savingsLabel: $savingsText") } catch (_: Exception) {}
                 }
