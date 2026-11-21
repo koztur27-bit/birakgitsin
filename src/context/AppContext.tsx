@@ -249,19 +249,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (Platform.OS === 'web') return;
     registerNotificationCategories();
-    const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+    const handleNotifAction = (res: Notifications.NotificationResponse | null) => {
+      if (!res) return;
       const action = res.actionIdentifier;
-      if (action && action !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
-        remoteActionRef.current[action]?.();
+      if (!action || action === Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+      if (action === 'action_add_smoked' || action === 'snooze30') {
+        Notifications.dismissNotificationAsync(res.notification.request.identifier).catch(() => {});
       }
+      remoteActionRef.current[action]?.();
+    };
+    const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+      handleNotifAction(res);
     });
     Notifications.getLastNotificationResponseAsync()
       .then((res) => {
-        if (!res) return;
-        const action = res.actionIdentifier;
-        if (action && action !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
-          remoteActionRef.current[action]?.();
-        }
+        handleNotifAction(res);
       })
       .catch(() => {});
     return () => sub.remove();
@@ -878,6 +880,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       smoke: () => logCigarette(),
       resisted: () => dismissTimer(),
       snooze5: () => extendTimer(5),
+      action_add_smoked: () => {
+        logCigarette();
+      },
       confirm_resisted: () => {
         logCraving(true);
       },

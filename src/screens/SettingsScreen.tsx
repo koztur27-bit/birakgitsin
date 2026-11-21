@@ -793,7 +793,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v2.2.6</Text>
+        <Text style={styles.footer}>Bırak Gitsin v2.2.7</Text>
       </ScrollView>
 
       {!IS_USER_RELEASE && (

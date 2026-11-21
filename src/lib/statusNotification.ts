@@ -187,8 +187,8 @@ export async function registerNotificationCategories(): Promise<void> {
     ]);
     await Notifications.setNotificationCategoryAsync('birakgitsin-smart', [
       {
-        identifier: 'confirm_resisted',
-        buttonTitle: 'İçmedim 💪',
+        identifier: 'action_add_smoked',
+        buttonTitle: '+1 İçtim',
         options: { opensAppToForeground: false },
       },
       {
