@@ -36,12 +36,44 @@ function detectIntent(text: string): CoachQuickId | 'sleep' | 'cough' | 'money' 
   return 'default';
 }
 
+
+function safetyGuardrail(input: string, locale: AppLanguage): string | null {
+  const s = (input || '').toLowerCase();
+  // Self-harm / severe depression signals
+  if (/intihar|kendime zarar|ölmek ist|olmek ist|suicide|self.harm|kill myself|end my life|depresyon|depresyondayim/.test(s)) {
+    return locale === 'en'
+      ? 'I\'m really sorry you\'re feeling this way. Please reach out for immediate help: emergency services 112, mental health support line 183 (ALO 183), or ALO 171. You are not alone — a professional can support you right now. If you are in immediate danger, call 112.'
+      : 'Bu duyguları taşıyor olman çok zor. Lütfen hemen yardım al: acil servis 112, ruh sağlığı destek hattı 183 (ALO 183) veya ALO 171. Yalnız değilsin — bir uzman şu an seni destekleyebilir. Acil bir tehlike varsa 112\'yi ara.';
+  }
+  // Pregnancy
+  if (/hamile|gebelik|pregnant|pregnancy/.test(s)) {
+    return locale === 'en'
+      ? 'Pregnancy changes how nicotine replacement and medications should be used. Please consult your obstetrician/gynecologist before using any nicotine product or medication. You can also contact ALO 171 for free professional support.'
+      : 'Hamilelik, nikotin replasmanı ve ilaçların kullanımını değiştirir. Herhangi bir nikotin ürünü veya ilaç kullanmadan önce kadın doğum uzmanınıza/hekiminize danışın. Ayrıca ücretsiz profesyonel destek için ALO 171\'i arayabilirsiniz.';
+  }
+  // Chronic illness / medication
+  if (/kronik|diyabet|diabetes|kalp hast|heart disease|hipertansiyon|hypertension|ilac|ilaç|medication|doktorum|hekimim/.test(s)) {
+    return locale === 'en'
+      ? 'With chronic conditions or medications, please consult your physician before changing nicotine intake or starting cessation aids. ALO 171 can connect you with free professional support.'
+      : 'Kronik hastalığınız veya kullandığınız ilaçlar varsa, nikotin alımınızı değiştirmeden veya bırakma yardımcılarına başlamadan önce hekiminize danışın. Ücretsiz profesyonel destek için ALO 171\'i arayabilirsiniz.';
+  }
+  // Medication dosage requests
+  if (/doz|dozaj|mg |miligram|nicorette|nikotin bandi|nikotin sakizi|patch|gum|ilac oner|ilaç öner|hangi ilac|hangi ilaç/.test(s)) {
+    return locale === 'en'
+      ? 'I cannot recommend specific medications or dosages. Nicotine replacement and other cessation medications should be chosen with a healthcare professional based on your health profile. Please consult a doctor or pharmacist, or contact ALO 171 for free support.'
+      : 'Belirli ilaç veya doz öneremem. Nikotin replasmanı ve diğer bırakma ilaçları, sağlık profilinize göre bir sağlık uzmanı ile seçilmelidir. Lütfen bir doktor veya eczacıya danışın ya da ücretsiz destek için ALO 171\'i arayın.';
+  }
+  return null;
+}
+
 export function coachReply(
   input: string,
   quickId: CoachQuickId | null,
   data: AppData,
   locale: AppLanguage,
 ): string {
+  const guard = safetyGuardrail(input, locale);
+  if (guard) return guard;
   const intent = quickId ?? detectIntent(input);
   const personal = personalStats(data, locale);
 
@@ -83,6 +115,8 @@ export async function coachReplyAsync(
 ): Promise<string> {
   const apiUrl = (typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_AI_API_URL) || '';
   const apiKey = (typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_AI_API_KEY) || '';
+  const guard = safetyGuardrail(input, locale);
+  if (guard) return guard;
   if (!apiUrl) {
     return coachReply(input, quickId, data, locale);
   }
@@ -95,8 +129,8 @@ export async function coachReplyAsync(
     : (locale === 'en' ? 'none yet' : 'henüz yok');
   const context =
     locale === 'en'
-      ? `User quit-smoking context: days on plan=${days}, cigarettes avoided=${avoided}, money saved=${saved}, top triggers=${triggers}. Be supportive, non-judgmental, concise, science-based.`
-      : `Kullanici sigara birakma baglami: planda gun=${days}, icilmeyen sigara=${avoided}, biriken para=${saved}, en sik tetikleyiciler=${triggers}. Destekleyici, yargilamayan, kisa ve bilimsel ol.`;
+      ? `User quit-smoking context: days on plan=${days}, cigarettes avoided=${avoided}, money saved=${saved}, top triggers=${triggers}. Be supportive, non-judgmental, concise, science-based. IMPORTANT SAFETY RULES: Never recommend medications or dosages. For pregnancy, chronic illness, or medication questions, direct the user to a healthcare professional and ALO 171. If self-harm or severe depression is mentioned, provide crisis lines (112, 183, ALO 171) and encourage immediate help.`
+      : `Kullanici sigara birakma baglami: planda gun=${days}, icilmeyen sigara=${avoided}, biriken para=${saved}, en sik tetikleyiciler=${triggers}. Destekleyici, yargilamayan, kisa ve bilimsel ol. ONEMLI GUVENLIK KURALLARI: Hicbir zaman ilac veya doz onerme. Hamilelik, kronik hastalik veya ilac sorularinda kullaniciyi saglik uzmanina ve ALO 171'e yonlendir. Kendine zarar verme veya agir depresyon belirtilerinde acil hatlari (112, 183, ALO 171) goster ve acil yardim almaya tesvik et.`;
   try {
     const res = await fetch(apiUrl, {
       method: 'POST',

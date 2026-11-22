@@ -30,7 +30,7 @@ const HORIZONS = [
 
 export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const { data, grantProUnlock24h } = useApp();
   const pro = hasProAccess(data);
@@ -129,6 +129,12 @@ export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
           </View>
         )}
       </View>
+
+      <Text style={{fontSize:11,color:colors.textMuted,marginTop:8,lineHeight:14}}>
+        {locale==='en'
+          ? 'Estimates are based on your current price and average daily reduction; they do not account for inflation or price changes and are not financial/investment advice.'
+          : 'Tahminler mevcut fiyat ve ortalama gunluk azaltma uzerine dayanir; enflasyon veya fiyat degisimlerini icermez ve yatirim/finansal tavsiye niteligi tasimaz.'}
+      </Text>
     </Card>
   );
 }

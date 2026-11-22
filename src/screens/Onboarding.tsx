@@ -67,7 +67,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data, setQuitMotivation } = useApp();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(() =>
@@ -426,6 +426,13 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
           </Card>
         )}
       </ScrollView>
+
+      <Text style={{fontSize:11,color:'#64748B',textAlign:'center',paddingHorizontal:16,paddingBottom:4}}>
+        {locale==='en' ? 'This app is intended for adults 18+. It is not medical advice.' : 'Bu uygulama 18 yaş ve üzeri yetişkinlere yöneliktir. Tıbbi tavsiye değildir.'}
+      </Text>
+      <Text style={{fontSize:11,color:'#64748B',textAlign:'center',paddingHorizontal:16,paddingBottom:4}}>
+        {locale==='en' ? 'The app does not replace medical advice; consult a doctor for health decisions.' : 'Uygulama tibbi tavsiyenin yerini tutmaz; saglik kararlariniz icin doktorunuza danisin.'}
+      </Text>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         {step > 0 && (

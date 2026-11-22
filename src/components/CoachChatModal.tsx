@@ -42,7 +42,10 @@ export function CoachChatModal({ visible, onClose }: Props) {
   const scrollRef = useRef<ScrollView>(null);
 
   const initChat = () => {
-    setMessages([{ id: 'intro', role: 'coach', text: coachIntro(locale) }]);
+    const disclaimer = locale === 'en'
+      ? 'Note: I am not a doctor and do not provide medical advice. For health decisions, consult a qualified professional.'
+      : 'Not: Ben bir doktor degilim ve tibbi tavsiye vermem. Saglik kararlariniz icin mutlaka bir uzmana danisin.';
+    setMessages([{ id: 'intro', role: 'coach', text: coachIntro(locale) + '\n\n' + disclaimer }]);
     setInput('');
   };
 

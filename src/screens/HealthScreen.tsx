@@ -66,6 +66,12 @@ export function HealthScreen() {
           <Text style={styles.subtitle}>Bırakmaya başladıktan sonra geçirdiğin süre</Text>
         </View>
 
+        <Text style={{fontSize:11,color:'#64748B',paddingHorizontal:4,paddingBottom:8,lineHeight:15}}>
+          {isEn
+            ? 'This app does not provide medical advice, diagnosis, or treatment. Consult a healthcare professional for health decisions.'
+            : 'Bu uygulama tibbi tavsiye, teshis veya tedavi sunmaz. Saglik kararlariniz icin bir saglik uzmanina danisin.'}
+        </Text>
+
         <Pressable onPress={() => { try { Linking.openURL('tel:171'); } catch {} }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel="ALO 171">
           <Text style={{fontWeight:'800',color:'#991B1B'}}>{'🚨 ' + (isEn?'Free Professional Support':'Ücretsiz Profesyonel Destek')}</Text>
           <Text style={{color:'#7F1D1D',fontSize:12,marginTop:2}}>{isEn?'ALO 171 Smoking Cessation Hotline — tap to call':'ALO 171 Sigara Birakma Danisma Hatti — aramak icin dokun'}</Text>
