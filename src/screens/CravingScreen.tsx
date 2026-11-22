@@ -1,7 +1,7 @@
 import { useTheme } from '../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
@@ -62,7 +62,7 @@ export function CravingScreen() {
 
   const [tool, setTool] = useState<Tool>('breath');
   const [coachOpen, setCoachOpen] = useState(false);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const [running, setRunning] = useState(false);
   const [phaseIndex, setPhaseIndex] = useState(0);
@@ -186,6 +186,29 @@ export function CravingScreen() {
           Canın sigara çektiğinde buraya gel. İstek ortalama 3–5 dakika sürer; bu araçlarla
           tepe noktasını geç.
         </Text>
+
+        {data.quitMotivation && (data.quitMotivation.text || data.quitMotivation.photoUri) ? (
+          <View style={{flexDirection:'row',alignItems:'center',gap:10,padding:12,borderRadius:12,backgroundColor:'#EEF2FF',marginBottom:12}}>
+            {data.quitMotivation.photoUri ? (
+              <Image source={{ uri: data.quitMotivation.photoUri }} style={{width:48,height:48,borderRadius:8}} />
+            ) : (
+              <Text style={{fontSize:28}}>💙</Text>
+            )}
+            <View style={{flex:1}}>
+              <Text style={{fontWeight:'800',color:'#1E3A8A',fontSize:13}}>{locale==='en'?'Why I quit':'Neden biraktim'}</Text>
+              {data.quitMotivation.text ? <Text style={{color:'#1E40AF',fontSize:12,marginTop:2}}>{data.quitMotivation.text}</Text> : null}
+            </View>
+          </View>
+        ) : null}
+
+        <Pressable onPress={() => { try { Linking.openURL('tel:171'); } catch {} }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel="ALO 171">
+          <Text style={{fontWeight:'800',color:'#991B1B'}}>{'🚨 ' + (locale==='en'?'Free Professional Support':'Ücretsiz Profesyonel Destek')}</Text>
+          <Text style={{color:'#7F1D1D',fontSize:12,marginTop:2}}>{locale==='en'?'ALO 171 Smoking Cessation Hotline — tap to call':'ALO 171 Sigara Birakma Danisma Hatti — aramak icin dokun'}</Text>
+        </Pressable>
+        <Pressable onPress={() => { try { Linking.openURL('tel:115'); } catch {} }} style={{padding:12,borderRadius:12,backgroundColor:'#DCFCE7',marginBottom:12}} accessibilityRole="button" accessibilityLabel="YEDAM">
+          <Text style={{fontWeight:'800',color:'#14532D'}}>{'🌿 YEDAM (Yesilay Danisma Merkezi)'}</Text>
+          <Text style={{color:'#166534',fontSize:12,marginTop:2}}>{locale==='en'?'Support & info: call 115':'Destek ve bilgi icin 115\'i ara'}</Text>
+        </Pressable>
 
         <Pressable
           accessibilityRole="button"

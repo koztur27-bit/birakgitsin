@@ -1,5 +1,6 @@
 import { useTheme } from '../context/ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
+import { persistMotivationPhoto } from '../lib/motivationPhoto';
 import React, { useState } from 'react';
 import {
   Image,
@@ -102,7 +103,8 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
         quality: 0.7,
       });
       if (!res.canceled && res.assets?.[0]?.uri) {
-        setMotivationPhoto(res.assets[0].uri);
+        const persisted = await persistMotivationPhoto(res.assets[0].uri);
+        setMotivationPhoto(persisted);
       }
     } catch {
       // ignore picker errors

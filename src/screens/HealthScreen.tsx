@@ -1,6 +1,6 @@
 import { useTheme } from '../context/ThemeContext';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
@@ -65,6 +65,15 @@ export function HealthScreen() {
           <View style={styles.titleRow}><MapBadge code="9" /><Text style={styles.title}>Sağlık Durumum</Text></View>
           <Text style={styles.subtitle}>Bırakmaya başladıktan sonra geçirdiğin süre</Text>
         </View>
+
+        <Pressable onPress={() => { try { Linking.openURL('tel:171'); } catch {} }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel="ALO 171">
+          <Text style={{fontWeight:'800',color:'#991B1B'}}>{'🚨 ' + (isEn?'Free Professional Support':'Ücretsiz Profesyonel Destek')}</Text>
+          <Text style={{color:'#7F1D1D',fontSize:12,marginTop:2}}>{isEn?'ALO 171 Smoking Cessation Hotline — tap to call':'ALO 171 Sigara Birakma Danisma Hatti — aramak icin dokun'}</Text>
+        </Pressable>
+        <Pressable onPress={() => { try { Linking.openURL('tel:115'); } catch {} }} style={{padding:12,borderRadius:12,backgroundColor:'#DCFCE7',marginBottom:12}} accessibilityRole="button" accessibilityLabel="YEDAM">
+          <Text style={{fontWeight:'800',color:'#14532D'}}>{'🌿 YEDAM (Yesilay Danisma Merkezi)'}</Text>
+          <Text style={{color:'#166534',fontSize:12,marginTop:2}}>{isEn?'Support & info: call 115':'Destek ve bilgi icin 115\'i ara'}</Text>
+        </Pressable>
 
         <Card style={styles.nextCard}>
           <Text style={styles.nextLabel}>Sıradaki sağlık kazancı</Text>

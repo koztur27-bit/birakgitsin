@@ -1,6 +1,8 @@
 import { useTheme } from '../context/ThemeContext';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
+import { persistMotivationPhoto } from '../lib/motivationPhoto';
+import { readErrorLog, clearErrorLog } from '../lib/errorLog';
 import React, { useEffect, useMemo, useState } from 'react';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
@@ -154,7 +156,8 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         quality: 0.7,
       });
       if (!res.canceled && res.assets?.[0]?.uri) {
-        saveMotivation(undefined, res.assets[0].uri);
+        const persisted = await persistMotivationPhoto(res.assets[0].uri);
+        saveMotivation(undefined, persisted);
       }
     } catch {
       // ignore
@@ -264,6 +267,23 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         { text: 'Sil', style: 'destructive', onPress: resetAll },
       ],
     );
+  };
+
+  const shareErrorLog = async () => {
+    const log = await readErrorLog();
+    if (!log.trim()) {
+      Alert.alert('Hata günlüğü boş', 'Henüz kaydedilmiş bir hata yok.');
+      return;
+    }
+    try {
+      await Share.share({ title: 'Bırak Gitsin hata günlüğü', message: log });
+    } catch {
+      Alert.alert('Paylaşılamadı', 'Hata günlüğü paylaşılamadı.');
+    }
+  };
+  const clearErrorLogBtn = async () => {
+    await clearErrorLog();
+    Alert.alert('Temizlendi', 'Hata günlüğü silindi.');
   };
 
   const doBackup = async () => {
@@ -789,11 +809,20 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </View>
         </Card>
 
+        <View style={styles.inlineRow}>
+          <Pressable style={styles.smallBtn} onPress={shareErrorLog}>
+            <Text style={styles.smallBtnText}>Hata günlüğünü paylaş</Text>
+          </Pressable>
+          <Pressable style={styles.smallBtn} onPress={clearErrorLogBtn}>
+            <Text style={styles.smallBtnText}>Günlüğü temizle</Text>
+          </Pressable>
+        </View>
+
         <Pressable style={styles.dangerBtn} onPress={confirmReset}>
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v2.4.3</Text>
+        <Text style={styles.footer}>Bırak Gitsin v2.5.0</Text>
       </ScrollView>
 
       {!IS_USER_RELEASE && (

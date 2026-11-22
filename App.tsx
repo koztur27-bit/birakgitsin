@@ -23,12 +23,12 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { Onboarding } from './src/screens/Onboarding';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { StatsScreen } from './src/screens/StatsScreen';
-import { TimerScreen } from './src/screens/TimerScreen';
 import { refreshWidgets } from './src/lib/widgetData';
 import { registerBackgroundNotificationTask } from './src/lib/backgroundNotificationTask';
 import { registerNotificationCategories } from './src/lib/statusNotification';
 import './src/lib/backgroundNotificationTask';
 import { colors, fontSizes, radius, spacing } from './src/theme';
+import { logError } from './src/lib/errorLog';
 import { Plan, TabKey } from './src/types';
 
 class ErrorBoundary extends Component<
@@ -39,6 +39,10 @@ class ErrorBoundary extends Component<
 
   static getDerivedStateFromError(error: Error) {
     return { error: { message: error.message, stack: error.stack } };
+  }
+
+  componentDidCatch(error: Error) {
+    logError({ message: error.message, stack: error.stack }).catch(() => {});
   }
 
   render() {
@@ -84,7 +88,7 @@ function I18nBridge({ children }: { children: React.ReactNode }) {
   return <I18nProvider locale={data.language || 'tr'}>{children}</I18nProvider>;
 }
 
-const TABS: TabKey[] = ['home', 'craving', 'timer', 'stats', 'health', 'settings'];
+const TABS: TabKey[] = ['home', 'craving', 'stats', 'health', 'settings'];
 
 function Root() {
   const { colors } = useTheme();
@@ -168,9 +172,6 @@ function Root() {
         </View>
         <View key="craving" style={styles.page} collapsable={false}>
           <CravingScreen />
-        </View>
-        <View key="timer" style={styles.page} collapsable={false}>
-          <TimerScreen />
         </View>
         <View key="stats" style={styles.page} collapsable={false}>
           <StatsScreen />

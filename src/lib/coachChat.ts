@@ -1,5 +1,5 @@
 import { AppData, AppLanguage } from '../types';
-import { cigarettesAvoided, daysSinceStart, formatMoney, totalMoneySaved } from './calculations';
+import { cigarettesAvoided, daysSinceStart, formatMoney, totalMoneySaved, topTriggerCounts } from './calculations';
 
 export type CoachQuickId = 'urge' | 'stress' | 'trigger' | 'slip' | 'motivate';
 
@@ -73,6 +73,54 @@ export function coachReply(
 
   const dict = locale === 'en' ? en : tr;
   return dict[intent] || dict.default;
+}
+
+export async function coachReplyAsync(
+  input: string,
+  quickId: CoachQuickId | null,
+  data: AppData,
+  locale: AppLanguage,
+): Promise<string> {
+  const apiUrl = (typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_AI_API_URL) || '';
+  const apiKey = (typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_AI_API_KEY) || '';
+  if (!apiUrl) {
+    return coachReply(input, quickId, data, locale);
+  }
+  const plan = data.plan;
+  const days = plan ? Math.max(0, daysSinceStart(plan)) : 0;
+  const avoided = plan ? Math.max(0, Math.round(cigarettesAvoided(plan, data.logs))) : 0;
+  const saved = plan ? formatMoney(totalMoneySaved(plan, data.logs), plan.currency) : '';
+  const triggers = (data.cravings || []).length
+    ? topTriggerCounts(data.cravings, 3).map((t) => t.trigger).join(', ')
+    : (locale === 'en' ? 'none yet' : 'henüz yok');
+  const context =
+    locale === 'en'
+      ? `User quit-smoking context: days on plan=${days}, cigarettes avoided=${avoided}, money saved=${saved}, top triggers=${triggers}. Be supportive, non-judgmental, concise, science-based.`
+      : `Kullanici sigara birakma baglami: planda gun=${days}, icilmeyen sigara=${avoided}, biriken para=${saved}, en sik tetikleyiciler=${triggers}. Destekleyici, yargilamayan, kisa ve bilimsel ol.`;
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { Authorization: 'Bearer ' + apiKey } : {}),
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: context + '\n\nUser: ' + input }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
+      }),
+    });
+    if (!res.ok) throw new Error('http ' + res.status);
+    const json = await res.json();
+    const text =
+      json?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      json?.text ||
+      json?.reply ||
+      json?.choices?.[0]?.message?.content;
+    if (typeof text === 'string' && text.trim()) return text.trim();
+  } catch {
+    // fallback below
+  }
+  return coachReply(input, quickId, data, locale);
 }
 
 export function coachIntro(locale: AppLanguage): string {

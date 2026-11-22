@@ -17,7 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../i18n';
 import { showRewardedUnlockAd } from '../lib/ads';
 import { todayKey } from '../lib/calculations';
-import { CoachQuickId, coachIntro, coachReply } from '../lib/coachChat';
+import { CoachQuickId, coachIntro, coachReply, coachReplyAsync } from '../lib/coachChat';
 import { hasProAccess } from '../lib/proAccess';
 import { fontSizes, radius, spacing } from '../theme';
 
@@ -106,10 +106,14 @@ export function CoachChatModal({ visible, onClose }: Props) {
       return;
     }
     push('user', trimmed);
-    const reply = coachReply(trimmed, quickId, data, locale);
-    // small delay for natural feel
-    setTimeout(() => push('coach', reply), 250);
     setInput('');
+    coachReplyAsync(trimmed, quickId, data, locale)
+      .then((reply) => {
+        setTimeout(() => push('coach', reply), 250);
+      })
+      .catch(() => {
+        setTimeout(() => push('coach', coachReply(trimmed, quickId, data, locale)), 250);
+      });
   };
 
   const quicks: { id: CoachQuickId; label: string }[] = [

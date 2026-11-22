@@ -17,7 +17,6 @@ export function TabBar({ active, onChange }: TabBarProps) {
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'home', label: t('tabs.home') },
     { key: 'craving', label: t('tabs.craving') },
-    { key: 'timer', label: t('tabs.timer') },
     { key: 'stats', label: t('tabs.stats') },
     { key: 'health', label: t('tabs.health') },
     { key: 'settings', label: t('tabs.settings') },

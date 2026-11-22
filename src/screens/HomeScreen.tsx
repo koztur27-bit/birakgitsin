@@ -22,6 +22,7 @@ import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { ProScreen } from './ProScreen';
 import { SosBreathingModal } from '../components/SosBreathingModal';
+import { TimerScreen } from './TimerScreen';
 import {
   ShareThemeId,
   SuccessShareCard,
@@ -67,6 +68,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const lang = data.language || 'tr';
 
   const [sosOpen, setSosOpen] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [happinessKey, setHappinessKey] = useState<keyof HappinessPrompts | null>(null);
@@ -451,6 +453,11 @@ export function HomeScreen(_props: HomeScreenProps) {
             </Text>
           </Pressable>
         </View>
+
+        <Pressable style={[styles.timerCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setTimerOpen(true)} accessibilityRole="button" accessibilityLabel={lang === 'en' ? 'Open craving timer' : 'Dayanma sayacini ac'}>
+          <Text style={[styles.timerCardTitle, { color: colors.text }]}>{lang === 'en' ? 'Craving Timer' : 'Dayanma Sayaci'}</Text>
+          <Text style={[styles.timerCardSub, { color: colors.textMuted }]}>{lang === 'en' ? 'Start a timer to get through a craving.' : 'Bir istek anini atlatmak icin sayac baslat.'}</Text>
+        </Pressable>
       </ScrollView>
 
       <SosBreathingModal
@@ -460,6 +467,10 @@ export function HomeScreen(_props: HomeScreenProps) {
       />
       <HappinessPromptModal visible={!!happinessKey} onClose={closeHappiness} />
       <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
+      <Modal visible={timerOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTimerOpen(false)}>
+        <TimerScreen />
+        <Pressable style={{position:'absolute',top:8,right:8,padding:8}} onPress={() => setTimerOpen(false)}><Text style={{color:'#fff',fontWeight:'700'}}>✕</Text></Pressable>
+      </Modal>
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
 
       <Modal visible={sharePickerOpen} transparent animationType="fade" onRequestClose={() => setSharePickerOpen(false)}>
@@ -825,4 +836,7 @@ const createStyles = (colors: any) =>
     },
     inviteShareBtnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
     inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
+    timerCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 4, marginTop: 12 },
+    timerCardTitle: { fontSize: 18, fontWeight: '800' },
+    timerCardSub: { fontSize: 13 },
   });
