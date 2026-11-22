@@ -1,5 +1,8 @@
 import { useTheme } from '../context/ThemeContext';
 import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as DocumentPicker from 'expo-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { persistMotivationPhoto } from '../lib/motivationPhoto';
 import { readErrorLog, clearErrorLog } from '../lib/errorLog';
@@ -69,6 +72,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   } = useApp();
   const plan = data.plan;
   const [backupText, setBackupText] = useState('');
+  const [backupDirUri, setBackupDirUri] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -163,6 +167,12 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
       // ignore
     }
   };
+
+  useEffect(() => {
+    AsyncStorage.getItem('@birakgitsin/backupDirUri').then((v) => {
+      if (v) setBackupDirUri(v);
+    }).catch(() => {});
+  }, []);
 
   const myInviteCode = data.inviteCode || 'BG';
   const shareInvite = async () => {
@@ -322,6 +332,77 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
       setBackupText('');
     } catch {
       Alert.alert('Geçersiz yedek', 'Metin okunamadı. Geçerli bir yedek yapıştırdığına emin ol.');
+    }
+  };
+
+  const BACKUP_DIR_KEY = '@birakgitsin/backupDirUri';
+
+  const pickBackupDir = async () => {
+    try {
+      if (Platform.OS !== 'android' || !(FileSystem as any).StorageAccessFramework) {
+        Alert.alert('Desteklenmiyor', 'Bu ozellik Android Storage Access Framework gerektirir. iOS icin Paylas secenegini kullanin.');
+        return;
+      }
+      const SAF = (FileSystem as any).StorageAccessFramework;
+      const perm = await SAF.requestDirectoryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Izin verilmedi', 'Klasor secimi iptal edildi.');
+        return;
+      }
+      setBackupDirUri(perm.directoryUri);
+      await AsyncStorage.setItem(BACKUP_DIR_KEY, perm.directoryUri);
+      Alert.alert('Klasor secildi', 'Yedekler bu klasore kaydedilecek.');
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message || 'Klasor secilemedi.');
+    }
+  };
+
+  const doBackupToDir = async () => {
+    try {
+      let dir = backupDirUri;
+      if (!dir) {
+        await pickBackupDir();
+        dir = (await AsyncStorage.getItem(BACKUP_DIR_KEY)) || null;
+        setBackupDirUri(dir);
+        if (!dir) return;
+      }
+      const SAF = (FileSystem as any).StorageAccessFramework;
+      const date = new Date().toISOString().slice(0, 10);
+      const fileName = `birakgitsin-yedek-${date}.json`;
+      const fileUri = await SAF.createFileAsync(dir, fileName, 'application/json');
+      await FileSystem.writeAsStringAsync(fileUri, exportedJson());
+      Alert.alert('Yedek kaydedildi', `Yedek seçtiginiz klasore basariyla kaydedildi: ${fileName}`);
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message || 'Yedek kaydedilemedi.');
+    }
+  };
+
+  const doImportFile = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: 'application/json', copyToCacheDirectory: true });
+      if (res.canceled) return;
+      const asset = res.assets?.[0];
+      if (!asset?.uri) return;
+      const content = await FileSystem.readAsStringAsync(asset.uri);
+      const parsed = JSON.parse(content);
+      if (!parsed || !Array.isArray(parsed.logs)) {
+        Alert.alert('Gecersiz yedek', 'Bu bir Birak Gitsin yedegi gibi gorunmuyor.');
+        return;
+      }
+      Alert.alert('Geri yukle', 'Secilen yedek geri yuklensin mi? Mevcut verilerin uzerine yazilacak.', [
+        { text: 'Vazgec', style: 'cancel' },
+        { text: 'Geri Yukle', onPress: async () => {
+            try {
+              await restoreData(parsed);
+              setBackupText('');
+              Alert.alert('Basarili', 'Veriler geri yuklendi.');
+            } catch (e: any) {
+              Alert.alert('Hata', e?.message || 'Geri yuklenemedi.');
+            }
+          } },
+      ]);
+    } catch (e: any) {
+      Alert.alert('Hata', e?.message || 'Dosya secilemedi.');
     }
   };
 
@@ -608,29 +689,44 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Card>
           <Text style={styles.cardLabel}>Verilerini yedekle</Text>
           <Text style={styles.planSub}>
-            Verilerini panoya kopyala ya da bir metin alanına yapıştır — telefonunu
-            değiştirsen bile kaybın olmaz.
+            Yedegi telefonundaki bir klasore kaydet veya dosyadan geri yukle. Panoya kopyala / yapistir secenekleri de mevcut.
           </Text>
           <View style={styles.inlineRow}>
-            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doBackup}>
-              <Text style={styles.smallBtnText}>Yedeği panoya kopyala</Text>
+            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doBackupToDir}>
+              <Text style={styles.smallBtnText}>Yedek Al (klasore kaydet)</Text>
+            </Pressable>
+            <Pressable style={styles.smallBtn} onPress={pickBackupDir}>
+              <Text style={styles.smallBtnText}>Klasoru Degistir</Text>
+            </Pressable>
+          </View>
+          {backupDirUri ? (
+            <Text style={{fontSize:11,color:colors.textMuted,marginTop:4}} numberOfLines={1}>{backupDirUri}</Text>
+          ) : null}
+          <View style={styles.inlineRow}>
+            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doImportFile}>
+              <Text style={styles.smallBtnText}>Yedeği Geri Cagir (dosya sec)</Text>
+            </Pressable>
+          </View>
+          <View style={styles.inlineRow}>
+            <Pressable style={styles.smallBtn} onPress={doBackup}>
+              <Text style={styles.smallBtnText}>Panoya kopyala</Text>
             </Pressable>
             <Pressable style={styles.smallBtn} onPress={doBackupShare}>
-              <Text style={styles.smallBtnText}>Paylaş / dosyaya kaydet</Text>
+              <Text style={styles.smallBtnText}>Paylas / dosyaya kaydet</Text>
             </Pressable>
           </View>
           <TextInput
             style={styles.backupInput}
             value={backupText}
             onChangeText={setBackupText}
-            placeholder="Geri yüklemek için yedek verisini buraya yapıştır"
+            placeholder="Geri yuklemek icin yedek verisini buraya yapistir"
             placeholderTextColor={colors.textMuted}
             multiline
             textAlignVertical="top"
           />
           <View style={styles.inlineRow}>
             <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doRestore}>
-              <Text style={styles.smallBtnText}>Yapıştırılan veriyi geri yükle</Text>
+              <Text style={styles.smallBtnText}>Yapistirilan veriyi geri yukle</Text>
             </Pressable>
           </View>
         </Card>
