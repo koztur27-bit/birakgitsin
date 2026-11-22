@@ -10,6 +10,7 @@ import { BubblePopGame } from '../components/BubblePopGame';
 import { CoachChatModal } from '../components/CoachChatModal';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n';
+import { detectRegion, supportLines } from '../lib/regionalSupport';
 import { triggerAction } from '../lib/coach';
 import { fontSizes, radius, spacing } from '../theme';
 
@@ -63,6 +64,8 @@ export function CravingScreen() {
   const [tool, setTool] = useState<Tool>('breath');
   const [coachOpen, setCoachOpen] = useState(false);
   const { t, locale } = useI18n();
+  const region = detectRegion();
+  const support = supportLines(region, locale === 'en' ? 'en' : 'tr');
 
   const [running, setRunning] = useState(false);
   const [phaseIndex, setPhaseIndex] = useState(0);
@@ -201,14 +204,12 @@ export function CravingScreen() {
           </View>
         ) : null}
 
-        <Pressable onPress={() => { try { Linking.openURL('tel:171'); } catch {} }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel="ALO 171">
-          <Text style={{fontWeight:'800',color:'#991B1B'}}>{'🚨 ' + (locale==='en'?'Free Professional Support':'Ücretsiz Profesyonel Destek')}</Text>
-          <Text style={{color:'#7F1D1D',fontSize:12,marginTop:2}}>{locale==='en'?'ALO 171 Smoking Cessation Hotline — tap to call':'ALO 171 Sigara Birakma Danisma Hatti — aramak icin dokun'}</Text>
-        </Pressable>
-        <Pressable onPress={() => { try { Linking.openURL('tel:115'); } catch {} }} style={{padding:12,borderRadius:12,backgroundColor:'#DCFCE7',marginBottom:12}} accessibilityRole="button" accessibilityLabel="YEDAM">
-          <Text style={{fontWeight:'800',color:'#14532D'}}>{'🌿 YEDAM (Yesilay Danisma Merkezi)'}</Text>
-          <Text style={{color:'#166534',fontSize:12,marginTop:2}}>{locale==='en'?'Support & info: call 115':'Destek ve bilgi icin 115\'i ara'}</Text>
-        </Pressable>
+        {support.map((ln) => (
+          <Pressable key={ln.id} onPress={() => { if (ln.action === 'call') { try { Linking.openURL('tel:' + ln.number.replace(/\s/g, '')); } catch {} } else if (ln.url) { try { Linking.openURL(ln.url); } catch {} } }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel={ln.label}>
+            <Text style={{fontWeight:'800',color:'#991B1B'}}>{ln.label}</Text>
+            <Text style={{color:'#7F1D1D',fontSize:12,marginTop:2}}>{ln.number}</Text>
+          </Pressable>
+        ))}
 
         <Pressable
           accessibilityRole="button"

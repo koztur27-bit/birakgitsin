@@ -136,6 +136,7 @@ export function CoachChatModal({ visible, onClose }: Props) {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>{t('coach.title')}</Text>
+            <Text style={{fontSize:11,color:'#64748B',marginTop:2}}>{locale==='en'?'AI-Powered Coach (AI-assisted, not medical advice)':'AI Destekli Koc (Yapay zeka destekli, tibbi tavsiye degildir)'}</Text>
             <Text style={styles.sub}>
               {unlimited ? t('coach.unlimited') : t('coach.remaining', { count: remaining })}
             </Text>

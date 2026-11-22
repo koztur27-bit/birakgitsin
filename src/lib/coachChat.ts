@@ -42,26 +42,26 @@ function safetyGuardrail(input: string, locale: AppLanguage): string | null {
   // Self-harm / severe depression signals
   if (/intihar|kendime zarar|ölmek ist|olmek ist|suicide|self.harm|kill myself|end my life|depresyon|depresyondayim/.test(s)) {
     return locale === 'en'
-      ? 'I\'m really sorry you\'re feeling this way. Please reach out for immediate help: emergency services 112, mental health support line 183 (ALO 183), or ALO 171. You are not alone — a professional can support you right now. If you are in immediate danger, call 112.'
-      : 'Bu duyguları taşıyor olman çok zor. Lütfen hemen yardım al: acil servis 112, ruh sağlığı destek hattı 183 (ALO 183) veya ALO 171. Yalnız değilsin — bir uzman şu an seni destekleyebilir. Acil bir tehlike varsa 112\'yi ara.';
+      ? 'I\'m really sorry you\'re feeling this way. Please reach out for immediate help: emergency services (911 in the US, 999/112 in the UK, 112 in the EU), or ALO 171 in Turkey. Mental health support: 988 (US), 183 (Turkey). You are not alone — a professional can support you right now. If you are in immediate danger, call your local emergency number.'
+      : 'Bu duyguları taşıyor olman çok zor. Lütfen hemen yardım al: acil servis (ABD 911, Ingiltere 999/112, AB 112), Turkiye\'de ALO 171. Ruh sagligi destegi: ABD 988, Turkiye 183. Yalnız degilsin — bir uzman su an seni destekleyebilir. Acil bir tehlike varsa yerel acil numarani ara.';
   }
   // Pregnancy
   if (/hamile|gebelik|pregnant|pregnancy/.test(s)) {
     return locale === 'en'
-      ? 'Pregnancy changes how nicotine replacement and medications should be used. Please consult your obstetrician/gynecologist before using any nicotine product or medication. You can also contact ALO 171 for free professional support.'
-      : 'Hamilelik, nikotin replasmanı ve ilaçların kullanımını değiştirir. Herhangi bir nikotin ürünü veya ilaç kullanmadan önce kadın doğum uzmanınıza/hekiminize danışın. Ayrıca ücretsiz profesyonel destek için ALO 171\'i arayabilirsiniz.';
+      ? 'Pregnancy changes how nicotine replacement and medications should be used. Please consult your obstetrician/gynecologist before using any nicotine product or medication. You can also contact your local quit line (ALO 171 in Turkey, 1-800-QUIT-NOW in the US, NHS Smokefree 0300 123 1044 in the UK).'
+      : 'Hamilelik, nikotin replasmanı ve ilaçların kullanımını değiştirir. Herhangi bir nikotin ürünü veya ilaç kullanmadan önce kadın doğum uzmanınıza/hekiminize danışın. Ayrıca ücretsiz profesyonel destek için yerel hattınızı arayabilirsiniz (Turkiye ALO 171, ABD 1-800-QUIT-NOW, Ingiltere NHS Smokefree 0300 123 1044).';
   }
   // Chronic illness / medication
   if (/kronik|diyabet|diabetes|kalp hast|heart disease|hipertansiyon|hypertension|ilac|ilaç|medication|doktorum|hekimim/.test(s)) {
     return locale === 'en'
-      ? 'With chronic conditions or medications, please consult your physician before changing nicotine intake or starting cessation aids. ALO 171 can connect you with free professional support.'
-      : 'Kronik hastalığınız veya kullandığınız ilaçlar varsa, nikotin alımınızı değiştirmeden veya bırakma yardımcılarına başlamadan önce hekiminize danışın. Ücretsiz profesyonel destek için ALO 171\'i arayabilirsiniz.';
+      ? 'With chronic conditions or medications, please consult your physician before changing nicotine intake or starting cessation aids. Your local quit line can connect you with free professional support.'
+      : 'Kronik hastalığınız veya kullandığınız ilaçlar varsa, nikotin alımınızı değiştirmeden veya bırakma yardımcılarına başlamadan önce hekiminize danışın. Ücretsiz profesyonel destek için yerel bırakma hattınızı arayabilirsiniz.';
   }
   // Medication dosage requests
   if (/doz|dozaj|mg |miligram|nicorette|nikotin bandi|nikotin sakizi|patch|gum|ilac oner|ilaç öner|hangi ilac|hangi ilaç/.test(s)) {
     return locale === 'en'
-      ? 'I cannot recommend specific medications or dosages. Nicotine replacement and other cessation medications should be chosen with a healthcare professional based on your health profile. Please consult a doctor or pharmacist, or contact ALO 171 for free support.'
-      : 'Belirli ilaç veya doz öneremem. Nikotin replasmanı ve diğer bırakma ilaçları, sağlık profilinize göre bir sağlık uzmanı ile seçilmelidir. Lütfen bir doktor veya eczacıya danışın ya da ücretsiz destek için ALO 171\'i arayın.';
+      ? 'I cannot recommend specific medications or dosages. Nicotine replacement and other cessation medications should be chosen with a healthcare professional based on your health profile. Please consult a doctor or pharmacist, or contact your local quit line for free support.'
+      : 'Belirli ilaç veya doz öneremem. Nikotin replasmanı ve diğer bırakma ilaçları, sağlık profilinize göre bir sağlık uzmanı ile seçilmelidir. Lütfen bir doktor veya eczacıya danışın ya da ücretsiz destek için yerel bırakma hattınızı arayın.';
   }
   return null;
 }
@@ -129,8 +129,8 @@ export async function coachReplyAsync(
     : (locale === 'en' ? 'none yet' : 'henüz yok');
   const context =
     locale === 'en'
-      ? `User quit-smoking context: days on plan=${days}, cigarettes avoided=${avoided}, money saved=${saved}, top triggers=${triggers}. Be supportive, non-judgmental, concise, science-based. IMPORTANT SAFETY RULES: Never recommend medications or dosages. For pregnancy, chronic illness, or medication questions, direct the user to a healthcare professional and ALO 171. If self-harm or severe depression is mentioned, provide crisis lines (112, 183, ALO 171) and encourage immediate help.`
-      : `Kullanici sigara birakma baglami: planda gun=${days}, icilmeyen sigara=${avoided}, biriken para=${saved}, en sik tetikleyiciler=${triggers}. Destekleyici, yargilamayan, kisa ve bilimsel ol. ONEMLI GUVENLIK KURALLARI: Hicbir zaman ilac veya doz onerme. Hamilelik, kronik hastalik veya ilac sorularinda kullaniciyi saglik uzmanina ve ALO 171'e yonlendir. Kendine zarar verme veya agir depresyon belirtilerinde acil hatlari (112, 183, ALO 171) goster ve acil yardim almaya tesvik et.`;
+      ? `User quit-smoking context: days on plan=${days}, cigarettes avoided=${avoided}, money saved=${saved}, top triggers=${triggers}. Be supportive, non-judgmental, concise, science-based. IMPORTANT SAFETY RULES: Never recommend medications or dosages. For pregnancy, chronic illness, or medication questions, direct the user to a healthcare professional and their local quit line. If self-harm or severe depression is mentioned, provide crisis lines (112, 183, ALO 171) and encourage immediate help.`
+      : `Kullanici sigara birakma baglami: planda gun=${days}, icilmeyen sigara=${avoided}, biriken para=${saved}, en sik tetikleyiciler=${triggers}. Destekleyici, yargilamayan, kisa ve bilimsel ol. ONEMLI GUVENLIK KURALLARI: Hicbir zaman ilac veya doz onerme. Hamilelik, kronik hastalik veya ilac sorularinda kullaniciyi saglik uzmanina ve yerel birakma hattina yonlendir. Kendine zarar verme veya agir depresyon belirtilerinde acil hatlari (112, 183, ALO 171) goster ve acil yardim almaya tesvik et.`;
   try {
     const res = await fetch(apiUrl, {
       method: 'POST',
