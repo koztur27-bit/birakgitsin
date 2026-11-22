@@ -1,6 +1,6 @@
 {
   "name": "birakgitsin",
-  "version": "2.3.9",
+  "version": "2.4.0",
   "main": "index.ts",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
