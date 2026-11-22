@@ -64,3 +64,15 @@ EAS bulut kotası tükenince (aylık 15 Android derleme; sıfırlanma her ayın 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Kalıcı Kural — Otomatik Sürüm & Derleme (BirakGitsin)
+
+Projede herhangi bir kod, tasarım veya metin değişikliği tamamlandığında, kullanıcı ayrıca istemese bile her zaman:
+
+1. `npx tsc --noEmit` ve `npm run lint` kontrollerini çalıştır; sıfır hata/uyarı olmadan devam etme.
+2. `app.json` içindeki Android `versionCode` değerini otomatik olarak 1 artır (yeni özellikle birlikte gerekiyorsa `version` numarasını da güncelle; `package.json`, `package-lock.json`, `src/lib/syncUpdate.ts`, `src/screens/SettingsScreen.tsx`, `android/app/build.gradle` ile senkron tut).
+3. Değişiklikleri açıklayıcı bir mesajla commit ve push et.
+4. GitHub Actions (`build.yml`) üzerindeki release APK ve AAB derleme workflow'unu tetikle (push zaten tetikler; gerekirse `workflow_dispatch`), tamamlanmasını bekle ve üretilen güncel APK/AAB dosyalarını Downloads / Google Drive (`gdrive:Guncel-APKlar/` ve `PlayStore-Hazirlik/`) / GitHub Release hedeflerine teslim et; aynı uygulamanın eski APK/AAB'lerini Drive'dan temizle.
+5. İmzayı (`CN=Birak Gitsin`) ve manifest izinlerini (`RECORD_AUDIO`/`SYSTEM_ALERT_WINDOW` yok, `targetSdkVersion` 36) doğrula.
+
+Bu kural istisnasız uygulanır; kullanıcı onayı veya ek istek beklenmez.
