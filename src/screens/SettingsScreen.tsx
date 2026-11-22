@@ -44,7 +44,7 @@ import { downloadAndInstallUpdate } from '../lib/updater';
 import { IS_USER_RELEASE } from '../lib/buildFlags';
 import { pinHomeShortcut } from '../lib/shortcut';
 import { syncWidgetsAndCheckUpdate } from '../lib/syncUpdate';
-import { refreshWidgets } from '../lib/widgetData';
+
 import { fontSizes, radius, spacing } from '../theme';
 
 type SettingsScreenProps = {
@@ -473,31 +473,30 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
           <Text style={styles.cardLabel}>Ana Ekran Widget&apos;ları</Text>
           <Text style={styles.planSub}>
-            MIUI widget menüsüne girmeden ekle. 1×2, 2×2, 2×3 ve 4×2 kartların canlı önizlemesini gör,
-            tek dokunuşla ana ekranına yerleştir.
+            Ana ekranına sayaç widget&apos;ı ekleyerek ilerlemeni her an takip et.
           </Text>
           <Pressable style={styles.rowBtn} onPress={() => setWidgetsOpen(true)}>
             <Text style={styles.rowBtnText}>Widget Galerisini Aç</Text>
           </Pressable>
         </Card>
 
+        {!IS_USER_RELEASE && (
         <Card>
-          <Text style={styles.cardLabel}>{IS_USER_RELEASE ? 'Widget Senkronize Et' : 'Güncelle / Senkronize Et'}</Text>
+          <Text style={styles.cardLabel}>Güncelle / Senkronize Et</Text>
           <Text style={styles.planSub}>
-            {IS_USER_RELEASE
-              ? "Tüm ana ekran widget'larını zorla yeniler."
-              : "Tüm ana ekran widget'larını zorla yeniler ve GitHub üzerinden yeni uygulama sürümü olup olmadığını kontrol eder."}
+            Tüm ana ekran widget&apos;larını zorla yeniler ve GitHub üzerinden yeni uygulama sürümü olup olmadığını kontrol eder.
           </Text>
           <Pressable
             style={[styles.rowBtn, { backgroundColor: colors.primary }]}
-            onPress={IS_USER_RELEASE ? () => { try { refreshWidgets(); Alert.alert('Tamam', "Widget'lar yenilendi."); } catch { Alert.alert('Hata', "Widget'lar yenilenemedi."); } } : handleSyncAndUpdate}
+            onPress={handleSyncAndUpdate}
             disabled={syncing}
           >
             <Text style={[styles.rowBtnText, { color: colors.white }]}>
-              {syncing ? 'Güncelleniyor…' : (IS_USER_RELEASE ? 'Senkronize Et' : 'Güncelle / Senkronize Et')}
+              {syncing ? 'Güncelleniyor…' : 'Güncelle / Senkronize Et'}
             </Text>
           </Pressable>
         </Card>
+        )}
 
         {!IS_USER_RELEASE && (
         <Card>
@@ -905,6 +904,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </View>
         </Card>
 
+        {!IS_USER_RELEASE && (
         <View style={styles.inlineRow}>
           <Pressable style={styles.smallBtn} onPress={shareErrorLog}>
             <Text style={styles.smallBtnText}>Hata günlüğünü paylaş</Text>
@@ -913,6 +913,22 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             <Text style={styles.smallBtnText}>Günlüğü temizle</Text>
           </Pressable>
         </View>
+        )}
+
+        <Card>
+          <Text style={styles.cardLabel}>Yasal ve Destek</Text>
+          <View style={styles.inlineRow}>
+            <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/privacy-policy.html')}>
+              <Text style={styles.smallBtnText}>Gizlilik Politikası</Text>
+            </Pressable>
+            <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/terms-of-use.html')}>
+              <Text style={styles.smallBtnText}>Kullanım Koşulları</Text>
+            </Pressable>
+          </View>
+          <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('mailto:birakgitsin.app@gmail.com')}>
+            <Text style={styles.smallBtnText}>Destek: birakgitsin.app@gmail.com</Text>
+          </Pressable>
+        </Card>
 
         <Pressable style={styles.dangerBtn} onPress={confirmReset}>
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
@@ -923,12 +939,8 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
 
       {!IS_USER_RELEASE && (
         <>
-          {!IS_USER_RELEASE && (
-            <>
-              <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
-              <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
-            </>
-          )}
+          <ScreenMapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
+          <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
         </>
       )}
       <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
