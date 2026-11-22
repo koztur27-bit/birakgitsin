@@ -1,6 +1,6 @@
 {
   "name": "birakgitsin",
-  "version": "2.3.8",
+  "version": "2.3.9",
   "main": "index.ts",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -27,6 +27,7 @@
     "react-native-android-widget": "^0.26.0",
     "react-native-google-mobile-ads": "^15.6.0",
     "react-native-iap": "^17.4.1",
+    "react-native-pager-view": "8.0.2",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-view-shot": "5.1.0",
     "react-native-web": "^0.21.2"

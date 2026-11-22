@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import PagerView from 'react-native-pager-view';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TabBar } from './src/components/TabBar';
 import { AppProvider, useApp } from './src/context/AppContext';
@@ -83,13 +84,22 @@ function I18nBridge({ children }: { children: React.ReactNode }) {
   return <I18nProvider locale={data.language || 'tr'}>{children}</I18nProvider>;
 }
 
+const TABS: TabKey[] = ['home', 'craving', 'timer', 'stats', 'health', 'settings'];
+
 function Root() {
   const { colors } = useTheme();
   const { t } = useI18n();
   const { data, ready, setPlan, markFutureOnboardingShown } = useApp();
-  const [tab, setTab] = useState<TabKey>('home');
+  const [tab, setTabState] = useState<TabKey>('home');
+  const pagerRef = React.useRef<PagerView>(null);
   const [editing, setEditing] = useState(false);
   const [futurePlan, setFuturePlan] = useState<Plan | null>(null);
+
+  const setTab = (next: TabKey) => {
+    setTabState(next);
+    const index = TABS.indexOf(next);
+    if (index >= 0) pagerRef.current?.setPage(index);
+  };
 
   // Uygulama açılırken ve arka plana geçerken widget'ları zorla yenile.
   useEffect(() => {
@@ -142,26 +152,36 @@ function Root() {
 
   return (
     <View style={[styles.app, { backgroundColor: colors.bg }]}>
-      <View style={styles.screen}>
-        <View style={[styles.page, tab !== 'home' && styles.hidden]}>
+      <PagerView
+        ref={pagerRef}
+        style={styles.screen}
+        initialPage={TABS.indexOf(tab)}
+        overdrag={false}
+        offscreenPageLimit={5}
+        onPageSelected={(e) => {
+          const next = TABS[e.nativeEvent.position];
+          if (next) setTabState(next);
+        }}
+      >
+        <View key="home" style={styles.page} collapsable={false}>
           <HomeScreen onOpenCraving={() => setTab('craving')} />
         </View>
-        <View style={[styles.page, tab !== 'craving' && styles.hidden]}>
+        <View key="craving" style={styles.page} collapsable={false}>
           <CravingScreen />
         </View>
-        <View style={[styles.page, tab !== 'timer' && styles.hidden]}>
+        <View key="timer" style={styles.page} collapsable={false}>
           <TimerScreen />
         </View>
-        <View style={[styles.page, tab !== 'stats' && styles.hidden]}>
+        <View key="stats" style={styles.page} collapsable={false}>
           <StatsScreen />
         </View>
-        <View style={[styles.page, tab !== 'health' && styles.hidden]}>
+        <View key="health" style={styles.page} collapsable={false}>
           <HealthScreen />
         </View>
-        <View style={[styles.page, tab !== 'settings' && styles.hidden]}>
+        <View key="settings" style={styles.page} collapsable={false}>
           <SettingsScreen onEditPlan={() => setEditing(true)} />
         </View>
-      </View>
+      </PagerView>
       <TabBar active={tab} onChange={setTab} />
     </View>
   );
