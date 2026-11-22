@@ -67,7 +67,7 @@ type AppContextValue = {
   incrementCoachUsage: () => void;
   setQuitMotivation: (motivation: QuitMotivation | null) => void;
   markFutureOnboardingShown: () => void;
-  markHappinessPrompt: (key: keyof HappinessPrompts) => void;
+  markHappinessPrompt: (action: 'positive' | 'negative' | 'dismiss') => void;
   redeemInviteCode: (code: string) => { ok: boolean; message?: string };
   pledgeToday: () => void;
   timer: TimerState;
@@ -756,10 +756,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     persist({ ...data, futureOnboardingShown: true });
   };
 
-  const markHappinessPrompt = (key: keyof HappinessPrompts) => {
+  const markHappinessPrompt = (action: 'positive' | 'negative' | 'dismiss') => {
     const prev = data.happinessPrompts || {};
-    if (prev[key]) return;
-    persist({ ...data, happinessPrompts: { ...prev, [key]: true } });
+    const next: HappinessPrompts = { ...prev, lastPromptAt: Date.now() };
+    if (action === 'positive') {
+      next.positiveResponse = true;
+    }
+    persist({ ...data, happinessPrompts: next });
   };
 
   const redeemInviteCode = (code: string): { ok: boolean; message?: string } => {
@@ -844,6 +847,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               first24h: !!(incoming.happinessPrompts as any).first24h,
               sosPassed: !!(incoming.happinessPrompts as any).sosPassed,
               savings500: !!(incoming.happinessPrompts as any).savings500,
+              positiveResponse: !!(incoming.happinessPrompts as any).positiveResponse,
+              lastPromptAt:
+                typeof (incoming.happinessPrompts as any).lastPromptAt === 'number'
+                  ? (incoming.happinessPrompts as any).lastPromptAt
+                  : undefined,
             }
           : {},
       inviteCode: typeof incoming.inviteCode === 'string' && incoming.inviteCode ? incoming.inviteCode : (data.inviteCode || generateInviteCode()),

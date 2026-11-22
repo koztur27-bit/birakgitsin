@@ -41,6 +41,7 @@ import {
   formatMoneyShort,
   fromMin,
   getLog,
+  goalStreak,
   nextWindowInfo,
   nowMin,
   pledgeStreak,
@@ -52,7 +53,7 @@ import {
 import { hasProAccess } from '../lib/proAccess';
 import { updateWidgetData } from '../lib/widgetData';
 import { fontSizes, radius, shadows, spacing } from '../theme';
-import { HappinessPrompts } from '../types';
+
 
 type HomeScreenProps = {
   onOpenCraving: () => void;
@@ -71,7 +72,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const [timerOpen, setTimerOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
-  const [happinessKey, setHappinessKey] = useState<keyof HappinessPrompts | null>(null);
+  const [showHappiness, setShowHappiness] = useState(false);
 
   const [smokeNote, setSmokeNote] = useState<string | null>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -152,31 +153,27 @@ export function HomeScreen(_props: HomeScreenProps) {
     );
   }, [data, plan, lang]);
 
-  // Mutluluk anı (5 yıldız filtresi) tetikleyicileri: ilk 24 saat ve 500 birim tasarruf
+  // Mutluluk penceresi: kurulumdan 72 saat sonra, rozet/3 gün seri koşulu ve 30 gün soğuma ile
   useEffect(() => {
-    if (!plan || happinessKey) return;
+    if (!plan || showHappiness) return;
     const hp = data.happinessPrompts || {};
-    const saved = totalMoneySaved(plan, data.logs);
-    let next: keyof HappinessPrompts | null = null;
-    if (!hp.first24h && elapsedDays(plan) >= 1) next = 'first24h';
-    else if (!hp.savings500 && saved >= 500) next = 'savings500';
-    if (next) {
-      const t = setTimeout(() => setHappinessKey(next), 0);
-      return () => clearTimeout(t);
-    }
-  }, [plan, data.logs, data.happinessPrompts, happinessKey]);
+    if (hp.positiveResponse) return;
+    const hoursSinceStart = (Date.now() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60);
+    if (hoursSinceStart < 72) return;
+    const hasBadge = (data.badges || []).length >= 1;
+    const hasStreak = goalStreak(plan, data.logs) >= 3;
+    if (!hasBadge && !hasStreak) return;
+    if (hp.lastPromptAt && Date.now() - hp.lastPromptAt < 30 * 24 * 60 * 60 * 1000) return;
+    const t = setTimeout(() => setShowHappiness(true), 0);
+    return () => clearTimeout(t);
+  }, [plan, data.badges, data.logs, data.happinessPrompts, showHappiness]);
 
-  const closeHappiness = () => {
-    if (happinessKey) markHappinessPrompt(happinessKey);
-    setHappinessKey(null);
+  const closeHappiness = (action: 'positive' | 'negative' | 'dismiss') => {
+    markHappinessPrompt(action);
+    setShowHappiness(false);
   };
 
-  const onSosGamePassed = () => {
-    const hp = data.happinessPrompts || {};
-    if (!hp.sosPassed) {
-      setHappinessKey('sosPassed');
-    }
-  };
+  const onSosGamePassed = () => {};
 
   const todayPledged = (data.dailyPledges || []).includes(todayKey());
   const currentPledgeStreak = typeof pledgeStreak === 'function' ? pledgeStreak(data.dailyPledges || []) : 0;
@@ -465,7 +462,7 @@ export function HomeScreen(_props: HomeScreenProps) {
         onClose={() => setSosOpen(false)}
         onGamePassed={onSosGamePassed}
       />
-      <HappinessPromptModal visible={!!happinessKey} onClose={closeHappiness} />
+      <HappinessPromptModal visible={showHappiness} onClose={closeHappiness} />
       <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
       <Modal visible={timerOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTimerOpen(false)}>
         <TimerScreen />

@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   visible: boolean;
-  onClose: () => void;
+  onClose: (action: 'positive' | 'negative' | 'dismiss') => void;
 };
 
 export function HappinessPromptModal({ visible, onClose }: Props) {
@@ -25,7 +25,7 @@ export function HappinessPromptModal({ visible, onClose }: Props) {
     } catch {
       // ignore
     } finally {
-      onClose();
+      onClose('positive');
     }
   };
 
@@ -38,12 +38,12 @@ export function HappinessPromptModal({ visible, onClose }: Props) {
     } catch {
       // ignore
     } finally {
-      onClose();
+      onClose('negative');
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={() => onClose('dismiss')}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <Text style={styles.emoji}>🌟</Text>
@@ -56,7 +56,7 @@ export function HappinessPromptModal({ visible, onClose }: Props) {
           <Pressable style={[styles.btn, styles.btnNegative]} onPress={onNegative}>
             <Text style={styles.btnNegativeText}>{t('happiness.negative')}</Text>
           </Pressable>
-          <Pressable style={styles.later} onPress={onClose}>
+          <Pressable style={styles.later} onPress={() => onClose('dismiss')}>
             <Text style={styles.laterText}>{t('common.cancel')}</Text>
           </Pressable>
         </View>

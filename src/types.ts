@@ -68,6 +68,10 @@ export type HappinessPrompts = {
   first24h?: boolean;
   sosPassed?: boolean;
   savings500?: boolean;
+  /** Kullanıcı "Harika gidiyor" dedi - bir daha gösterme */
+  positiveResponse?: boolean;
+  /** Son gösterim/yanıt zamanı (ms) - negatif veya iptal için 30 gün bekle */
+  lastPromptAt?: number;
 };
 
 export type AppData = {
