@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Bırak Gitsin",
+    "name": "Let It Go",
     "slug": "birakgitsin",
     "version": "2.5.0",
     "orientation": "portrait",
@@ -8,11 +8,14 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.birakgitsin.app"
+      "bundleIdentifier": "com.birakgitsin.app",
+      "infoPlist": {
+        "CFBundleDisplayName": "Let It Go"
+      }
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 67,
+      "versionCode": 68,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -35,8 +38,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Bırak Gitsin",
-      "shortName": "Bırak Gitsin",
+      "name": "Let It Go",
+      "shortName": "Let It Go",
       "description": "Sigarayı azaltarak bırakma sayacı",
       "themeColor": "#2563EB",
       "backgroundColor": "#F2F6FD",
@@ -87,7 +90,8 @@
       ],
       "./plugins/withNotificationIcon.js",
       "./plugins/withProguardRules.js",
-      "./plugins/withReleaseSigning.js"
+      "./plugins/withReleaseSigning.js",
+      "./plugins/withAppNameLocalization.js"
     ],
     "extra": {
       "eas": {
@@ -100,6 +104,10 @@
     },
     "updates": {
       "url": "https://u.expo.dev/599c1947-ec45-4c30-b398-9a7d77f59919"
+    },
+    "locales": {
+      "tr": "./locales/tr.json",
+      "en": "./locales/en.json"
     }
   }
 }

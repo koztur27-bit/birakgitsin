@@ -723,7 +723,7 @@ export const translations = {
   },
   en: {
     common: {
-      appName: 'Quit & Let Go',
+      appName: 'Let It Go',
       cancel: 'Cancel',
       close: 'Close',
       back: 'Back',
@@ -778,7 +778,7 @@ export const translations = {
       retry: 'Try Again',
     },
     onboarding: {
-      brand: 'Quit & Let Go',
+      brand: 'Let It Go',
       subtitleEdit: 'Edit your plan',
       subtitleNew: 'Quit smoking by cutting down',
       step0Title: 'How it works',
@@ -851,8 +851,8 @@ export const translations = {
       positive: 'Going great, I love it 😍',
       negative: 'Needs improvement',
       thanks: 'Thank you!',
-      feedbackSubject: 'Quit & Let Go - Feedback',
-      feedbackBody: 'Hi Quit & Let Go team,\n\nMy feedback/suggestion:\n',
+      feedbackSubject: 'Let It Go - Feedback',
+      feedbackBody: 'Hi Let It Go team,\n\nMy feedback/suggestion:\n',
     },
     invite: {
       title: 'Invite a Friend, Both Get 7 Days of PRO!',
@@ -861,7 +861,7 @@ export const translations = {
       copyCode: 'Copy code',
       copied: 'Invite code copied.',
       shareWhatsApp: 'Share via WhatsApp',
-      shareMessage: "I've been smoke-free for {days} days with Quit & Let Go and saved {saved}! Start with my invite code ({code}) and get 7 days of PRO free. Download the app for free on Google Play: Bırak Gitsin",
+      shareMessage: "I've been smoke-free for {days} days with Let It Go and saved {saved}! Start with my invite code ({code}) and get 7 days of PRO free. Download the app for free on Google Play: Bırak Gitsin",
       enterTitle: "Friend's invite code",
       enterPlaceholder: 'e.g. BGABC123',
       redeem: 'Redeem code (+7 Days PRO)',
@@ -872,7 +872,7 @@ export const translations = {
       redeemEmpty: 'Please enter an invite code.',
     },
     home: {
-      brand: 'Quit & Let Go',
+      brand: 'Let It Go',
       pro: 'PRO',
       map: 'Map',
       mapOn: 'Map ✓',
@@ -979,7 +979,7 @@ export const translations = {
       shareGallery: 'Save to Gallery',
       shareSend: 'Share',
       shareCopied: 'Share text copied to clipboard. Choose an app and paste it.',
-      shareText: 'Day {days} with Quit & Let Go! I skipped {avoided} cigarettes and saved {saved}. On-target rate: {rate}%.',
+      shareText: 'Day {days} with Let It Go! I skipped {avoided} cigarettes and saved {saved}. On-target rate: {rate}%.',
       slipAlertMsg: 'This doesn’t mean you’ve failed. “I had one” logs a slip-up; your streak and stats are preserved so you can continue kindly. Be gentle with yourself.',
     },
     craving: {
@@ -1266,7 +1266,7 @@ export const translations = {
       avoidedLabel: 'Cigarettes avoided',
       savedLabel: 'Saved',
       storeBadge: 'Download Free on Google Play',
-      shareFooter: 'Shared with Quit & Let Go',
+      shareFooter: 'Shared with Let It Go',
       preview: 'Card preview',
       share: 'Share card',
     },
@@ -1431,7 +1431,7 @@ export const translations = {
       progress: 'Progress',
       challengeBtn: 'Challenge a Friend',
       challengeTitle: 'Challenge',
-      challengeMsg: "I've been quitting smoking for {days} days and saved {saved} — your turn! Try it with Quit & Let Go.",
+      challengeMsg: "I've been quitting smoking for {days} days and saved {saved} — your turn! Try it with Let It Go.",
       challengeShare: 'Share challenge',
       list: {
         m24h: { title: 'First 24h Warrior', desc: 'Complete your first 24 hours on the plan.' },
