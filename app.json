@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 79,
+      "versionCode": 80,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -85,7 +85,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#2563EB"
+          "color": "#1E62D0"
         }
       ],
       "./plugins/withNotificationIcon.js",

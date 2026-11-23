@@ -3,7 +3,10 @@ package expo.modules.bgstatus
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -17,9 +20,28 @@ import expo.modules.kotlin.modules.ModuleDefinition
 class BgStatusModule : Module() {
   private val tag = "birakgitsin-status"
   private val notifyId = 0x0B67
+  private var sosLabel = "🆘 Kriz (SOS)"
+  private var resistedLabel = "💪 +1 Dayandım"
+  private var pendingQuickAction: String? = null
 
   override fun definition() = ModuleDefinition {
     Name("BgStatus")
+
+    Function("setQuickActionLabels") { sos: String, resisted: String ->
+      sosLabel = sos
+      resistedLabel = resisted
+      true
+    }
+
+    Function("getPendingQuickAction") {
+      val fromIntent = (appContext.reactContext as? android.app.Activity)
+        ?.intent?.getStringExtra("birakgitsin_quick_action")
+      val action = pendingQuickAction ?: fromIntent
+      pendingQuickAction = null
+      // Aynı aksiyonun tekrar tüketilmemesi için activity extras temizlenir.
+      (appContext.reactContext as? android.app.Activity)?.intent?.removeExtra("birakgitsin_quick_action")
+      action
+    }
 
     Function("showCountdown") { title: String, body: String, endAtMs: Double, channelId: String ->
       val context = appContext.reactContext ?: return@Function false
@@ -28,8 +50,12 @@ class BgStatusModule : Module() {
       val now = System.currentTimeMillis()
       val useChronometer = endAtMs > now
 
+      val smallIconId = context.resources.getIdentifier(
+        "notification_icon", "drawable", context.packageName
+      )
       val builder = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+        .setSmallIcon(if (smallIconId != 0) smallIconId else android.R.drawable.ic_lock_idle_alarm)
+        .setColor(Color.parseColor("#1E62D0"))
         .setContentTitle(title)
         .setContentText(body)
         .setOngoing(true)
@@ -39,6 +65,14 @@ class BgStatusModule : Module() {
         .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+      // Pozitif hızlı aksiyonlar: Kriz (SOS) ve +1 Dayandım.
+      quickActionPendingIntent(context, "SOS_ACTION")?.let {
+        builder.addAction(android.R.drawable.ic_dialog_info, sosLabel, it)
+      }
+      quickActionPendingIntent(context, "RESISTED_ACTION")?.let {
+        builder.addAction(android.R.drawable.ic_menu_add, resistedLabel, it)
+      }
 
       if (useChronometer) {
         builder.setWhen(endAtMs.toLong())
@@ -58,6 +92,15 @@ class BgStatusModule : Module() {
       NotificationManagerCompat.from(context).cancel(tag, notifyId)
       true
     }
+  }
+
+  private fun quickActionPendingIntent(context: Context, action: String): PendingIntent? {
+    val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+    intent.putExtra("birakgitsin_quick_action", action)
+    val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+      (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+    return PendingIntent.getActivity(context, action.hashCode(), intent, flags)
   }
 
   private fun ensureChannel(context: Context, channelId: String) {

@@ -2,6 +2,10 @@ import * as Notifications from 'expo-notifications';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 
+export const SOS_ACTION = 'SOS_ACTION';
+export const RESISTED_ACTION = 'RESISTED_ACTION';
+export const QUICK_CATEGORY = 'birakgitsin-quick';
+
 const ID = 'birakgitsin-status';
 const CHANNEL_ID = 'birakgitsin-v2';
 const LEGACY_CHANNEL_IDS = ['birakgitsin-status','birakgitsin-status-v2','birakgitsin-status-v3','birakgitsin-status-v4','birakgitsin-status-v5','birakgitsin-status-v6','birakgitsin-status-v7','birakgitsin-ongoing','birakgitsin-silent','birakgitsin-v1'];
@@ -15,7 +19,17 @@ type BgStatusNative = {
     channelId: string,
   ) => boolean;
   clear: () => boolean;
+  setQuickActionLabels?: (sosTitle: string, resistedTitle: string) => boolean;
+  getPendingQuickAction?: () => string | null;
 };
+
+export type NotificationLanguage = 'tr' | 'en';
+
+export function quickActionLabels(language: NotificationLanguage) {
+  return language === 'en'
+    ? { sos: '🆘 Craving SOS', resisted: '💪 +1 Resisted', smoked: 'Smoked 1', resistedShort: 'Resisted' }
+    : { sos: '🆘 Kriz (SOS)', resisted: '💪 +1 Dayandım', smoked: 'Sigara içtim', resistedShort: 'Dayandım' };
+}
 
 // Android'e özel yerel modül: sayacı sistemin kendi kronometresiyle gösterir
 // (uygulama arka planda donsa bile sayaç akmaya devam eder).
@@ -146,67 +160,103 @@ export async function requestStatusPermission(): Promise<void> {
   await ensureNotificationPermission();
 }
 
-export async function registerNotificationCategories(): Promise<void> {
+export async function registerNotificationCategories(
+  language: NotificationLanguage = 'tr',
+): Promise<void> {
   if (Platform.OS === 'web') return;
+  const labels = quickActionLabels(language);
+  const quickActions = [
+    {
+      identifier: SOS_ACTION,
+      buttonTitle: labels.sos,
+      options: { opensAppToForeground: true },
+    },
+    {
+      identifier: RESISTED_ACTION,
+      buttonTitle: labels.resisted,
+      options: { opensAppToForeground: true },
+    },
+  ];
   try {
+    // Kalıcı durum / ilerleme bildirimi: tam olarak 2 pozitif kısayol.
+    await Notifications.setNotificationCategoryAsync(QUICK_CATEGORY, quickActions);
     await Notifications.setNotificationCategoryAsync('birakgitsin-status', [
+      ...quickActions,
       {
         identifier: 'smoke',
-        buttonTitle: 'Sigara içtim',
+        buttonTitle: labels.smoked,
         options: { opensAppToForeground: true },
       },
       {
         identifier: 'resisted',
-        buttonTitle: 'Dayandım',
+        buttonTitle: labels.resistedShort,
         options: { opensAppToForeground: true },
       },
     ]);
     await Notifications.setNotificationCategoryAsync('birakgitsin-alarm', [
+      ...quickActions,
       {
         identifier: 'smoke',
-        buttonTitle: 'Sigara içtim',
+        buttonTitle: labels.smoked,
         options: { opensAppToForeground: true },
       },
       {
         identifier: 'snooze5',
-        buttonTitle: '5 dk ertele',
+        buttonTitle: language === 'en' ? '5 min snooze' : '5 dk ertele',
         options: { opensAppToForeground: true },
       },
       {
         identifier: 'resisted',
-        buttonTitle: 'Dayandım',
+        buttonTitle: labels.resistedShort,
         options: { opensAppToForeground: true },
       },
     ]);
     await Notifications.setNotificationCategoryAsync('birakgitsin-smart', [
+      ...quickActions,
       {
         identifier: 'action_add_smoked',
-        buttonTitle: '+1 İçtim',
+        buttonTitle: '+1',
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'snooze30',
-        buttonTitle: 'Ertele',
+        buttonTitle: language === 'en' ? 'Snooze' : 'Ertele',
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'smoke',
-        buttonTitle: 'Sigara içtim',
+        buttonTitle: labels.smoked,
         options: { opensAppToForeground: true },
       },
       {
         identifier: 'snooze5',
-        buttonTitle: '5 dk ertele',
+        buttonTitle: language === 'en' ? '5 min snooze' : '5 dk ertele',
         options: { opensAppToForeground: true },
       },
       {
         identifier: 'resisted',
-        buttonTitle: 'Dayandım',
+        buttonTitle: labels.resistedShort,
         options: { opensAppToForeground: true },
       },
     ]);
   } catch {
     // categories unavailable
+  }
+  // Native kronometre bildirimi aynı etiketleri kullansın.
+  try {
+    getBgStatus()?.setQuickActionLabels?.(labels.sos, labels.resisted);
+  } catch {
+    // native module unavailable
+  }
+}
+
+/** Native kronometre bildiriminden gelen hızlı aksiyonu tüket (varsa). */
+export function consumeNativeQuickAction(): string | null {
+  if (Platform.OS !== 'android') return null;
+  try {
+    return getBgStatus()?.getPendingQuickAction?.() ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -275,7 +325,7 @@ export async function publishLockStatus(
         sound: true,
         sticky: true,
         priority: Notifications.AndroidNotificationPriority.MAX,
-        categoryIdentifier: 'birakgitsin-smart',
+        categoryIdentifier: QUICK_CATEGORY,
         data: { statusPane: true },
       },
       trigger: { channelId: CHANNEL_ID },

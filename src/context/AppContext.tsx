@@ -9,9 +9,12 @@ import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
 import {
   celebrate,
   clearLockStatus,
+  consumeNativeQuickAction,
   ensureNotificationPermission,
   publishLockStatus,
   registerNotificationCategories,
+  RESISTED_ACTION,
+  SOS_ACTION,
 } from '../lib/statusNotification';
 import {
   AppData,
@@ -80,6 +83,8 @@ type AppContextValue = {
   extendTimer: (extraMinutes: number) => void;
   restoreData: (data: AppData) => void;
   exportedJson: () => string;
+  sosRequest: number;
+  openSos: () => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -225,6 +230,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [timer, setTimer] = useState<TimerState>(defaultTimer);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+  // Bildirim kısayoluyla açılan SOS isteği (HomeScreen modalını tetikler).
+  const [sosRequest, setSosRequest] = useState(0);
 
   const endAtRef = useRef(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -249,7 +256,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
-    registerNotificationCategories();
+    // Kategori etiketleri cihaz/uygulama diline göre (TR/EN) kaydedilir.
+    registerNotificationCategories(data.language === 'en' ? 'en' : 'tr').catch(() => {});
+  }, [data.language]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
     const handleNotifAction = (res: Notifications.NotificationResponse | null) => {
       if (!res) return;
       const action = res.actionIdentifier;
@@ -267,6 +279,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         handleNotifAction(res);
       })
       .catch(() => {});
+    return () => sub.remove();
+  }, []);
+
+  // Yerel kronometre bildirimindeki native hızlı aksiyonlar uygulamayı
+  // açtığında ilgili JS handler'ına yönlendirilir.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const consume = () => {
+      const action = consumeNativeQuickAction();
+      if (action) remoteActionRef.current[action]?.();
+    };
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') consume();
+    });
+    consume();
     return () => sub.remove();
   }, []);
 
@@ -902,6 +929,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const body = crisisBody(data);
         scheduleSmartSnoozeNotification(title, body).catch(() => {});
       },
+      [SOS_ACTION]: () => {
+        // Uygulamayı açıp doğrudan SOS nefes modalını göster.
+        setSosRequest((n) => n + 1);
+      },
+      [RESISTED_ACTION]: () => {
+        // Bildirimden tek dokunuşla direnen istek kaydı + kutlama + sayaç yenileme.
+        logCraving(true, { trigger: 'notification_quick_action' });
+        const isEn = data.language === 'en';
+        const today = todayKey();
+        const resistedToday =
+          data.cravings.filter(
+            (c) => c.resisted && String(c.timestamp).slice(0, 10) === today,
+          ).length + 1;
+        const smoked = getLog(data.logs, today).smoked;
+        celebrate(
+          isEn ? 'You resisted! 💪' : 'Dayandın! 💪',
+          isEn
+            ? `+1 craving resisted. Today: ${resistedToday}. Keep it up!`
+            : `+1 isteğe dayandın. Bugün: ${resistedToday}. Devam et!`,
+        ).catch(() => {});
+        publishLockStatus(
+          isEn
+            ? `Smoked: ${smoked} · Resisted: ${resistedToday}`
+            : `İçilen: ${smoked} · Dayanılan: ${resistedToday}`,
+          true,
+          endAtRef.current,
+        ).catch(() => {});
+      },
     };
   });
 
@@ -937,6 +992,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     extendTimer,
     restoreData,
     exportedJson,
+    sosRequest,
+    openSos: () => setSosRequest((n) => n + 1),
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

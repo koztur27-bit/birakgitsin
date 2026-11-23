@@ -93,7 +93,7 @@ const TABS: TabKey[] = ['home', 'craving', 'stats', 'health', 'settings'];
 function Root() {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const { data, ready, setPlan, markFutureOnboardingShown } = useApp();
+  const { data, ready, setPlan, markFutureOnboardingShown, sosRequest } = useApp();
   const [tab, setTabState] = useState<TabKey>('home');
   const pagerRef = React.useRef<PagerView>(null);
   const [editing, setEditing] = useState(false);
@@ -105,10 +105,15 @@ function Root() {
     if (index >= 0) pagerRef.current?.setPage(index);
   };
 
+  // Bildirimdeki SOS kısayoluyla gelindiğinde ana sekmeye geç (modal orada açılır).
+  useEffect(() => {
+    if (sosRequest > 0) setTab('home');
+  }, [sosRequest]);
+
   // Uygulama açılırken ve arka plana geçerken widget'ları zorla yenile.
   useEffect(() => {
     refreshWidgets();
-    registerNotificationCategories().catch(() => {});
+    registerNotificationCategories(data.language === 'en' ? 'en' : 'tr').catch(() => {});
     registerBackgroundNotificationTask().catch(() => {});
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active' || state === 'background') refreshWidgets();

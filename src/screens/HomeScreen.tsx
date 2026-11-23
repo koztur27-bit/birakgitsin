@@ -64,11 +64,19 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday } = useApp();
+  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
-  const [sosOpen, setSosOpen] = useState(false);
+  const [sosOpenLocal, setSosOpenLocal] = useState(false);
+  const [sosDismissedFor, setSosDismissedFor] = useState(0);
+  // Bildirim kısayolu sosRequest'i artırır; yerel buton ise sosOpenLocal'ı açar.
+  const sosOpen = sosOpenLocal || sosRequest > sosDismissedFor;
+  const openSos = () => setSosOpenLocal(true);
+  const closeSos = () => {
+    setSosOpenLocal(false);
+    setSosDismissedFor(sosRequest);
+  };
   const [timerOpen, setTimerOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
@@ -421,7 +429,7 @@ export function HomeScreen(_props: HomeScreenProps) {
             <Pressable
               accessibilityRole="button"
               style={({ pressed }) => [styles.supportBtn, styles.supportBtnSOS, pressed && styles.pressed]}
-              onPress={() => setSosOpen(true)}
+              onPress={openSos}
             >
               <Text style={styles.supportEmoji}>🆘</Text>
               <Text style={[styles.supportTitle, { color: colors.danger }]}>
@@ -459,7 +467,7 @@ export function HomeScreen(_props: HomeScreenProps) {
 
       <SosBreathingModal
         visible={sosOpen}
-        onClose={() => setSosOpen(false)}
+        onClose={closeSos}
         onGamePassed={onSosGamePassed}
       />
       <HappinessPromptModal visible={showHappiness} onClose={closeHappiness} />
