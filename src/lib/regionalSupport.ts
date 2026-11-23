@@ -1,4 +1,4 @@
-export type Region = 'TR' | 'US' | 'GB' | 'EU' | 'GLOBAL';
+export type Region = 'TR' | 'US' | 'GB' | 'EU' | 'JP' | 'GLOBAL';
 
 export type SupportLine = {
   id: string;
@@ -23,6 +23,7 @@ export function detectRegion(): Region {
       return 'GB';
     }
     if (lower.startsWith('europe/')) return 'EU';
+    if (lower === 'asia/tokyo' || lower.startsWith('asia/tokyo')) return 'JP';
     // Locale fallback
     let locale = '';
     try {
@@ -41,6 +42,7 @@ export function detectRegion(): Region {
     if (lc.startsWith('tr')) return 'TR';
     if (lc === 'en-us' || lc.startsWith('en-us')) return 'US';
     if (lc === 'en-gb' || lc.startsWith('en-gb')) return 'GB';
+    if (lc.startsWith('ja')) return 'JP';
     if (lc.startsWith('en') ) {
       // default English outside known regions -> global
       return 'GLOBAL';
@@ -96,6 +98,29 @@ export function regionLabel(region: Region, locale: 'tr' | 'en'): string {
     case 'US': return 'United States';
     case 'GB': return 'United Kingdom';
     case 'EU': return en ? 'European Union' : 'Avrupa Birligi';
+    case 'JP': return en ? 'Japan' : 'Japonya';
     default: return en ? 'Global' : 'Global';
+  }
+}
+
+export type RegionalCurrencyDefaults = {
+  currency: string;
+  packPrice: number;
+};
+
+export function regionalCurrencyDefaults(region: Region): RegionalCurrencyDefaults {
+  switch (region) {
+    case 'TR':
+      return { currency: '₺', packPrice: 100 };
+    case 'US':
+      return { currency: '$', packPrice: 10 };
+    case 'GB':
+      return { currency: '£', packPrice: 14 };
+    case 'EU':
+      return { currency: '€', packPrice: 8 };
+    case 'JP':
+      return { currency: '¥', packPrice: 600 };
+    default:
+      return { currency: '$', packPrice: 8 };
   }
 }

@@ -20,6 +20,7 @@ import { WindowEditor } from '../components/WindowEditor';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n';
 import { currencySymbols, fontSizes, radius, spacing } from '../theme';
+import { detectRegion, regionalCurrencyDefaults } from '../lib/regionalSupport';
 import { CessationAid, Plan, SmokeWindow } from '../types';
 
 const STEPS = 6;
@@ -70,22 +71,28 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
   const { t, locale } = useI18n();
   const { data, setQuitMotivation } = useApp();
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<Draft>(() =>
-    initial
-      ? {
-          baselinePerDay: initial.baselinePerDay,
-          weeklyReduction: initial.weeklyReduction,
-          packPrice: initial.packPrice,
-          cigarettesPerPack: initial.cigarettesPerPack,
-          currency: initial.currency,
-          useWindows: (initial.windows?.length ?? 0) > 0,
-          windows:
-            initial.windows?.length > 0 ? initial.windows : defaultWindows,
-          cessationAid: initial.cessationAid ?? 'none',
-          heavySmokerMode: initial.heavySmokerMode ?? false,
-        }
-      : defaultDraft,
-  );
+  const [draft, setDraft] = useState<Draft>(() => {
+    if (initial) {
+      return {
+        baselinePerDay: initial.baselinePerDay,
+        weeklyReduction: initial.weeklyReduction,
+        packPrice: initial.packPrice,
+        cigarettesPerPack: initial.cigarettesPerPack,
+        currency: initial.currency,
+        useWindows: (initial.windows?.length ?? 0) > 0,
+        windows:
+          initial.windows?.length > 0 ? initial.windows : defaultWindows,
+        cessationAid: initial.cessationAid ?? 'none',
+        heavySmokerMode: initial.heavySmokerMode ?? false,
+      };
+    }
+    const regional = regionalCurrencyDefaults(detectRegion());
+    return {
+      ...defaultDraft,
+      currency: regional.currency,
+      packPrice: regional.packPrice,
+    };
+  });
   const [motivationText, setMotivationText] = useState(data.quitMotivation?.text || '');
   const [motivationPhoto, setMotivationPhoto] = useState<string | undefined>(data.quitMotivation?.photoUri);
 
@@ -291,25 +298,29 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                   max={40}
                   suffix="adet"
                 />
-                <Text style={styles.paragraph}>Para birimi</Text>
-                <View style={styles.currencyRow}>
-                  {currencySymbols.map((c) => (
-                    <Pressable
-                      key={c}
-                      onPress={() => set('currency', c)}
-                      style={[styles.currencyBtn, draft.currency === c && styles.currencyBtnActive]}
-                    >
-                      <Text
-                        style={[
-                          styles.currencyText,
-                          draft.currency === c && styles.currencyTextActive,
-                        ]}
-                      >
-                        {c}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                {initial && (
+                  <>
+                    <Text style={styles.paragraph}>Para birimi</Text>
+                    <View style={styles.currencyRow}>
+                      {currencySymbols.map((c) => (
+                        <Pressable
+                          key={c}
+                          onPress={() => set('currency', c)}
+                          style={[styles.currencyBtn, draft.currency === c && styles.currencyBtnActive]}
+                        >
+                          <Text
+                            style={[
+                              styles.currencyText,
+                              draft.currency === c && styles.currencyTextActive,
+                            ]}
+                          >
+                            {c}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </>
+                )}
               </>
             }
           />
