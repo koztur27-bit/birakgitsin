@@ -51,6 +51,7 @@ import {
   windowAllowances,
   windowSmokedOn,
 } from '../lib/calculations';
+import { celebrate, publishLockStatus } from '../lib/statusNotification';
 import { hasProAccess } from '../lib/proAccess';
 import { updateWidgetData } from '../lib/widgetData';
 import { fontSizes, radius, shadows, spacing } from '../theme';
@@ -65,7 +66,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, timer, startTimer, pauseTimer, resumeTimer, dismissTimer, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
+  const { data, timer, startTimer, resumeTimer, resetTimer, setTimerDuration, logCigarette, undoCigarette, logSlip, logCraving, showFlash, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
@@ -79,12 +80,64 @@ export function HomeScreen(_props: HomeScreenProps) {
     setSosDismissedFor(sosRequest);
   };
   const [timerOpen, setTimerOpen] = useState(false);
-  const handleTimerAction = () => {
+  // Sayaç bitince / "Dayandım" basılınca aynı ödül-kayıt akışı çalışır.
+  const awardResistance = React.useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    logCraving(true, { trigger: 'timer_completed' });
+    const isEn = data.language === 'en';
+    const today = todayKey();
+    const resistedToday =
+      data.cravings.filter(
+        (c) => c.resisted && String(c.timestamp).slice(0, 10) === today,
+      ).length + 1;
+    const smoked = getLog(data.logs, today).smoked;
+    const cheer = isEn
+      ? 'Amazing! You resisted 1 more craving 💪'
+      : 'Harika! 1 krize daha direndin 💪';
+    showFlash(cheer);
+    celebrate(
+      isEn ? `💪 ${resistedToday} cravings resisted` : `💪 Bugün ${resistedToday} kriz`,
+      cheer,
+    ).catch(() => {});
+    publishLockStatus(
+      isEn
+        ? `Smoked: ${smoked} · Resisted: ${resistedToday}`
+        : `İçilen: ${smoked} · Dayanılan: ${resistedToday}`,
+      true,
+      0,
+    ).catch(() => {});
+  }, [data.language, data.cravings, data.logs, logCraving, showFlash]);
+
+  const doneHandledRef = useRef(false);
+  useEffect(() => {
+    if (timer.status === 'running') doneHandledRef.current = false;
+    if (timer.status === 'done' && !doneHandledRef.current) {
+      doneHandledRef.current = true;
+      awardResistance();
+    }
+  }, [timer.status, awardResistance]);
+
+  const changeDuration = (delta: number) => {
+    const minutes = Math.min(120, Math.max(5, timer.minutes + delta));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    if (timer.status === 'running') pauseTimer();
-    else if (timer.status === 'paused') resumeTimer();
-    else if (timer.status === 'done') dismissTimer();
-    else startTimer();
+    setTimerDuration(minutes);
+  };
+
+  const handleTimerAction = () => {
+    if (timer.status === 'running') {
+      doneHandledRef.current = true;
+      awardResistance();
+      resetTimer();
+    } else if (timer.status === 'paused') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      resumeTimer();
+    } else if (timer.status === 'done') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      resetTimer();
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      startTimer();
+    }
   };
   const timerStatusText =
     timer.status === 'running'
@@ -96,7 +149,7 @@ export function HomeScreen(_props: HomeScreenProps) {
           : (lang === 'en' ? `Ready · ${timer.minutes} min` : `hazır · ${timer.minutes} dk`);
   const timerActionLabel =
     timer.status === 'running'
-      ? (lang === 'en' ? 'Pause' : 'Duraklat')
+      ? (lang === 'en' ? 'Resisted ✓' : 'Dayandım ✓')
       : timer.status === 'paused'
         ? (lang === 'en' ? 'Resume' : 'Devam et')
         : timer.status === 'done'
@@ -371,7 +424,7 @@ export function HomeScreen(_props: HomeScreenProps) {
           <View style={styles.heroIntegratedPanel}>
             <View style={styles.heroPanelLeft}>
               <Text style={styles.heroPanelLabel}>
-                {lang === 'en' ? 'Smoked today / Goal' : 'Bugün içtiğin / Hedefin'}
+                {lang === 'en' ? 'Today / Goal' : 'Bugün / Hedef'}
               </Text>
               <View style={styles.heroPanelCountRow}>
                 <Text style={styles.heroPanelCount}>{smokedCount}</Text>
@@ -389,18 +442,44 @@ export function HomeScreen(_props: HomeScreenProps) {
             <View style={styles.heroPanelDivider} />
 
             <View style={styles.heroPanelRight}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={lang === 'en' ? 'Open full craving timer' : 'Dayanma sayacını tam ekran aç'}
-                style={styles.heroTimerInfoTouch}
-                onPress={() => setTimerOpen(true)}
-              >
-                <Text style={styles.heroTimerLabel}>
-                  ⏱ {lang === 'en' ? 'Craving timer' : 'Dayanma sayacı'}
-                </Text>
-                <Text style={styles.heroTimerValue}>{formatCountdown(timer.remaining)}</Text>
-                <Text style={styles.heroTimerHint}>{timerStatusText}</Text>
-              </Pressable>
+              <Text style={styles.heroTimerLabel}>
+                ⏱ {lang === 'en' ? 'Craving timer' : 'Dayanma sayacı'}
+              </Text>
+              <View style={styles.heroTimerControlRow}>
+                {timer.status === 'idle' ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={lang === 'en' ? 'Decrease 5 minutes' : '5 dakika azalt'}
+                    style={styles.heroTimerStepBtn}
+                    onPress={() => changeDuration(-5)}
+                  >
+                    <Text style={styles.heroTimerStepText}>−</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.heroTimerStepSpacer} />
+                )}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={lang === 'en' ? 'Open full craving timer' : 'Dayanma sayacını tam ekran aç'}
+                  style={styles.heroTimerInfoTouch}
+                  onPress={() => setTimerOpen(true)}
+                >
+                  <Text style={styles.heroTimerValue}>{formatCountdown(timer.remaining)}</Text>
+                </Pressable>
+                {timer.status === 'idle' ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={lang === 'en' ? 'Increase 5 minutes' : '5 dakika artır'}
+                    style={styles.heroTimerStepBtn}
+                    onPress={() => changeDuration(5)}
+                  >
+                    <Text style={styles.heroTimerStepText}>+</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.heroTimerStepSpacer} />
+                )}
+              </View>
+              <Text style={styles.heroTimerHint}>{timerStatusText}</Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={timerActionLabel}
@@ -694,15 +773,15 @@ const createStyles = (colors: any) =>
     cigLogTime: { color: colors.white, fontSize: fontSizes.md, fontWeight: '700' },
 
     heroIntegratedPanel: {
-      backgroundColor: 'rgba(11, 22, 48, 0.35)',
+      backgroundColor: 'rgba(11, 22, 48, 0.38)',
       borderRadius: 20,
       padding: 16,
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.1)',
+      borderColor: 'rgba(255,255,255,0.12)',
       flexDirection: 'row',
       alignItems: 'center',
     },
-    heroPanelLeft: { flex: 1.2, paddingRight: 14 },
+    heroPanelLeft: { flex: 1.15, paddingRight: 14 },
     heroPanelLabel: {
       fontSize: fontSizes.sm,
       fontWeight: '700',
@@ -737,6 +816,28 @@ const createStyles = (colors: any) =>
       backgroundColor: 'rgba(255,255,255,0.15)',
     },
     heroPanelRight: { flex: 1, paddingLeft: 14, alignItems: 'center' },
+    heroTimerControlRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: 4,
+    },
+    heroTimerStepBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroTimerStepSpacer: { width: 32, height: 32 },
+    heroTimerStepText: {
+      fontSize: 20,
+      fontWeight: '700',
+      lineHeight: 22,
+      color: colors.white,
+    },
     heroTimerInfoTouch: { alignItems: 'center' },
     heroPanelStartBtn: {
       alignSelf: 'stretch',
