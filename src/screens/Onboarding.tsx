@@ -309,6 +309,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                           style={[styles.currencyBtn, draft.currency === c && styles.currencyBtnActive]}
                         >
                           <Text
+                            numberOfLines={2}
                             style={[
                               styles.currencyText,
                               draft.currency === c && styles.currencyTextActive,
@@ -424,6 +425,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                   onPress={() => set('cessationAid', opt.key as CessationAid)}
                 >
                   <Text
+                    numberOfLines={2}
                     style={[
                       styles.currencyText,
                       draft.cessationAid === opt.key && styles.currencyTextActive,
@@ -544,18 +546,22 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   currencyBtn: {
     flex: 1,
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.bg,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   currencyBtnActive: {
     backgroundColor: colors.primaryDark,
   },
   currencyText: {
-    fontSize: fontSizes.xl,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   currencyTextActive: { color: colors.white },
   summaryRow: {
