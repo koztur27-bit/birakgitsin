@@ -369,7 +369,7 @@ export function HomeScreen(_props: HomeScreenProps) {
           </View>
 
           <View style={styles.heroGoalSection}>
-            <View style={styles.heroGoalLeft}>
+            <View style={styles.heroGoalCard}>
               <Text style={styles.heroTitle}>
                 {lang === 'en' ? "Today's goal" : 'Bugünkü hedefin'}
               </Text>
@@ -890,27 +890,35 @@ const createStyles = (colors: any) =>
     inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
     heroGoalSection: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'stretch',
       justifyContent: 'space-between',
-      gap: spacing.md,
+      gap: 12,
     },
-    heroGoalLeft: { flex: 1, justifyContent: 'center' },
+    heroGoalCard: {
+      flex: 1,
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.25)',
+      backgroundColor: 'rgba(15, 23, 42, 0.25)',
+      justifyContent: 'space-between',
+    },
     heroTimerCard: {
-      minWidth: 122,
-      borderRadius: radius.md,
+      flex: 1,
+      borderRadius: 16,
+      padding: 14,
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.4)',
       backgroundColor: 'rgba(255,255,255,0.12)',
-      overflow: 'hidden',
+      justifyContent: 'space-between',
     },
     heroTimerTop: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
       alignItems: 'center',
       gap: 2,
     },
     heroTimerAction: {
       backgroundColor: 'rgba(255,255,255,0.92)',
+      borderRadius: 10,
       paddingVertical: 7,
       alignItems: 'center',
     },
