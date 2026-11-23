@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 81,
+      "versionCode": 82,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/android-icon-foreground.png",

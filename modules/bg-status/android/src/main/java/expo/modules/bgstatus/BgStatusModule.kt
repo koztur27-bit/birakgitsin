@@ -68,6 +68,16 @@ class BgStatusModule : Module() {
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
+      // Bildirim kartının sağında tam renkli logo (Android largeIcon).
+      val largeIconId = context.resources.getIdentifier(
+        "ic_notification_large", "drawable", context.packageName
+      )
+      if (largeIconId != 0) {
+        android.graphics.BitmapFactory.decodeResource(context.resources, largeIconId)?.let {
+          builder.setLargeIcon(it)
+        }
+      }
+
       // Hızlı aksiyonlar: Kriz, +1 Dayandım ve +1 İçtim (aynı sırayla).
       quickActionPendingIntent(context, "SOS_ACTION")?.let {
         builder.addAction(android.R.drawable.ic_dialog_info, sosLabel, it)
