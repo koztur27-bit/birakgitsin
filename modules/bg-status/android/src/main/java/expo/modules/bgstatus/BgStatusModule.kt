@@ -20,16 +20,18 @@ import expo.modules.kotlin.modules.ModuleDefinition
 class BgStatusModule : Module() {
   private val tag = "birakgitsin-status"
   private val notifyId = 0x0B67
-  private var sosLabel = "🆘 Kriz (SOS)"
+  private var sosLabel = "🆘 Kriz"
   private var resistedLabel = "💪 +1 Dayandım"
+  private var smokedLabel = "🚬 +1 İçtim"
   private var pendingQuickAction: String? = null
 
   override fun definition() = ModuleDefinition {
     Name("BgStatus")
 
-    Function("setQuickActionLabels") { sos: String, resisted: String ->
+    Function("setQuickActionLabels") { sos: String, resisted: String, smoked: String ->
       sosLabel = sos
       resistedLabel = resisted
+      smokedLabel = smoked
       true
     }
 
@@ -66,12 +68,15 @@ class BgStatusModule : Module() {
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-      // Pozitif hızlı aksiyonlar: Kriz (SOS) ve +1 Dayandım.
+      // Hızlı aksiyonlar: Kriz, +1 Dayandım ve +1 İçtim (aynı sırayla).
       quickActionPendingIntent(context, "SOS_ACTION")?.let {
         builder.addAction(android.R.drawable.ic_dialog_info, sosLabel, it)
       }
       quickActionPendingIntent(context, "RESISTED_ACTION")?.let {
         builder.addAction(android.R.drawable.ic_menu_add, resistedLabel, it)
+      }
+      quickActionPendingIntent(context, "SMOKED_ACTION")?.let {
+        builder.addAction(android.R.drawable.ic_menu_save, smokedLabel, it)
       }
 
       if (useChronometer) {

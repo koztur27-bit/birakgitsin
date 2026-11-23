@@ -93,7 +93,7 @@ const TABS: TabKey[] = ['home', 'craving', 'stats', 'health', 'settings'];
 function Root() {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const { data, ready, setPlan, markFutureOnboardingShown, sosRequest } = useApp();
+  const { data, ready, setPlan, markFutureOnboardingShown, sosRequest, flashMessage } = useApp();
   const [tab, setTabState] = useState<TabKey>('home');
   const pagerRef = React.useRef<PagerView>(null);
   const [editing, setEditing] = useState(false);
@@ -189,6 +189,11 @@ function Root() {
         </View>
       </PagerView>
       <TabBar active={tab} onChange={setTab} />
+      {flashMessage ? (
+        <View style={styles.flashToast} pointerEvents="none">
+          <Text style={styles.flashToastText}>{flashMessage}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -306,5 +311,27 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  flashToast: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 84,
+    backgroundColor: '#1E62D0',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+    alignItems: 'center',
+  },
+  flashToastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

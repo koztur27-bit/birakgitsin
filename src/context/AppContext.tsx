@@ -1,4 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Linking, Platform, Vibration } from 'react-native';
@@ -14,6 +15,7 @@ import {
   publishLockStatus,
   registerNotificationCategories,
   RESISTED_ACTION,
+  SMOKED_ACTION,
   SOS_ACTION,
 } from '../lib/statusNotification';
 import {
@@ -85,6 +87,8 @@ type AppContextValue = {
   exportedJson: () => string;
   sosRequest: number;
   openSos: () => void;
+  flashMessage: string | null;
+  showFlash: (message: string) => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -232,6 +236,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   // Bildirim kısayoluyla açılan SOS isteği (HomeScreen modalını tetikler).
   const [sosRequest, setSosRequest] = useState(0);
+  // Bildirim aksiyonlarının anlık onay mesajı (kısa süreli toast).
+  const [flashMessage, setFlashMessage] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showFlash = (message: string) => {
+    setFlashMessage(message);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setFlashMessage(null), 2800);
+  };
 
   const endAtRef = useRef(0);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -930,11 +942,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         scheduleSmartSnoozeNotification(title, body).catch(() => {});
       },
       [SOS_ACTION]: () => {
-        // Uygulamayı açıp doğrudan SOS nefes modalını göster.
+        // Kısa haptic + uygulamayı açıp doğrudan SOS nefes modalını göster.
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
         setSosRequest((n) => n + 1);
       },
       [RESISTED_ACTION]: () => {
-        // Bildirimden tek dokunuşla direnen istek kaydı + kutlama + sayaç yenileme.
+        // Başarı haptiği + direnen istek kaydı + anlık onay + sayaç yenileme.
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         logCraving(true, { trigger: 'notification_quick_action' });
         const isEn = data.language === 'en';
         const today = todayKey();
@@ -943,11 +957,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             (c) => c.resisted && String(c.timestamp).slice(0, 10) === today,
           ).length + 1;
         const smoked = getLog(data.logs, today).smoked;
+        const cheer = isEn
+          ? 'Amazing! You resisted 1 more craving 💪'
+          : 'Harika! 1 krize daha direndin 💪';
+        showFlash(cheer);
         celebrate(
-          isEn ? 'You resisted! 💪' : 'Dayandın! 💪',
+          isEn ? `💪 ${resistedToday} cravings resisted` : `💪 Bugün ${resistedToday} kriz`,
+          cheer,
+        ).catch(() => {});
+        publishLockStatus(
           isEn
-            ? `+1 craving resisted. Today: ${resistedToday}. Keep it up!`
-            : `+1 isteğe dayandın. Bugün: ${resistedToday}. Devam et!`,
+            ? `Smoked: ${smoked} · Resisted: ${resistedToday}`
+            : `İçilen: ${smoked} · Dayanılan: ${resistedToday}`,
+          true,
+          endAtRef.current,
+        ).catch(() => {});
+      },
+      [SMOKED_ACTION]: () => {
+        // Yargılamadan +1 kaydı, nazik haptic ve destekleyici geri bildirim.
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        logSlip({ trigger: 'notification_quick_action' });
+        const isEn = data.language === 'en';
+        const today = todayKey();
+        const smoked = getLog(data.logs, today).smoked + 1;
+        const resistedToday = data.cravings.filter(
+          (c) => c.resisted && String(c.timestamp).slice(0, 10) === today,
+        ).length;
+        const support = isEn
+          ? 'Saved. No problem, we can delay the next one together.'
+          : 'Kaydedildi. Sorun değil, bir sonrakini birlikte erteleyebiliriz.';
+        showFlash(support);
+        celebrate(
+          isEn ? `🚬 ${smoked} today · recorded` : `🚬 Bugün ${smoked} · kaydedildi`,
+          support,
         ).catch(() => {});
         publishLockStatus(
           isEn
@@ -994,6 +1036,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     exportedJson,
     sosRequest,
     openSos: () => setSosRequest((n) => n + 1),
+    flashMessage,
+    showFlash,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

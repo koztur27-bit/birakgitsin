@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 export const SOS_ACTION = 'SOS_ACTION';
 export const RESISTED_ACTION = 'RESISTED_ACTION';
+export const SMOKED_ACTION = 'SMOKED_ACTION';
 export const QUICK_CATEGORY = 'birakgitsin-quick';
 
 const ID = 'birakgitsin-status';
@@ -19,7 +20,11 @@ type BgStatusNative = {
     channelId: string,
   ) => boolean;
   clear: () => boolean;
-  setQuickActionLabels?: (sosTitle: string, resistedTitle: string) => boolean;
+  setQuickActionLabels?: (
+    sosTitle: string,
+    resistedTitle: string,
+    smokedTitle: string,
+  ) => boolean;
   getPendingQuickAction?: () => string | null;
 };
 
@@ -27,8 +32,20 @@ export type NotificationLanguage = 'tr' | 'en';
 
 export function quickActionLabels(language: NotificationLanguage) {
   return language === 'en'
-    ? { sos: '🆘 Craving SOS', resisted: '💪 +1 Resisted', smoked: 'Smoked 1', resistedShort: 'Resisted' }
-    : { sos: '🆘 Kriz (SOS)', resisted: '💪 +1 Dayandım', smoked: 'Sigara içtim', resistedShort: 'Dayandım' };
+    ? {
+        sos: '🆘 Craving',
+        resisted: '💪 +1 Resisted',
+        smoked: '🚬 +1 Smoked',
+        resistedShort: 'Resisted',
+        smokedShort: 'Smoked 1',
+      }
+    : {
+        sos: '🆘 Kriz',
+        resisted: '💪 +1 Dayandım',
+        smoked: '🚬 +1 İçtim',
+        resistedShort: 'Dayandım',
+        smokedShort: 'Sigara içtim',
+      };
 }
 
 // Android'e özel yerel modül: sayacı sistemin kendi kronometresiyle gösterir
@@ -176,15 +193,20 @@ export async function registerNotificationCategories(
       buttonTitle: labels.resisted,
       options: { opensAppToForeground: true },
     },
+    {
+      identifier: SMOKED_ACTION,
+      buttonTitle: labels.smoked,
+      options: { opensAppToForeground: true },
+    },
   ];
   try {
-    // Kalıcı durum / ilerleme bildirimi: tam olarak 2 pozitif kısayol.
+    // Kalıcı durum / ilerleme bildirimi: tam olarak 3 hızlı kısayol.
     await Notifications.setNotificationCategoryAsync(QUICK_CATEGORY, quickActions);
     await Notifications.setNotificationCategoryAsync('birakgitsin-status', [
       ...quickActions,
       {
         identifier: 'smoke',
-        buttonTitle: labels.smoked,
+        buttonTitle: labels.smokedShort,
         options: { opensAppToForeground: true },
       },
       {
@@ -197,7 +219,7 @@ export async function registerNotificationCategories(
       ...quickActions,
       {
         identifier: 'smoke',
-        buttonTitle: labels.smoked,
+        buttonTitle: labels.smokedShort,
         options: { opensAppToForeground: true },
       },
       {
@@ -225,7 +247,7 @@ export async function registerNotificationCategories(
       },
       {
         identifier: 'smoke',
-        buttonTitle: labels.smoked,
+        buttonTitle: labels.smokedShort,
         options: { opensAppToForeground: true },
       },
       {
@@ -244,7 +266,7 @@ export async function registerNotificationCategories(
   }
   // Native kronometre bildirimi aynı etiketleri kullansın.
   try {
-    getBgStatus()?.setQuickActionLabels?.(labels.sos, labels.resisted);
+    getBgStatus()?.setQuickActionLabels?.(labels.sos, labels.resisted, labels.smoked);
   } catch {
     // native module unavailable
   }
