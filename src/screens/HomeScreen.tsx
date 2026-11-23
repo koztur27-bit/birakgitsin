@@ -37,6 +37,7 @@ import {
   currentWindowIndex,
   dailyGoal,
   elapsedDays,
+  formatCountdown,
   formatMoney,
   formatMoneyShort,
   fromMin,
@@ -64,7 +65,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
+  const { data, timer, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
@@ -344,13 +345,38 @@ export function HomeScreen(_props: HomeScreenProps) {
             )}
           </View>
 
-          <Text style={styles.heroTitle}>
-            {lang === 'en' ? "Today's goal" : 'Bugünkü hedefin'}
-          </Text>
-          <View style={styles.heroGoalRow}>
-            <Text style={styles.heroGoal}>{goal}</Text>
-            <CigaretteIcon size={22} style={styles.heroGoalIcon} />
-            <Text style={styles.heroGoalUnit}>{lang === 'en' ? 'cigarettes' : 'sigara'}</Text>
+          <View style={styles.heroGoalSection}>
+            <View style={styles.heroGoalLeft}>
+              <Text style={styles.heroTitle}>
+                {lang === 'en' ? "Today's goal" : 'Bugünkü hedefin'}
+              </Text>
+              <View style={styles.heroGoalRow}>
+                <Text style={styles.heroGoal}>{goal}</Text>
+                <CigaretteIcon size={22} style={styles.heroGoalIcon} />
+                <Text style={styles.heroGoalUnit}>{lang === 'en' ? 'cigarettes' : 'sigara'}</Text>
+              </View>
+            </View>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={lang === 'en' ? 'Open craving timer' : 'Dayanma sayacını aç'}
+              style={({ pressed }) => [styles.heroTimerCard, pressed && styles.pressed]}
+              onPress={() => setTimerOpen(true)}
+            >
+              <Text style={styles.heroTimerLabel}>
+                ⏱ {lang === 'en' ? 'Craving timer' : 'Dayanma sayacı'}
+              </Text>
+              <Text style={styles.heroTimerValue}>{formatCountdown(timer.remaining)}</Text>
+              <Text style={styles.heroTimerHint}>
+                {timer.status === 'running'
+                  ? (lang === 'en' ? 'Counting...' : 'sayıyor...')
+                  : timer.status === 'paused'
+                    ? (lang === 'en' ? 'Paused' : 'duraklatıldı')
+                    : timer.status === 'done'
+                      ? (lang === 'en' ? 'Time is up!' : 'süre doldu!')
+                      : (lang === 'en' ? `Set ${timer.minutes} min` : `${timer.minutes} dk kurulu`)}
+              </Text>
+            </Pressable>
           </View>
 
           <Text style={[styles.heroLabel, styles.heroSpacer]}>
@@ -459,10 +485,6 @@ export function HomeScreen(_props: HomeScreenProps) {
           </Pressable>
         </View>
 
-        <Pressable style={[styles.timerCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setTimerOpen(true)} accessibilityRole="button" accessibilityLabel={lang === 'en' ? 'Open craving timer' : 'Dayanma sayacini ac'}>
-          <Text style={[styles.timerCardTitle, { color: colors.text }]}>{lang === 'en' ? 'Craving Timer' : 'Dayanma Sayaci'}</Text>
-          <Text style={[styles.timerCardSub, { color: colors.textMuted }]}>{lang === 'en' ? 'Start a timer to get through a craving.' : 'Bir istek anini atlatmak icin sayac baslat.'}</Text>
-        </Pressable>
       </ScrollView>
 
       <SosBreathingModal
@@ -841,7 +863,37 @@ const createStyles = (colors: any) =>
     },
     inviteShareBtnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
     inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
-    timerCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 4, marginTop: 12 },
-    timerCardTitle: { fontSize: 18, fontWeight: '800' },
-    timerCardSub: { fontSize: 13 },
+    heroGoalSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    heroGoalLeft: { flex: 1, justifyContent: 'center' },
+    heroTimerCard: {
+      minWidth: 108,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.4)',
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      gap: 2,
+    },
+    heroTimerLabel: {
+      fontSize: fontSizes.xs,
+      fontWeight: '700',
+      color: 'rgba(255,255,255,0.85)',
+    },
+    heroTimerValue: {
+      fontSize: fontSizes.lg,
+      fontWeight: '800',
+      color: colors.white,
+      fontVariant: ['tabular-nums'],
+    },
+    heroTimerHint: {
+      fontSize: fontSizes.xs,
+      color: 'rgba(255,255,255,0.75)',
+    },
   });

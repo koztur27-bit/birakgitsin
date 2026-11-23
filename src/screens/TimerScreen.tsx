@@ -7,10 +7,9 @@ import { MapBadge } from '../components/MapBadge';
 import { Stepper } from '../components/Stepper';
 import { useApp } from '../context/AppContext';
 import { stopAlarm } from '../lib/alarm';
-import { formatCountdown, nextWindowInfo } from '../lib/calculations';
+import { formatCountdown } from '../lib/calculations';
 import { fontSizes, radius, shadows, spacing } from '../theme';
 
-const PRESETS_MIN = [5, 10, 30, 60];
 const RING_SIZE = 240;
 const INNER_SIZE = RING_SIZE - 14;
 
@@ -34,12 +33,6 @@ export function TimerScreen() {
     setTimerDuration(m);
   };
 
-  const setToNextWindow = () => {
-    const next = nextWindowInfo(plan);
-    if (!next) return;
-    setTimerDuration(Math.max(1, Math.ceil(next.minutes / 60)));
-  };
-
   const { minutes, remaining, status } = timer;
 
   return (
@@ -52,25 +45,6 @@ export function TimerScreen() {
         </Text>
 
         <Card>
-          <View style={styles.presetRow}>
-            {PRESETS_MIN.map((m) => (
-              <Pressable
-                key={m}
-                onPress={() => setDuration(m)}
-                style={[styles.preset, minutes === m && status === 'idle' && styles.presetActive]}
-              >
-                <Text
-                  style={[
-                    styles.presetText,
-                    minutes === m && status === 'idle' && styles.presetTextActive,
-                  ]}
-                >
-                  {m < 60 ? `${m} dk` : `${m / 60} sa`}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
           <View style={styles.stepperWrap}>
             <Stepper
               label="Özel süre"
@@ -81,14 +55,6 @@ export function TimerScreen() {
               suffix="dk"
             />
           </View>
-
-          {plan.windows.length > 0 ? (
-            <Pressable style={styles.windowShortcut} onPress={setToNextWindow}>
-              <Text style={styles.windowShortcutText}>
-                Sonraki izin penceresine kadar kur
-              </Text>
-            </Pressable>
-          ) : null}
 
           <View style={styles.clockWrap}>
             <View style={styles.clockRing}>
@@ -171,35 +137,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textMuted,
     lineHeight: fontSizes.md + 4,
   },
-  presetRow: { flexDirection: 'row', gap: spacing.sm },
-  preset: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-  },
-  presetActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  presetText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
-  presetTextActive: { color: colors.white },
   stepperWrap: { marginTop: spacing.sm },
-  windowShortcut: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.accentSoft,
-    alignItems: 'center',
-  },
-  windowShortcutText: {
-    fontSize: fontSizes.sm,
-    fontWeight: '700',
-    color: '#8a5a00',
-  },
   clockWrap: { alignItems: 'center', marginVertical: spacing.lg },
   clockRing: {
     width: RING_SIZE,
