@@ -6,7 +6,7 @@ import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
 import { Stepper } from '../components/Stepper';
 import { useApp } from '../context/AppContext';
-import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
+import { stopAlarm } from '../lib/alarm';
 import { formatCountdown, nextWindowInfo } from '../lib/calculations';
 import { fontSizes, radius, shadows, spacing } from '../theme';
 
@@ -29,11 +29,6 @@ export function TimerScreen() {
   }, []);
 
   if (!plan) return null;
-
-  const testAlarm = () => {
-    vibrateFive();
-    playAlarmFor(3000);
-  };
 
   const setDuration = (m: number) => {
     setTimerDuration(m);
@@ -137,9 +132,6 @@ export function TimerScreen() {
             ) : null}
           </View>
 
-          <Pressable style={styles.testAlarmBtn} onPress={testAlarm}>
-            <Text style={styles.testAlarmText}>Alarmı test et</Text>
-          </Pressable>
         </Card>
 
         {status === 'done' ? (
@@ -266,14 +258,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
   },
   resetText: { fontSize: fontSizes.md, fontWeight: '700', color: colors.textMuted },
-  testAlarmBtn: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    backgroundColor: colors.dangerSoft,
-  },
-  testAlarmText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.danger },
   alarmCard: {
     backgroundColor: colors.dangerSoft,
     borderRadius: radius.xl,
