@@ -65,7 +65,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, timer, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
+  const { data, timer, startTimer, pauseTimer, resumeTimer, dismissTimer, logCigarette, undoCigarette, logSlip, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
@@ -79,6 +79,29 @@ export function HomeScreen(_props: HomeScreenProps) {
     setSosDismissedFor(sosRequest);
   };
   const [timerOpen, setTimerOpen] = useState(false);
+  const handleTimerAction = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (timer.status === 'running') pauseTimer();
+    else if (timer.status === 'paused') resumeTimer();
+    else if (timer.status === 'done') dismissTimer();
+    else startTimer();
+  };
+  const timerStatusText =
+    timer.status === 'running'
+      ? (lang === 'en' ? `Counting · ${timer.minutes} min` : `sayıyor · ${timer.minutes} dk`)
+      : timer.status === 'paused'
+        ? (lang === 'en' ? 'Paused' : 'duraklatıldı')
+        : timer.status === 'done'
+          ? (lang === 'en' ? 'Time is up!' : 'süre doldu!')
+          : (lang === 'en' ? `Ready · ${timer.minutes} min` : `hazır · ${timer.minutes} dk`);
+  const timerActionLabel =
+    timer.status === 'running'
+      ? (lang === 'en' ? 'Pause' : 'Duraklat')
+      : timer.status === 'paused'
+        ? (lang === 'en' ? 'Resume' : 'Devam et')
+        : timer.status === 'done'
+          ? (lang === 'en' ? 'Done' : 'Tamam')
+          : (lang === 'en' ? 'Start' : 'Başlat');
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
@@ -357,26 +380,28 @@ export function HomeScreen(_props: HomeScreenProps) {
               </View>
             </View>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={lang === 'en' ? 'Open craving timer' : 'Dayanma sayacını aç'}
-              style={({ pressed }) => [styles.heroTimerCard, pressed && styles.pressed]}
-              onPress={() => setTimerOpen(true)}
-            >
-              <Text style={styles.heroTimerLabel}>
-                ⏱ {lang === 'en' ? 'Craving timer' : 'Dayanma sayacı'}
-              </Text>
-              <Text style={styles.heroTimerValue}>{formatCountdown(timer.remaining)}</Text>
-              <Text style={styles.heroTimerHint}>
-                {timer.status === 'running'
-                  ? (lang === 'en' ? 'Counting...' : 'sayıyor...')
-                  : timer.status === 'paused'
-                    ? (lang === 'en' ? 'Paused' : 'duraklatıldı')
-                    : timer.status === 'done'
-                      ? (lang === 'en' ? 'Time is up!' : 'süre doldu!')
-                      : (lang === 'en' ? `Set ${timer.minutes} min` : `${timer.minutes} dk kurulu`)}
-              </Text>
-            </Pressable>
+            <View style={styles.heroTimerCard}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={lang === 'en' ? 'Open full craving timer' : 'Dayanma sayacını tam ekran aç'}
+                style={({ pressed }) => [styles.heroTimerTop, pressed && styles.pressed]}
+                onPress={() => setTimerOpen(true)}
+              >
+                <Text style={styles.heroTimerLabel}>
+                  ⏱ {lang === 'en' ? 'Craving timer' : 'Dayanma sayacı'}
+                </Text>
+                <Text style={styles.heroTimerValue}>{formatCountdown(timer.remaining)}</Text>
+                <Text style={styles.heroTimerHint}>{timerStatusText}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={timerActionLabel}
+                style={({ pressed }) => [styles.heroTimerAction, pressed && styles.pressed]}
+                onPress={handleTimerAction}
+              >
+                <Text style={styles.heroTimerActionText}>{timerActionLabel}</Text>
+              </Pressable>
+            </View>
           </View>
 
           <Text style={[styles.heroLabel, styles.heroSpacer]}>
@@ -871,15 +896,28 @@ const createStyles = (colors: any) =>
     },
     heroGoalLeft: { flex: 1, justifyContent: 'center' },
     heroTimerCard: {
-      minWidth: 108,
+      minWidth: 122,
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.4)',
       backgroundColor: 'rgba(255,255,255,0.12)',
+      overflow: 'hidden',
+    },
+    heroTimerTop: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       alignItems: 'center',
       gap: 2,
+    },
+    heroTimerAction: {
+      backgroundColor: 'rgba(255,255,255,0.92)',
+      paddingVertical: 7,
+      alignItems: 'center',
+    },
+    heroTimerActionText: {
+      fontSize: fontSizes.xs,
+      fontWeight: '800',
+      color: colors.primaryDark,
     },
     heroTimerLabel: {
       fontSize: fontSizes.xs,
