@@ -66,7 +66,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, timer, startTimer, resumeTimer, resetTimer, setTimerDuration, logCigarette, undoCigarette, logSlip, logCraving, showFlash, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
+  const { data, timer, resumeTimer, resetTimer, setTimerDuration, logCigarette, undoCigarette, logSlip, logCraving, showFlash, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
@@ -134,27 +134,14 @@ export function HomeScreen(_props: HomeScreenProps) {
     } else if (timer.status === 'done') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       resetTimer();
-    } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      startTimer();
     }
   };
-  const timerStatusText =
-    timer.status === 'running'
-      ? (lang === 'en' ? `Counting · ${timer.minutes} min` : `sayıyor · ${timer.minutes} dk`)
-      : timer.status === 'paused'
-        ? (lang === 'en' ? 'Paused' : 'duraklatıldı')
-        : timer.status === 'done'
-          ? (lang === 'en' ? 'Time is up!' : 'süre doldu!')
-          : (lang === 'en' ? `Ready · ${timer.minutes} min` : `hazır · ${timer.minutes} dk`);
   const timerActionLabel =
-    timer.status === 'running'
-      ? (lang === 'en' ? 'Resisted ✓' : 'Dayandım ✓')
-      : timer.status === 'paused'
-        ? (lang === 'en' ? 'Resume' : 'Devam et')
-        : timer.status === 'done'
-          ? (lang === 'en' ? 'Done' : 'Tamam')
-          : (lang === 'en' ? 'Start' : 'Başlat');
+    timer.status === 'paused'
+      ? (lang === 'en' ? 'Resume' : 'Devam et')
+      : timer.status === 'done'
+        ? (lang === 'en' ? 'Done' : 'Tamam')
+        : (lang === 'en' ? 'Resisted ✓' : 'Dayandım ✓');
   const [coachOpen, setCoachOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
@@ -442,9 +429,7 @@ export function HomeScreen(_props: HomeScreenProps) {
             <View style={styles.heroPanelDivider} />
 
             <View style={styles.heroPanelRight}>
-              <Text style={styles.heroTimerLabel}>
-                ⏱ {lang === 'en' ? 'Craving timer' : 'Dayanma sayacı'}
-              </Text>
+              <Text style={styles.heroTimerIcon}>⏱</Text>
               <View style={styles.heroTimerControlRow}>
                 {timer.status === 'idle' ? (
                   <Pressable
@@ -479,15 +464,16 @@ export function HomeScreen(_props: HomeScreenProps) {
                   <View style={styles.heroTimerStepSpacer} />
                 )}
               </View>
-              <Text style={styles.heroTimerHint}>{timerStatusText}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={timerActionLabel}
-                style={({ pressed }) => [styles.heroPanelStartBtn, pressed && styles.pressed]}
-                onPress={handleTimerAction}
-              >
-                <Text style={styles.heroPanelStartText}>{timerActionLabel}</Text>
-              </Pressable>
+              {timer.status !== 'idle' ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={timerActionLabel}
+                  style={({ pressed }) => [styles.heroPanelStartBtn, pressed && styles.pressed]}
+                  onPress={handleTimerAction}
+                >
+                  <Text style={styles.heroPanelStartText}>{timerActionLabel}</Text>
+                </Pressable>
+              ) : null}
             </View>
           </View>
 
@@ -1021,19 +1007,14 @@ const createStyles = (colors: any) =>
     },
     inviteShareBtnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
     inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
-    heroTimerLabel: {
-      fontSize: fontSizes.xs,
-      fontWeight: '700',
+    heroTimerIcon: {
+      fontSize: fontSizes.lg,
       color: 'rgba(255,255,255,0.85)',
     },
     heroTimerValue: {
-      fontSize: fontSizes.lg,
+      fontSize: fontSizes.xl,
       fontWeight: '800',
       color: colors.white,
       fontVariant: ['tabular-nums'],
-    },
-    heroTimerHint: {
-      fontSize: fontSizes.xs,
-      color: 'rgba(255,255,255,0.75)',
     },
   });
