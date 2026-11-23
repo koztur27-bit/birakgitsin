@@ -73,6 +73,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const plan = data.plan;
   const [backupText, setBackupText] = useState('');
   const [backupDirUri, setBackupDirUri] = useState<string | null>(null);
+  const [backupAdvancedOpen, setBackupAdvancedOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -340,20 +341,20 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const pickBackupDir = async () => {
     try {
       if (Platform.OS !== 'android' || !(FileSystem as any).StorageAccessFramework) {
-        Alert.alert('Desteklenmiyor', 'Bu ozellik Android Storage Access Framework gerektirir. iOS icin Paylas secenegini kullanin.');
+        Alert.alert('Desteklenmiyor', 'Bu özellik Android Storage Access Framework gerektirir. iOS için Paylaş seçeneğini kullanın.');
         return;
       }
       const SAF = (FileSystem as any).StorageAccessFramework;
       const perm = await SAF.requestDirectoryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Izin verilmedi', 'Klasor secimi iptal edildi.');
+        Alert.alert('İzin verilmedi', 'Klasör seçimi iptal edildi.');
         return;
       }
       setBackupDirUri(perm.directoryUri);
       await AsyncStorage.setItem(BACKUP_DIR_KEY, perm.directoryUri);
-      Alert.alert('Klasor secildi', 'Yedekler bu klasore kaydedilecek.');
+      Alert.alert('Klasör seçildi', 'Yedekler bu klasöre kaydedilecek.');
     } catch (e: any) {
-      Alert.alert('Hata', e?.message || 'Klasor secilemedi.');
+      Alert.alert('Hata', e?.message || 'Klasör seçilemedi.');
     }
   };
 
@@ -371,7 +372,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
       const fileName = `birakgitsin-yedek-${date}.json`;
       const fileUri = await SAF.createFileAsync(dir, fileName, 'application/json');
       await FileSystem.writeAsStringAsync(fileUri, exportedJson());
-      Alert.alert('Yedek kaydedildi', `Yedek seçtiginiz klasore basariyla kaydedildi: ${fileName}`);
+      Alert.alert('Yedek kaydedildi', `Yedek seçtiğiniz klasöre başarıyla kaydedildi: ${fileName}`);
     } catch (e: any) {
       Alert.alert('Hata', e?.message || 'Yedek kaydedilemedi.');
     }
@@ -386,23 +387,23 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
       const content = await FileSystem.readAsStringAsync(asset.uri);
       const parsed = JSON.parse(content);
       if (!parsed || !Array.isArray(parsed.logs)) {
-        Alert.alert('Gecersiz yedek', 'Bu bir Birak Gitsin yedegi gibi gorunmuyor.');
+        Alert.alert('Geçersiz yedek', 'Bu bir Bırak Gitsin yedeği gibi görünmüyor.');
         return;
       }
-      Alert.alert('Geri yukle', 'Secilen yedek geri yuklensin mi? Mevcut verilerin uzerine yazilacak.', [
-        { text: 'Vazgec', style: 'cancel' },
-        { text: 'Geri Yukle', onPress: async () => {
+      Alert.alert('Geri yükle', 'Seçilen yedek geri yüklensin mi? Mevcut verilerin üzerine yazılacak.', [
+        { text: 'Vazgeç', style: 'cancel' },
+        { text: 'Geri Yükle', onPress: async () => {
             try {
               await restoreData(parsed);
               setBackupText('');
-              Alert.alert('Basarili', 'Veriler geri yuklendi.');
+              Alert.alert('Başarılı', 'Veriler geri yüklendi.');
             } catch (e: any) {
-              Alert.alert('Hata', e?.message || 'Geri yuklenemedi.');
+              Alert.alert('Hata', e?.message || 'Geri yüklenemedi.');
             }
           } },
       ]);
     } catch (e: any) {
-      Alert.alert('Hata', e?.message || 'Dosya secilemedi.');
+      Alert.alert('Hata', e?.message || 'Dosya seçilemedi.');
     }
   };
 
@@ -690,46 +691,58 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Card>
           <Text style={styles.cardLabel}>Verilerini yedekle</Text>
           <Text style={styles.planSub}>
-            Yedegi telefonundaki bir klasore kaydet veya dosyadan geri yukle. Panoya kopyala / yapistir secenekleri de mevcut.
+            Yedeği telefonundaki bir klasöre kaydet veya dosyadan geri yükle.
           </Text>
-          <View style={styles.inlineRow}>
-            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doBackupToDir}>
-              <Text style={styles.smallBtnText}>Yedek Al (klasore kaydet)</Text>
-            </Pressable>
-            <Pressable style={styles.smallBtn} onPress={pickBackupDir}>
-              <Text style={styles.smallBtnText}>Klasoru Degistir</Text>
-            </Pressable>
-          </View>
-          {backupDirUri ? (
-            <Text style={{fontSize:11,color:colors.textMuted,marginTop:4}} numberOfLines={1}>{backupDirUri}</Text>
+          <Pressable style={styles.backupMainBtn} onPress={doBackupToDir}>
+            <Text style={styles.backupMainBtnText}>Yedek Al</Text>
+          </Pressable>
+          <Pressable style={styles.backupSecondaryBtn} onPress={doImportFile}>
+            <Text style={styles.backupSecondaryBtnText}>Yedeği Geri Çağır</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.advancedToggle}
+            onPress={() => setBackupAdvancedOpen((v) => !v)}
+          >
+            <Text style={styles.advancedToggleText}>
+              {backupAdvancedOpen ? 'Gelişmiş seçenekler ▴' : 'Gelişmiş seçenekler ▾'}
+            </Text>
+          </Pressable>
+
+          {backupAdvancedOpen ? (
+            <>
+              <View style={styles.inlineRow}>
+                <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={pickBackupDir}>
+                  <Text style={styles.smallBtnText}>Klasörü Değiştir</Text>
+                </Pressable>
+              </View>
+              {backupDirUri ? (
+                <Text style={{fontSize:11,color:colors.textMuted,marginTop:4}} numberOfLines={1}>{backupDirUri}</Text>
+              ) : null}
+              <View style={styles.inlineRow}>
+                <Pressable style={styles.smallBtn} onPress={doBackup}>
+                  <Text style={styles.smallBtnText}>Panoya kopyala</Text>
+                </Pressable>
+                <Pressable style={styles.smallBtn} onPress={doBackupShare}>
+                  <Text style={styles.smallBtnText}>Paylaş / Dosyaya Kaydet</Text>
+                </Pressable>
+              </View>
+              <TextInput
+                style={styles.backupInput}
+                value={backupText}
+                onChangeText={setBackupText}
+                placeholder="Geri yüklemek için yedek verisini buraya yapıştır"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                textAlignVertical="top"
+              />
+              <View style={styles.inlineRow}>
+                <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doRestore}>
+                  <Text style={styles.smallBtnText}>Yapıştırılan Veriyi Geri Yükle</Text>
+                </Pressable>
+              </View>
+            </>
           ) : null}
-          <View style={styles.inlineRow}>
-            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doImportFile}>
-              <Text style={styles.smallBtnText}>Yedeği Geri Cagir (dosya sec)</Text>
-            </Pressable>
-          </View>
-          <View style={styles.inlineRow}>
-            <Pressable style={styles.smallBtn} onPress={doBackup}>
-              <Text style={styles.smallBtnText}>Panoya kopyala</Text>
-            </Pressable>
-            <Pressable style={styles.smallBtn} onPress={doBackupShare}>
-              <Text style={styles.smallBtnText}>Paylas / dosyaya kaydet</Text>
-            </Pressable>
-          </View>
-          <TextInput
-            style={styles.backupInput}
-            value={backupText}
-            onChangeText={setBackupText}
-            placeholder="Geri yuklemek icin yedek verisini buraya yapistir"
-            placeholderTextColor={colors.textMuted}
-            multiline
-            textAlignVertical="top"
-          />
-          <View style={styles.inlineRow}>
-            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={doRestore}>
-              <Text style={styles.smallBtnText}>Yapistirilan veriyi geri yukle</Text>
-            </Pressable>
-          </View>
         </Card>
 
         <Card>
@@ -1035,6 +1048,42 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   smallBtnFill: { flex: 1, alignItems: 'center' },
   smallBtnDisabled: { opacity: 0.6 },
+  backupMainBtn: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  backupMainBtnText: {
+    fontSize: fontSizes.md,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  backupSecondaryBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: 'center',
+  },
+  backupSecondaryBtnText: {
+    fontSize: fontSizes.md,
+    fontWeight: '800',
+    color: colors.primaryDark,
+  },
+  advancedToggle: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  advancedToggleText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
   backupInput: {
     marginTop: spacing.sm,
     minHeight: 90,
