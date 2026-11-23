@@ -470,6 +470,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </View>
         </Card>
 
+        {!IS_USER_RELEASE && (
         <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
           <Text style={styles.cardLabel}>Ana Ekran Widget&apos;ları</Text>
           <Text style={styles.planSub}>
@@ -479,6 +480,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             <Text style={styles.rowBtnText}>Widget Galerisini Aç</Text>
           </Pressable>
         </Card>
+        )}
 
         {!IS_USER_RELEASE && (
         <Card>
@@ -943,7 +945,9 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <StatusPopup visible={statusOpen} onClose={() => setStatusOpen(false)} />
         </>
       )}
-      <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
+      {!IS_USER_RELEASE && (
+        <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
+      )}
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
       <Modal visible={guideOpen} animationType="slide" onRequestClose={() => setGuideOpen(false)}>
         <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
