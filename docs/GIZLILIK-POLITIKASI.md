@@ -4,7 +4,7 @@
 **Son güncelleme:** 14 Kasım 2026  
 **Veri sorumlusu:** [Ad Soyad / Şirket unvanı]  
 **Adres:** [Açık adres]  
-**E-posta:** [destek@alanadi.com]  
+**E-posta:** koztur.27@gmail.com  
 **Web:** [https://alanadi.com]
 
 > Bu metin bir taslaktır. Yayına almadan önce gerçek şirket/kişi bilgileri, barındırma sağlayıcıları ve mağaza gereksinimleriyle uyumlu hale getirilmeli; gerekiyorsa hukuk danışmanına inceletilmelidir.
@@ -99,7 +99,7 @@ KVKK ve GDPR kapsamında:
 - Veri taşınabilirliği (panoya kopyalama),
 - Rızayı geri çekme
 
-haklarına sahipsin. Talepler için **[destek@alanadi.com]** adresine yazabilirsin. Kimliğini doğrulamak için makul bilgi istenebilir; yanıt en geç 30 gün içinde verilir.
+haklarına sahipsin. Talepler için **koztur.27@gmail.com** adresine yazabilirsin. Kimliğini doğrulamak için makul bilgi istenebilir; yanıt en geç 30 gün içinde verilir.
 
 ---
 
@@ -135,9 +135,9 @@ Bu politika güncellenirse yürürlük tarihi ve “son güncelleme” alanı de
 ## 11. İletişim
 
 **Veri sorumlusu:** [Ad Soyad / Şirket]  
-**E-posta:** [destek@alanadi.com]  
+**E-posta:** koztur.27@gmail.com  
 **Adres:** [Açık adres]  
-**KVKK başvuru:** [kvkk@alanadi.com] (varsa)
+**KVKK başvuru:** koztur.27@gmail.com
 
 ---
 

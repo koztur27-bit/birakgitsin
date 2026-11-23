@@ -6,7 +6,7 @@ export const PRIVACY_POLICY_URL =
   'https://koztur27-bit.github.io/birakgitsin/privacy-policy.html';
 export const TERMS_OF_USE_URL =
   'https://koztur27-bit.github.io/birakgitsin/terms-of-use.html';
-export const SUPPORT_EMAIL = 'birakgitsin.app@gmail.com';
+export const SUPPORT_EMAIL = 'koztur.27@gmail.com';
 
 export type LegalDocId = 'privacy' | 'terms';
 export type LegalLang = 'tr' | 'en';

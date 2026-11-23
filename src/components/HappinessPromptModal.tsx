@@ -32,7 +32,7 @@ export function HappinessPromptModal({ visible, onClose }: Props) {
   const onNegative = async () => {
     const subject = encodeURIComponent(t('happiness.feedbackSubject'));
     const body = encodeURIComponent(t('happiness.feedbackBody'));
-    const url = `mailto:birakgitsin.app@gmail.com?subject=${subject}&body=${body}`;
+    const url = `mailto:koztur.27@gmail.com?subject=${subject}&body=${body}`;
     try {
       await Linking.openURL(url);
     } catch {

@@ -76,3 +76,7 @@ Projede herhangi bir kod, tasarım veya metin değişikliği tamamlandığında,
 5. İmzayı (`CN=Birak Gitsin`) ve manifest izinlerini (`RECORD_AUDIO`/`SYSTEM_ALERT_WINDOW` yok, `targetSdkVersion` 36) doğrula.
 
 Bu kural istisnasız uygulanır; kullanıcı onayı veya ek istek beklenmez.
+
+## Kalıcı Kural — Destek ve iletişim e-posta adresi
+
+Tüm uygulamalarda destek, gizlilik ve mağaza iletişim e-posta adresi olarak her zaman `koztur.27@gmail.com` kullanılır.

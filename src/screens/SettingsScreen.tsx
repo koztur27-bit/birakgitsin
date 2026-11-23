@@ -943,8 +943,8 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
               <Text style={styles.smallBtnText}>Kullanım Koşulları</Text>
             </Pressable>
           </View>
-          <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('mailto:birakgitsin.app@gmail.com')}>
-            <Text style={styles.smallBtnText}>Destek: birakgitsin.app@gmail.com</Text>
+          <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('mailto:koztur.27@gmail.com')}>
+            <Text style={styles.smallBtnText}>Destek: koztur.27@gmail.com</Text>
           </Pressable>
         </Card>
 
