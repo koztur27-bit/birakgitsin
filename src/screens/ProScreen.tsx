@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -13,7 +12,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { LegalModal } from '../components/LegalModal';
 import { useI18n } from '../i18n';
+import type { LegalDocId } from '../lib/legalContent';
 import {
   FALLBACK_PRODUCTS,
   ProductId,
@@ -42,6 +43,7 @@ export function ProScreen({ visible, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<ProductId | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<LegalDocId | null>(null);
 
   const isPro = hasProAccess(data);
   const unlockMs = proUnlockRemainingMs(data);
@@ -182,11 +184,11 @@ export function ProScreen({ visible, onClose }: Props) {
           <View style={styles.legalBox}>
             <Text style={styles.legalText}>{t('pro.subscriptionLegal')}</Text>
             <View style={styles.legalLinks}>
-              <Pressable onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/privacy-policy.html')}>
+              <Pressable onPress={() => setLegalDoc('privacy')}>
                 <Text style={styles.legalLink}>{t('pro.privacyPolicy')}</Text>
               </Pressable>
               <Text style={styles.legalSep}>•</Text>
-              <Pressable onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/terms-of-use.html')}>
+              <Pressable onPress={() => setLegalDoc('terms')}>
                 <Text style={styles.legalLink}>{t('pro.termsOfUse')}</Text>
               </Pressable>
             </View>
@@ -194,6 +196,11 @@ export function ProScreen({ visible, onClose }: Props) {
 
           <View style={{ height: insets.bottom + 24 }} />
         </ScrollView>
+        <LegalModal
+          visible={legalDoc !== null}
+          doc={legalDoc ?? 'privacy'}
+          onClose={() => setLegalDoc(null)}
+        />
       </View>
     </Modal>
   );

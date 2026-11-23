@@ -719,6 +719,12 @@ export const translations = {
         m1000cigs: { title: '1000 Sigara Efsanesi', desc: 'Toplam 1000 sigara içme.' },
       },
     },
+    legal: {
+      openOnline: 'Canlı web sayfasını aç',
+      offlineNote: 'Bu metin internet bağlantısı olmadan da okunabilir.',
+      openFailed: 'Web sayfası açılamadı. Metni buradan okuyabilirsin.',
+      support: 'Destek',
+    },
   },
   en: {
     common: {
@@ -1439,6 +1445,12 @@ export const translations = {
         m30days: { title: '30-Day Free Lungs', desc: 'Complete 30 days on your plan.' },
         m1000cigs: { title: '1000 Cigarettes Legend', desc: 'Avoid 1000 cigarettes in total.' },
       },
+    },
+    legal: {
+      openOnline: 'Open live web page',
+      offlineNote: 'You can read this text even without an internet connection.',
+      openFailed: 'Could not open the web page. You can read the text here.',
+      support: 'Support',
     },
   },
 };

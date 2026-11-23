@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
 import { ScreenMapModal } from '../components/ScreenMapModal';
+import { LegalModal } from '../components/LegalModal';
 import { StatusPopup } from '../components/StatusPopup';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { WidgetGalleryScreen } from './WidgetGalleryScreen';
@@ -42,6 +43,7 @@ import { playAlarmFor } from '../lib/alarm';
 import { debugLockStatus } from '../lib/statusNotification';
 import { downloadAndInstallUpdate } from '../lib/updater';
 import { IS_USER_RELEASE } from '../lib/buildFlags';
+import type { LegalDocId } from '../lib/legalContent';
 import { pinHomeShortcut } from '../lib/shortcut';
 import { syncWidgetsAndCheckUpdate } from '../lib/syncUpdate';
 
@@ -74,6 +76,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [backupText, setBackupText] = useState('');
   const [backupDirUri, setBackupDirUri] = useState<string | null>(null);
   const [backupAdvancedOpen, setBackupAdvancedOpen] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<LegalDocId | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -933,10 +936,10 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <Card>
           <Text style={styles.cardLabel}>Yasal ve Destek</Text>
           <View style={styles.inlineRow}>
-            <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/privacy-policy.html')}>
+            <Pressable style={styles.smallBtn} onPress={() => setLegalDoc('privacy')}>
               <Text style={styles.smallBtnText}>Gizlilik Politikası</Text>
             </Pressable>
-            <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('https://github.com/koztur27-bit/birakgitsin/blob/master/docs/terms-of-use.html')}>
+            <Pressable style={styles.smallBtn} onPress={() => setLegalDoc('terms')}>
               <Text style={styles.smallBtnText}>Kullanım Koşulları</Text>
             </Pressable>
           </View>
@@ -951,6 +954,12 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
 
         <Text style={styles.footer}>Bırak Gitsin v2.5.0</Text>
       </ScrollView>
+
+      <LegalModal
+        visible={legalDoc !== null}
+        doc={legalDoc ?? 'privacy'}
+        onClose={() => setLegalDoc(null)}
+      />
 
       {!IS_USER_RELEASE && (
         <>
