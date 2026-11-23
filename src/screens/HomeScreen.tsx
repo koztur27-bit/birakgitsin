@@ -368,23 +368,31 @@ export function HomeScreen(_props: HomeScreenProps) {
             )}
           </View>
 
-          <View style={styles.heroGoalSection}>
-            <View style={styles.heroGoalCard}>
-              <Text style={styles.heroTitle}>
-                {lang === 'en' ? "Today's goal" : 'Bugünkü hedefin'}
+          <View style={styles.heroIntegratedPanel}>
+            <View style={styles.heroPanelLeft}>
+              <Text style={styles.heroPanelLabel}>
+                {lang === 'en' ? 'Smoked today / Goal' : 'Bugün içtiğin / Hedefin'}
               </Text>
-              <View style={styles.heroGoalRow}>
-                <Text style={styles.heroGoal}>{goal}</Text>
-                <CigaretteIcon size={22} style={styles.heroGoalIcon} />
-                <Text style={styles.heroGoalUnit}>{lang === 'en' ? 'cigarettes' : 'sigara'}</Text>
+              <View style={styles.heroPanelCountRow}>
+                <Text style={styles.heroPanelCount}>{smokedCount}</Text>
+                <Text style={styles.heroPanelGoal}>/ {goal} </Text>
+                <CigaretteIcon size={18} style={styles.heroPanelCigIcon} />
               </View>
+              <View style={styles.heroPanelProgress}>
+                <ProgressBar progress={progress} color="#FBBF24" height={8} />
+              </View>
+              <Text style={styles.heroPanelNextWindow}>
+                {lang === 'en' ? 'Next window' : 'Sıradaki pencere'}: {nextWindowStr}
+              </Text>
             </View>
 
-            <View style={styles.heroTimerCard}>
+            <View style={styles.heroPanelDivider} />
+
+            <View style={styles.heroPanelRight}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={lang === 'en' ? 'Open full craving timer' : 'Dayanma sayacını tam ekran aç'}
-                style={({ pressed }) => [styles.heroTimerTop, pressed && styles.pressed]}
+                style={styles.heroTimerInfoTouch}
                 onPress={() => setTimerOpen(true)}
               >
                 <Text style={styles.heroTimerLabel}>
@@ -396,24 +404,12 @@ export function HomeScreen(_props: HomeScreenProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={timerActionLabel}
-                style={({ pressed }) => [styles.heroTimerAction, pressed && styles.pressed]}
+                style={({ pressed }) => [styles.heroPanelStartBtn, pressed && styles.pressed]}
                 onPress={handleTimerAction}
               >
-                <Text style={styles.heroTimerActionText}>{timerActionLabel}</Text>
+                <Text style={styles.heroPanelStartText}>{timerActionLabel}</Text>
               </Pressable>
             </View>
-          </View>
-
-          <Text style={[styles.heroLabel, styles.heroSpacer]}>
-            {lang === 'en' ? "You've smoked today" : 'Bugün içtiğin'}
-          </Text>
-          <View style={styles.smokedRow}>
-            <Text style={styles.heroCount}>{smokedCount}</Text>
-            <CigaretteIcon size={30} style={styles.smokedIcon} />
-          </View>
-
-          <View style={styles.heroProgress}>
-            <ProgressBar progress={progress} color={colors.accent} height={8} />
           </View>
 
           <Text style={styles.heroStatus}>{heroStatus}</Text>
@@ -697,28 +693,64 @@ const createStyles = (colors: any) =>
     },
     cigLogTime: { color: colors.white, fontSize: fontSizes.md, fontWeight: '700' },
 
-    heroTitle: { fontSize: fontSizes.sm, color: 'rgba(255,255,255,0.85)' },
-    heroGoal: {
-      fontSize: fontSizes.xxl,
-      fontWeight: '800',
-      color: colors.white,
+    heroIntegratedPanel: {
+      backgroundColor: 'rgba(11, 22, 48, 0.35)',
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+      flexDirection: 'row',
+      alignItems: 'center',
     },
-    heroGoalRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    heroGoalIcon: { marginTop: 4 },
-    heroGoalUnit: { fontSize: fontSizes.md, fontWeight: '600', color: colors.white },
-    heroLabel: {
+    heroPanelLeft: { flex: 1.2, paddingRight: 14 },
+    heroPanelLabel: {
       fontSize: fontSizes.sm,
+      fontWeight: '700',
       color: 'rgba(255,255,255,0.85)',
     },
-    heroSpacer: { marginTop: spacing.sm },
-    smokedRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    smokedIcon: { marginBottom: spacing.xs },
-    heroCount: {
+    heroPanelCountRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 4,
+    },
+    heroPanelCount: {
       fontSize: fontSizes.huge,
       fontWeight: '800',
-      color: colors.accent,
+      color: '#FBBF24',
     },
-    heroProgress: { marginTop: spacing.xs, marginBottom: spacing.sm },
+    heroPanelGoal: {
+      fontSize: fontSizes.md,
+      fontWeight: '700',
+      color: colors.white,
+    },
+    heroPanelCigIcon: { marginTop: 2 },
+    heroPanelProgress: { marginTop: 8 },
+    heroPanelNextWindow: {
+      fontSize: fontSizes.xs,
+      color: 'rgba(255,255,255,0.75)',
+      marginTop: 6,
+    },
+    heroPanelDivider: {
+      width: 1,
+      height: '85%',
+      backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    heroPanelRight: { flex: 1, paddingLeft: 14, alignItems: 'center' },
+    heroTimerInfoTouch: { alignItems: 'center' },
+    heroPanelStartBtn: {
+      alignSelf: 'stretch',
+      backgroundColor: colors.white,
+      borderRadius: 10,
+      paddingVertical: 9,
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    heroPanelStartText: {
+      fontSize: fontSizes.sm,
+      fontWeight: '800',
+      color: colors.primaryDark,
+    },
     heroStatus: {
       fontSize: fontSizes.sm,
       color: 'rgba(255,255,255,0.95)',
@@ -888,45 +920,6 @@ const createStyles = (colors: any) =>
     },
     inviteShareBtnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
     inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
-    heroGoalSection: {
-      flexDirection: 'row',
-      alignItems: 'stretch',
-      justifyContent: 'space-between',
-      gap: 12,
-    },
-    heroGoalCard: {
-      flex: 1,
-      borderRadius: 16,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.25)',
-      backgroundColor: 'rgba(15, 23, 42, 0.25)',
-      justifyContent: 'space-between',
-    },
-    heroTimerCard: {
-      flex: 1,
-      borderRadius: 16,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.4)',
-      backgroundColor: 'rgba(255,255,255,0.12)',
-      justifyContent: 'space-between',
-    },
-    heroTimerTop: {
-      alignItems: 'center',
-      gap: 2,
-    },
-    heroTimerAction: {
-      backgroundColor: 'rgba(255,255,255,0.92)',
-      borderRadius: 10,
-      paddingVertical: 7,
-      alignItems: 'center',
-    },
-    heroTimerActionText: {
-      fontSize: fontSizes.xs,
-      fontWeight: '800',
-      color: colors.primaryDark,
-    },
     heroTimerLabel: {
       fontSize: fontSizes.xs,
       fontWeight: '700',
