@@ -19,23 +19,30 @@ function ensureAppName(stringsPath, value) {
 function removeAppName(stringsPath) {
   if (!fs.existsSync(stringsPath)) return;
   let content = fs.readFileSync(stringsPath, 'utf8');
-  const updated = content.replace(/\s*<string name="app_name"[^>]*>.*?<\/string>/, '');
+  const updated = content.replace(/\s*<string name="app_name"[^>]*>.*?<\/string>\s*/g, '\n');
   if (updated !== content) fs.writeFileSync(stringsPath, updated);
 }
 
 module.exports = function withAppNameLocalization(config) {
   return withDangerousMod(config, ['android', async (config) => {
     const resDir = path.join(config.modRequest.platformProjectRoot, 'app', 'src', 'main', 'res');
+    // Default
     ensureAppName(path.join(resDir, 'values', 'strings.xml'), 'Let It Go');
 
-    // Expo locales config may generate values-b+tr/strings.xml; avoid duplicate resources.
+    // Turkish: always write canonical values-b+tr, remove from values-tr to avoid duplicates
     const bTr = path.join(resDir, 'values-b+tr', 'strings.xml');
     const tr = path.join(resDir, 'values-tr', 'strings.xml');
-    if (fs.existsSync(bTr)) {
-      ensureAppName(bTr, 'Bırak Gitsin');
-      removeAppName(tr);
-    } else {
-      ensureAppName(tr, 'Bırak Gitsin');
+    ensureAppName(bTr, 'Bırak Gitsin');
+    removeAppName(tr);
+
+    // Also clean any other tr variants that might have app_name
+    if (fs.existsSync(resDir)) {
+      for (const entry of fs.readdirSync(resDir)) {
+        if (entry === 'values-b+tr' || entry === 'values') continue;
+        if (/^values-(b\+tr|tr\b)/.test(entry)) {
+          removeAppName(path.join(resDir, entry, 'strings.xml'));
+        }
+      }
     }
     return config;
   }]);

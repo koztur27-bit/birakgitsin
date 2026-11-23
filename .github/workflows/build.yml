@@ -39,6 +39,22 @@ jobs:
         if: ${{ hashFiles('package.json') != '' && hashFiles('android/gradlew') == '' }}
         run: CI=1 npx expo prebuild --platform android --clean --no-install
 
+      - name: TR app_name duplicate temizle
+        if: ${{ hashFiles('android/**') != '' }}
+        run: |
+          python3 - <<'PY2'
+          from pathlib import Path
+          res = Path('android/app/src/main/res')
+          btr = res/'values-b+tr'/'strings.xml'
+          tr = res/'values-tr'/'strings.xml'
+          if btr.exists() and tr.exists():
+              t = tr.read_text(encoding='utf-8')
+              t2 = t.replace('<string name="app_name">Bırak Gitsin</string>', '').replace('<string name="app_name">Let It Go</string>', '')
+              if t2 != t:
+                  tr.write_text(t2, encoding='utf-8')
+                  print('cleaned values-tr app_name')
+          PY2
+
       - name: Release keystore hazirla
         if: ${{ hashFiles('android/**') != '' }}
         env:
