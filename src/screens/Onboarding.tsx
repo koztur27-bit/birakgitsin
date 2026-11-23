@@ -381,7 +381,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                 <Image source={{ uri: motivationPhoto }} style={styles.motivationPhotoPreview} />
               ) : (
                 <View style={styles.motivationPhotoPlaceholder}>
-                  <Text style={styles.motivationPhotoPlaceholderText}>💙</Text>
+                  <Text style={styles.motivationPhotoPlaceholderText}>❤️</Text>
                 </View>
               )}
               <View style={{ flex: 1, gap: spacing.sm }}>
@@ -628,7 +628,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: 'rgba(239, 68, 68, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },
