@@ -82,6 +82,13 @@ module.exports = function withNotificationIcon(config) {
             sz,
             sharp,
           );
+          // Notifee tarzı resource adıyla da erişilebilsin (alias).
+          await writePng(
+            srcSmall,
+            path.join(dir, 'ic_notification.png'),
+            sz,
+            sharp,
+          );
         }
       }
 

@@ -52,9 +52,14 @@ class BgStatusModule : Module() {
       val now = System.currentTimeMillis()
       val useChronometer = endAtMs > now
 
-      val smallIconId = context.resources.getIdentifier(
-        "notification_icon", "drawable", context.packageName
+      var smallIconId = context.resources.getIdentifier(
+        "ic_notification", "drawable", context.packageName
       )
+      if (smallIconId == 0) {
+        smallIconId = context.resources.getIdentifier(
+          "notification_icon", "drawable", context.packageName
+        )
+      }
       val builder = NotificationCompat.Builder(context, channelId)
         .setSmallIcon(if (smallIconId != 0) smallIconId else android.R.drawable.ic_lock_idle_alarm)
         .setColor(Color.parseColor("#1E62D0"))
