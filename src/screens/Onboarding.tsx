@@ -330,10 +330,6 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
         {step === 3 && (
           <Card>
             <Text style={styles.title}>İzinli pencereler ve özet</Text>
-            <Text style={styles.paragraph}>
-              Sigara içmeyi planladığın saat aralıklarını belirle. Bugünkü hedefin bu
-              pencerelere dağıtılır.
-            </Text>
             <View style={styles.stepperWrap}>
               <WindowEditor
                 useWindows={draft.useWindows}
