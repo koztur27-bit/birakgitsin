@@ -206,7 +206,7 @@ Doğrulama: `npx tsc --noEmit` ✅ · `npm run lint` ✅ (0 hata).
 | Anti-tamper | `src/utils/appIntegrity.ts` → `App.tsx` içinde `useEffect` ile çağrılır | Yalnızca Android + release (`__DEV__ === false`) çalışır; `Application.applicationId` değerini `app.json → expo.android.package` ile karşılaştırır. Uyuşmazlıkta uygulamayı kapatmaz, `console.error` ile kayıt tutar (yanlış pozitif gerçek kullanıcıyı etkilemesin). iOS ve dev derlemeler atlanır. |
 | Cleartext trafik | `expo-build-properties` → `usesCleartextTraffic: false` | Üretim manifestinde `android:usesCleartextTraffic="false"`; şifresiz HTTP trafiği engellenir. Uygulamanın tüm uzak bağlantıları HTTPS/TLS. |
 
-**Doğrulama:** `NODE_OPTIONS=--max-old-space-size=3072 npx tsc --noEmit` ✅ · `npm run lint` ✅ · `npx expo prebuild --platform android --clean --no-install` ✅ · Babel dönüşümü: production → yalnızca `console.error(4)` kalıyor, development → 4 çağrı da duruyor. ✅
+**Doğrulama:** `NODE_OPTIONS=--max-old-space-size=3072 npx tsc --noEmit` ✅ · `npm run lint` ✅ · `npx expo prebuild --platform android --clean --no-install` ✅ · Babel dönüşümü: production → yalnızca `console.error(4)` kalıyor, development → 4 çağrı da duruyor. ✅ · CI: [#45483109498](https://github.com/koztur27-bit/birakgitsin/actions/runs/45483109498) ✅ (mapping.txt dahil 4 çıktı).
 
 **mapping.txt (Play Console deobfuscation dosyası):**
 - CI çalışma alanında: `android/app/build/outputs/mapping/release/mapping.txt`
