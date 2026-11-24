@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -16,6 +17,7 @@ import { useApp } from '../context/AppContext';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../i18n';
 import { showRewardedUnlockAd } from '../lib/ads';
+import { SUPPORT_EMAIL } from '../lib/legalContent';
 import { todayKey } from '../lib/calculations';
 import { CoachQuickId, coachIntro, coachReply, coachReplyAsync } from '../lib/coachChat';
 import { hasProAccess } from '../lib/proAccess';
@@ -43,8 +45,8 @@ export function CoachChatModal({ visible, onClose }: Props) {
 
   const initChat = () => {
     const disclaimer = locale === 'en'
-      ? 'Note: I am not a doctor and do not provide medical advice. For health decisions, consult a qualified professional.'
-      : 'Not: Ben bir doktor degilim ve tibbi tavsiye vermem. Saglik kararlariniz icin mutlaka bir uzmana danisin.';
+      ? 'Note: I am an AI, not a doctor. I do not provide medical advice, diagnosis, or treatment. Messages and anonymous progress numbers may be processed by an AI provider to generate a reply. Never share personal identifying information here. For health decisions, consult a qualified professional.'
+      : 'Not: Ben bir yapay zekayim, doktor degilim. Tibbi tavsiye, teshis veya tedavi sunmam. Yanit uretmek icin mesajlarin ve anonim ilerleme sayilarin bir AI saglayicisi tarafindan islenebilir. Buraya kisisel tanimlayici bilgi yazma. Saglik kararlarin icin mutlaka bir uzmana danisan.';
     setMessages([{ id: 'intro', role: 'coach', text: coachIntro(locale) + '\n\n' + disclaimer }]);
     setInput('');
   };
@@ -59,6 +61,29 @@ export function CoachChatModal({ visible, onClose }: Props) {
   const push = (role: 'user' | 'coach', text: string) => {
     setMessages((prev) => [...prev, { id: `${Date.now()}-${Math.random()}`, role, text }]);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+  };
+
+  // Google Play Generated Content policy: users can report objectionable AI output in-app.
+  const reportReply = (text: string) => {
+    const subject = encodeURIComponent('Bırak Gitsin - AI coach content report');
+    const body = encodeURIComponent(
+      `Reported coach message:\n\n${text.slice(0, 500)}\n\nReason (optional):\n`,
+    );
+    Alert.alert(
+      locale === 'en' ? 'Report this reply' : 'Bu yanıtı bildir',
+      locale === 'en'
+        ? 'Your report will be sent to the developer by email. Do not include personal health details.'
+        : 'Bildirimin geliştiriciye e-posta ile gönderilecek. Kişisel sağlık bilgisi eklemeyin.',
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: locale === 'en' ? 'Send report' : 'Bildirimi gönder',
+          onPress: () => {
+            Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`).catch(() => {});
+          },
+        },
+      ],
+    );
   };
 
   const tryConsume = (): boolean => {
@@ -189,6 +214,20 @@ export function CoachChatModal({ visible, onClose }: Props) {
                 >
                   {m.text}
                 </Text>
+                {m.role === 'coach' && (
+                  <>
+                    <Text style={styles.aiLabel}>
+                      {locale === 'en'
+                        ? 'AI-generated · may be inaccurate · not medical advice'
+                        : 'Yapay zeka üretti · hatalı olabilir · tıbbi tavsiye değildir'}
+                    </Text>
+                    <Pressable onPress={() => reportReply(m.text)} hitSlop={6}>
+                      <Text style={styles.reportLink}>
+                        {locale === 'en' ? '⚠ Report this reply' : '⚠ Bu yanıtı bildir'}
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
               </View>
             </View>
           ))}
@@ -341,4 +380,6 @@ const createStyles = (colors: any) =>
       marginBottom: 2,
     },
     sendText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
+    aiLabel: { fontSize: 10, color: colors.textMuted, marginTop: 6, fontStyle: 'italic' },
+    reportLink: { fontSize: 10, color: colors.danger, marginTop: 4, textDecorationLine: 'underline' },
   });

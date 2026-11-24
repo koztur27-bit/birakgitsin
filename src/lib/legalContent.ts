@@ -28,7 +28,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
   privacy: {
     tr: {
       title: 'Gizlilik Politikası',
-      updated: 'Son güncelleme: 22 Kasım 2026',
+      updated: 'Son güncelleme: 24 Kasım 2026',
       intro: `Bırak Gitsin ("Uygulama"), sigarayı azaltma ve bırakma sürecinde kullanıcılara destek olmayı amaçlayan bir mobil uygulamadır. Bu gizlilik politikası, uygulamanın hangi verileri işleyebileceğini, bu verilerin nasıl kullanıldığını ve kullanıcı haklarını açıklar.`,
       sections: [
         {
@@ -58,7 +58,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: '3a. AI Koç ve Anonim Bağlam',
           body: [
-            `Uygulama, isteğe bağlı bir AI koç özelliği sunar. Koça mesaj gönderildiğinde yalnızca anonimleştirilmiş ilerleme bağlamı (sigarasız gün sayısı, içilmeyen sigara, tasarruf, tetikleyiciler) işlenir. Ad, telefon, e-posta gibi kimlik bilgileri hiçbir zaman API'ye gönderilmez. Harici LLM servisi üçüncü taraf bir sağlayıcı tarafından işletilebilir.`,
+            `Uygulama isteğe bağlı bir AI koç sunar. Mesaj gönderdiğinizde sizin yazdığınız serbest metin ve anonim ilerleme bağlamı (sigarasız gün, içilmeyen sigara, tasarruf, tetikleyici kategorileri) yanıt üretmek için AI sağlayıcısına gönderilir. Ad/telefon/e-posta istenmez; ancak sohbete kimlik bilgisi yazmayın. İstemcide API anahtarı saklanmaz; üretimde sunucu proxy'si gerekir. AI yanıtları hatalı olabilir ve uygulama içinden bildirilebilir.`,
           ],
         },
         {
@@ -94,7 +94,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: '6. Çocukların Gizliliği',
           body: [
-            `Uygulama genel kitleye yönelik bir sigarayı bırakma destek aracıdır ve çocuklara yönelik özel olarak tasarlanmamıştır. 13 yaşın altındaki çocuklardan bilerek kişisel veri toplamayız. Bir ebeveyn/veli, çocuğuna ait verilerin işlendiğini düşünüyorsa bizimle iletişime geçebilir.`,
+            `Uygulama genel kitleye yönelik bir sigarayı bırakma destek aracıdır ve çocuklara yönelik özel olarak tasarlanmamıştır. 18 yaşın altındaki kişilerden bilerek kişisel veri toplamayız. Bir ebeveyn/veli, çocuğuna ait verilerin işlendiğini düşünüyorsa bizimle iletişime geçebilir.`,
           ],
         },
         {
@@ -120,6 +120,12 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: '10. İletişim',
           body: [`Gizlilikle ilgili sorularınız için: ${SUPPORT_EMAIL}`],
+        },
+        {
+          heading: '11. Play Uyum Ek Maddesi',
+          body: [
+            `Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez. Tıbbi tavsiye, tanı veya tedavi için bir sağlık uzmanına danışın. Sağlık yüzdeleri genel bilgilendirme amaçlı tahminlerdir, tıbbi ölçüm değildir. Android yedekleme kapalıdır, kilit ekranı bildirimleri gizlidir. AI koç yanıtları hatalı olabilir; her yanıtın altından bildirilebilir. Veri sorumlusu kimliği/adresi yayından önce doldurulmalıdır.`,
+          ],
         },
       ],
     },
@@ -155,7 +161,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: '3a. AI Coach and Anonymized Context',
           body: [
-            `The app offers an optional AI coach. When a message is sent, only anonymized progress context (days smoke-free, cigarettes avoided, savings, triggers) is processed. No identifying information such as name, phone, or email is ever sent to the API. The external LLM service may be operated by a third-party provider.`,
+            `The app offers an optional AI coach. When you send a message, your free-text message and anonymized progress context (days smoke-free, cigarettes avoided, savings, trigger categories) are sent to an AI provider to generate a reply. We do not ask for your name, phone, or email, but do not type identifying information into the chat. No API key is stored in the app; a server-side proxy is required for production. AI replies may be inaccurate and can be reported in-app.`,
           ],
         },
         {
@@ -191,7 +197,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: "6. Children's Privacy",
           body: [
-            `The App is a smoking cessation support tool intended for a general audience and is not directed to children. We do not knowingly collect personal data from children under 13. If you believe a child has provided data, please contact us.`,
+            `The App is a smoking cessation support tool intended for a general audience and is not directed to children. We do not knowingly collect personal data from persons under 18. If you believe a child has provided data, please contact us.`,
           ],
         },
         {
@@ -218,6 +224,12 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
           heading: '10. Contact',
           body: [`If you have questions about this Privacy Policy, contact: ${SUPPORT_EMAIL}`],
         },
+        {
+          heading: '11. Google Play Compliance Supplement',
+          body: [
+            `This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition. Consult a healthcare professional for medical advice, diagnosis, or treatment. Health percentages are general informational estimates, not medical measurements. Android backup is disabled and lock-screen notifications are private. AI coach replies may be inaccurate and can be reported in-app. Controller identity/address must be completed before publication.`,
+          ],
+        },
       ],
     },
   },
@@ -225,7 +237,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
   terms: {
     tr: {
       title: 'Kullanım Koşulları',
-      updated: 'Son güncelleme: 22 Kasım 2026',
+      updated: 'Son güncelleme: 24 Kasım 2026',
       intro: `Bu uygulamayı kullanarak aşağıdaki koşulları kabul etmiş olursunuz.`,
       sections: [
         {
@@ -243,7 +255,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: '1b. AI Koç ve Veri İşleme',
           body: [
-            `Uygulama, isteğe bağlı AI koç özelliği sunar. Koça mesaj gönderildiğinde yalnızca anonimleştirilmiş ilerleme bağlamı (sigarasız gün sayısı, içilmeyen sigara, tasarruf, tetikleyiciler) işlenir; ad, telefon veya e-posta gibi kimlik bilgileri hiçbir zaman API'ye gönderilmez. Harici LLM servisi üçüncü taraf bir sağlayıcı tarafından işletilebilir.`,
+            `Uygulama isteğe bağlı bir AI koç sunar. Mesaj gönderdiğinizde sizin yazdığınız serbest metin ve anonim ilerleme bağlamı (sigarasız gün, içilmeyen sigara, tasarruf, tetikleyici kategorileri) yanıt üretmek için AI sağlayıcısına gönderilir. Ad/telefon/e-posta istenmez; ancak sohbete kimlik bilgisi yazmayın. İstemcide API anahtarı saklanmaz; üretimde sunucu proxy'si gerekir. AI yanıtları hatalı olabilir ve uygulama içinden bildirilebilir.`
           ],
         },
         {
@@ -280,11 +292,17 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
           heading: '6. İletişim',
           body: [`Sorularınız için: ${SUPPORT_EMAIL}`],
         },
+        {
+          heading: '7. Play Uyum Ek Maddesi',
+          body: [
+            `Bu uygulama bir tıbbi cihaz değildir; tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez. Tıbbi tavsiye için sağlık uzmanına danışın. PRO abonelikleri otomatik yenilenir; iptal ve iade Google Play politikasına tabidir. 18 yaşın altındakiler uygulamayı kullanamaz.`,
+          ],
+        },
       ],
     },
     en: {
       title: 'Terms of Use',
-      updated: 'Last updated: November 22, 2026',
+      updated: 'Last updated: November 24, 2026',
       intro: `By using this app, you agree to these terms.`,
       sections: [
         {
@@ -302,7 +320,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: '1b. AI Coach and Data Processing',
           body: [
-            `The app offers an optional AI coach. When a message is sent, only anonymized progress context (days smoke-free, cigarettes avoided, savings, triggers) is processed; no identifying information such as name, phone, or email is ever sent to the API. The external LLM service may be operated by a third-party provider.`,
+            `The app offers an optional AI coach. When you send a message, your free-text message and anonymized progress context (days smoke-free, cigarettes avoided, savings, trigger categories) are sent to an AI provider to generate a reply. We do not ask for your name, phone, or email, but do not type identifying information into the chat. No API key is stored in the app; a server-side proxy is required for production. AI replies may be inaccurate and can be reported in-app.`,
           ],
         },
         {
@@ -338,6 +356,12 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         {
           heading: '6. Contact',
           body: [`For questions: ${SUPPORT_EMAIL}`],
+        },
+        {
+          heading: '7. Google Play Compliance Supplement',
+          body: [
+            `This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition. Consult a healthcare professional for medical advice. PRO subscriptions auto-renew; cancellation and refunds follow Google Play policy. Users under 18 must not use the app.`,
+          ],
         },
       ],
     },

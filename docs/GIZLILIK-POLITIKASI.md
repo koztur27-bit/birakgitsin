@@ -1,153 +1,136 @@
-# Bırak Gitsin — Gizlilik Politikası (Taslak)
+# Bırak Gitsin / Let It Go — Gizlilik Politikası
 
-**Yürürlük tarihi:** 14 Kasım 2026  
-**Son güncelleme:** 14 Kasım 2026  
-**Veri sorumlusu:** [Ad Soyad / Şirket unvanı]  
-**Adres:** [Açık adres]  
-**E-posta:** koztur.27@gmail.com  
-**Web:** [https://alanadi.com]
+**Yürürlük tarihi:** 24 Kasım 2026  
+**Son güncelleme:** 24 Kasım 2026  
+**E-posta / destek / KVKK başvurusu:** koztur.27@gmail.com  
+**Veri sorumlusu:** [GERÇEK AD SOYAD / ŞİRKET UNVANI — YAYINDAN ÖNCE DOLDURULMALI]  
+**Adres:** [GERÇEK AÇIK ADRES — YAYINDAN ÖNCE DOLDURULMALI]  
+**Web:** https://koztur27-bit.github.io/birakgitsin/
 
-> Bu metin bir taslaktır. Yayına almadan önce gerçek şirket/kişi bilgileri, barındırma sağlayıcıları ve mağaza gereksinimleriyle uyumlu hale getirilmeli; gerekiyorsa hukuk danışmanına inceletilmelidir.
+> **YAYIN ÖNESİ ZORUNLULUK:** Köşeli parantezli veri sorumlusu kimliği ve adresi gerçek bilgilerle değiştirilmelidir. Bu alanlar doldurulmadan Play Console'da yayın yapılmamalıdır.
 
 ---
 
 ## 1. Kısa özet
 
-- Bırak Gitsin **hesap açmanı istemez**; ad, e-posta veya telefon numarası toplamaz.
-- Planın, sigara kayıtların, kriz notların ve rozetlerin **telefonunda** saklanır.
-- Verilerini **reklam profili** için kullanmıyor, satmıyor veya üçüncü taraflarla paylaşmıyoruz.
-- Verilerini istediğin zaman **panoya kopyalayarak** yedekleyebilir, uygulama içinden silebilirsin.
-- Uygulama; bildirim, kendi kendini güncelleme ve isteğe bağlı ses çalma için bazı cihaz izinleri kullanır.
+- Uygulama **hesap açmanı istemez**; ad, e-posta veya telefon numarası toplamaz.
+- Planın, sigara/kriz kayıtların, tetikleyicilerin, rozetlerin ve ayarların **yalnızca cihazında**, uygulamanın özel depolama alanında tutulur.
+- **Android yedekleme kapalıdır** (`android:allowBackup=false`); sağlık davranışı verileri Google Drive yedeğine veya başka bir cihaza otomatik kopyalanmaz.
+- Verilerin panoya kopyalanarak manuel yedeklenmesi mümkündür. Pano içeriği işletim sistemi ve diğer uygulamalar tarafından okunabilir; işiniz bitince panoyu temizleyin.
+- Reklam (ödüllü AdMob), abonelik (Google Play Billing), isteğe bağlı AI koç ve güncelleme kontrolü (Expo Updates) sınırlı teknik amaçlarla üçüncü taraf hizmetleri kullanır.
+- Verileriniz **satılmaz** ve reklam profili oluşturmak için kullanılmaz.
+- Uygulama **tıbbi cihaz değildir**; tıbbi tavsiye, tanı veya tedavi sunmaz.
 
 ---
 
-## 2. Hangi veriler işlenir?
+## 2. İşlenen veriler
 
-### 2.1 Yalnızca cihazında saklanan veriler
+### 2.1 Yalnızca cihazda tutulan veriler
 
-| Veri | Amaç | Zorunlu mu? |
+| Veri | Amaç | Zorunluluk |
 |---|---|---|
-| Sigara azaltma planı (başlangıç tarihi, günlük taban, haftalık azaltma, paket fiyatı, izinli saatler) | Günlük hedef ve tasarruf hesaplama | Evet, uygulamanın çalışması için |
-| Günlük sigara kayıtları (tarih, adet, saat, pencere) | İlerleme, istatistik, haftalık rapor | Evet |
-| Kriz kayıtları (zaman, dayanıldı mı, şiddet, tetikleyici) | Riskli saat/tetikleyici analizi, kişisel öneriler | İsteğe bağlı |
-| Rozetler ve uygulama ayarları | Motivasyon ve tercihler | Evet |
-| Premium durumu (yerel işaret) | Özellik erişimi | Satın alma yapılırsa |
+| Plan (başlangıç anı, günlük taban, haftalık azaltma, izinli saatler, para birimi) | Günlük hedef, tasarruf ve ilerleme | Evet |
+| Günlük sigara kayıtları (tarih, adet, saat, pencere) | İstatistik ve hedef takibi | Evet |
+| Kriz kayıtları (zaman, dayanıldı mı, şiddet, tetikleyici kategorisi) | Tetikleyici analizi, kişisel öneriler | İsteğe bağlı |
+| Dayanma sayacı, rozetler, bildirim tercihleri, dil/tema | Motivasyon ve tercihler | Evet |
+| Motivasyon fotoğrafı (seçilirse) | Kişisel motivasyon | İsteğe bağlı, yalnızca cihazda |
+| PRO abonelik durumu | Özellik erişimi | Satın alma olursa; Play onayıyla |
 
-Bu veriler uygulamanın özel depolama alanında (AsyncStorage) tutulur. Sunucumuza yüklenmez. Uygulamayı silmen veya “Tüm Verileri Sıfırla” seçeneğini kullanman hâlinde cihazdaki veriler silinir.
+Bu veriler sunucuya yüklenmez. “Tüm Verileri Sıfırla” veya uygulamayı kaldırma işlemi yerel verileri siler.
 
-**Önemli:** Yedekleme özelliğini kullandığında verilerin **panoya** kopyalanır. Pano, işletim sistemi ve diğer uygulamalar tarafından okunabilir. Yedeği yalnızca güvendiğin bir yere yapıştır; işini bitince panoyu temizle.
+### 2.2 Google Play Billing
 
-### 2.2 Cihazda işlenen, sunucuya gönderilmeyen veriler
+Abonelik (`pro_monthly`, `pro_yearly`) Google Play altyapısında yürür. Kart bilgilerini görmez, saklamaz ve iletmezsiniz; Play faturalandırma akışını yönetir. PRO yetkisi yalnızca Play'den gelen onaylı satın alma olayıyla açılır; yedekten veya elle değiştirilmiş dosyadan devralınmaz.
 
-- **Bildirimler:** Hatırlatma ve dayanma sayacı bildirimleri cihazda planlanır. Bildirim izni vermezsen bu özellik çalışmaz; uygulamanın geri kalanı çalışır.
-- **Ses ve titreşim:** Uyarı sesi cihazda çalınır. Uygulama ses kaydı yapmaz.
-- **Kurulum izni:** Kendi kendini güncelleme özelliği, indirilen APK'yı yükleyebilmek için “bilinmeyen kaynaklardan uygulama yükleme” izni ister. Bu izin yalnızca senin başlattığın güncelleme için kullanılır.
+### 2.3 Reklamlar (AdMob)
 
-### 2.3 Güncelleme hizmeti
+Uygulama isteğe bağlı ödüllü reklamlar (AI koç kullanım sınırını kaldırma) gösterebilir. Google AdMob; reklam sunumu, ölçümleme ve dolandırıcılığın önlenmesi amacıyla reklam kimliği, IP adresi, yaklaşık konum ve uygulama etkileşimi gibi verileri kendi politikasına göre işleyebilir. Reklam izni/tercihleri Android ayarlarından yönetilebilir.
 
-Uygulama, JavaScript paket güncellemelerini almak için Expo Updates altyapısına (u.expo.dev) bağlanabilir. Bu istek sırasında cihaz/uygulama sürümü, istek zamanı ve IP adresi gibi teknik veriler ilgili sağlayıcı tarafından işlenebilir. Bu veriler kimliğini doğrudan tanımlamaz ve tarafımızca reklam amacıyla kullanılmaz. Güncelleme kontrolü için internet bağlantısı gerekir; uygulamanın çekirdek özellikleri çevrimdışı çalışır.
+### 2.4 AI koç
 
-### 2.4 Toplamadığımız veriler
+AI koç isteğe bağlıdır. Mesaj gönderdiğinizde **sizin yazdığınız serbest metin** ve anonim ilerleme sayıları (bırakma günü, içilmeyen sigara sayısı, tasarruf, tetikleyici **kategorileri**) yanıt üretmek için AI sağlayıcısına iletilir. İsim, e-posta, telefon veya konum gönderilmez; ancak serbest metne kendiniz kimlik bilgisi yazarsanız bu bilgi de iletilir — lütfen yazmayın. İstemcide API anahtarı saklanmaz; üretimde sunucu tarafı proxy kullanılmalıdır. AI çıktısı hatalı olabilir; her yanıtın altında uyarı ve uygulama içi bildirim (report) bulunur.
 
-- Ad, soyad, e-posta, telefon numarası
-- Konum
-- Kişiler, fotoğraflar, mesajlar
-- Reklam kimliği
-- Sağlık verisi satışı veya profillemesi
+### 2.5 Güncelleme ve teknik veriler
 
-Uygulamada reklam ağı, üçüncü taraf analitik veya sosyal medya takip kiti bulunmamaktadır. İleride eklenecek olursa bu politika güncellenecek ve gerekli onaylar alınacaktır.
+Expo Updates güncelleme kontrolü sırasında uygulama sürümü, istek zamanı ve IP adresi gibi teknik veriler sağlayıcı tarafından işlenebilir. Play/kullanıcı sürümünde HTTP tabanlı APK güncelleyici arayüzü gizlidir; yalnızca geliştirme derlemesinde bulunur. Çekirdek özellikler çevrimdışı çalışır.
 
----
+### 2.6 Toplamadığımız veriler
 
-## 3. İşleme hukuki dayanağı (KVKK / GDPR)
-
-- **Sözleşmenin ifası / hizmetin sunulması:** Plan ve kayıtların cihazda işlenmesi.
-- **Açık rıza:** İsteğe bağlı kriz kayıtları, bildirim izni ve yedekleme eylemi.
-- **Meşru menfaat:** Uygulama güvenliği, hata giderme ve temel güncelleme kontrolü.
-- **Hukuki yükümlülük:** Mağaza/mevzuat gereklilikleri (varsa).
-
-Özel nitelikli sağlık verisi niteliğinde olabilecek kayıtlar yalnızca cihazında ve senin kontrolünde tutulur; açık rızan olmadan işlenmez veya aktarılmaz.
+Ad, soyad, e-posta, telefon, konum, kişiler, mesajlar, fotoğraf galerisi (motivasyon fotoğrafı kullanıcı seçimi dışında), sağlık verisi satışı, reklam profillemesi.
 
 ---
 
-## 4. Veri paylaşımı
+## 3. Hukuki dayanak (KVKK / GDPR / UK GDPR)
 
-Verilerin satılmaz, kiralanmaz veya reklam amacıyla paylaşılmaz. Sınırlı teknik hizmet sağlayıcıları:
+- **Sözleşmenin ifası / hizmetin sunulması:** plan, kayıt ve sayaçların cihazda işlenmesi.
+- **Açık rıza (KVKK m.11 / GDPR Art.9(2)(a)):** sigara kullanımı ve kriz kayıtları özel nitelikli sağlık verisi niteliğinde olabilir. Uygulamayı kullanmaya devam ederek bu verilerin yalnızca cihazınızda işlenmesine yönelik hizmeti kabul edersiniz; AI koç ve bildirimler ayrıca isteğe bağlıdır ve rıza geri çekilebilir.
+- **Meşru menfaat:** güvenlik, hata giderme, temel güncelleme kontrolü.
+- **Hukuki yükümlülük:** mağaza/mevzuat gereklilikleri.
 
-- **Expo / EAS:** Güncelleme dağıtımı ve derleme altyapısı.
-- **Google Play / Apple App Store:** Uygulama dağıtımı, ödeme ve mağaza hizmetleri (satın alma etkinse).
-- **Barındırma / e-posta sağlayıcısı:** Yalnızca destek talebi gönderirsen.
+Yurt dışına aktarım yalnızca yukarıdaki teknik sağlayıcıların hizmeti kapsamında, sözleşmeleri ve KVKK/GDPR aktarım koşulları çerçevesinde olur.
 
-Bu sağlayıcılar kendi gizlilik politikalarına tabidir. Yasal zorunluluk hâlinde yetkili kamu kurumlarıyla yalnızca talep edilen veriyle sınırlı paylaşım yapılabilir.
+---
+
+## 4. Bölgesel haklar
+
+- **Türkiye (KVKK):** erişim, düzeltme, silme, itiraz, taşınabilirlik ve rızayı geri çekme. Başvuru: koztur.27@gmail.com — 30 gün içinde yanıt.
+- **AB/EEA (GDPR) ve İngiltere (UK GDPR):** erişim, düzeltme, silme, kısıtlama, itiraz, taşınabilirlik; ayrıca yetkili denetleyici kuruma şikâyet hakkı. Veri sorumlusu kimliği yukarıda belirtilmelidir.
+- **Kaliforniya (CCPA/CPRA):** Veri satışı veya "sharing" yapılmaz; hassas kişisel bilgi satışı yapılmaz. Silme/düzeltme/erişim ve ayrımcılığa uğramama hakları geçerlidir; koztur.27@gmail.com üzerinden kullanılabilir.
 
 ---
 
 ## 5. Saklama süresi
 
-Veriler, uygulamayı silene veya “Tüm Verileri Sıfırla” seçeneğini kullanana kadar cihazında kalır. Sunucumuzda kullanıcı hesabı veya yedeği tutulmadığı için ayrıca saklama süresi yoktur. Destek e-postası gönderirsen, talebin çözülmesi için makul süre (en fazla 1 yıl) saklanır.
+Veriler uygulamayı silene veya sıfırlayana kadar cihazda kalır. Destek e-postaları talep çözümü için en fazla 1 yıl saklanır. Yedekten PRO yetkisi devralınmaz.
 
 ---
 
-## 6. Hakların
+## 6. Güvenlik
 
-KVKK ve GDPR kapsamında:
-
-- Verilerine erişme,
-- Düzeltme,
-- Silme (uygulama içinden veya cihaz ayarlarından),
-- İşlemeye itiraz etme,
-- Veri taşınabilirliği (panoya kopyalama),
-- Rızayı geri çekme
-
-haklarına sahipsin. Talepler için **koztur.27@gmail.com** adresine yazabilirsin. Kimliğini doğrulamak için makul bilgi istenebilir; yanıt en geç 30 gün içinde verilir.
+Uygulama özel depolama, Android yedekleme kapatma (`allowBackup=false`), kilit ekranı bildirimlerinde `PRIVATE` görünürlük, HTTPS üzerinden güncelleme/AI isteği ve Play faturalandırma kullanır. Cihaz kilidi ve işletim sistemi güncellemeleri kullanıcı sorumluluğundadır.
 
 ---
 
 ## 7. Çocukların gizliliği
 
-Bırak Gitsin 18 yaş ve üzeri kullanıcılar için tasarlanmıştır. 18 yaş altındaki kişilerden bilerek veri toplamayız. Böyle bir durum fark edilirse ilgili veriler silinir.
+Uygulama **18 yaş ve üzeri** yetişkinler içindir (ABD'de tütün ürünleri için yasal yaş 21'dir). 18 yaş altındaki kişilerden bilerek veri toplanmaz; tespit edilirse silinir.
 
 ---
 
-## 8. Güvenlik
+## 8. Tıbbi sorumluluk reddi (Google Play zorunlu metin)
 
-- Veriler cihazın uygulama özel alanında tutulur.
-- Ağ üzerinden güncelleme indirilirken HTTPS kullanılır.
-- Uygulama, indirilen APK'nın kurulumunu yalnızca kullanıcı onayıyla başlatır.
-- Cihazının kilidini ve işletim sistemi güncellemelerini açık tutman önerilir.
-
-Hiçbir sistem %100 güvenli değildir. Cihazın kaybolur veya başkasının eline geçerse, uygulama verilerine erişilebilir. Bu nedenle cihaz kilidi ve gerekiyorsa şifreli yedek kullan.
+**Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez.** İçerik genel bilgilendirme ve motivasyon amaçlıdır. Tıbbi tavsiye, tanı veya tedavi için bir sağlık uzmanına danışın. Hamilelik, kronik hastalık, ilaç kullanımı veya ciddi yoksunluk belirtilerinde önce hekiminize başvurun. Acil durumda yerel acil numarayı (AB/İngiltere 112, ABD 911, Türkiye 112) arayın; ruhsal krizde ALO 182 (TR), 988 (ABD), 116 123 Samaritans (İngiltere).
 
 ---
 
-## 9. Sağlık feragatnamesi
+## 9. Yapay zekâ şeffaflığı (EU AI Act / Play Generated Content)
 
-Bırak Gitsin bir tıbbi cihaz, teşhis veya tedavi aracı değildir. İçerik ve öneriler genel bilgilendirme amaçlıdır; doktor, eczacı veya diğer sağlık profesyonellerinin tavsiyesinin yerini almaz. Hamilelik, kalp/akciğer hastalığı, psikiyatrik durumlar, ilaç kullanımı veya ciddi yoksunluk belirtileri varsa önce bir sağlık profesyoneline danış. Acil durumda **112**'yi ara.
-
----
-
-## 10. Politika değişiklikleri
-
-Bu politika güncellenirse yürürlük tarihi ve “son güncelleme” alanı değiştirilir; önemli değişiklikler uygulama içinde veya mağaza sayfasında duyurulur. Değişiklikten sonra uygulamayı kullanmaya devam etmen, güncel politikayı kabul ettiğin anlamına gelir.
+AI koç, yapay zekâ tarafından üretilen metinler sunar. Sistem, tıbbi tavsiye/ilaç dozu önermeyecek şekilde yönlendirilir; çıktı otomatik olarak filtrelenir ve güvenli olmayan yanıtlar yerel yanıtlara düşürülür. Kullanıcılar her yanıtın altındaki **“Bu yanıtı bildir”** bağlantısıyla içerik bildirebilir. AI destekli olmayan tamamen yerel yanıtlar da mevcuttur.
 
 ---
 
-## 11. İletişim
+## 10. Değişiklikler ve iletişim
 
-**Veri sorumlusu:** [Ad Soyad / Şirket]  
+Politika güncellenirse tarih değiştirilir; önemli değişiklikler uygulama/mağaza üzerinden duyurulur.
+
 **E-posta:** koztur.27@gmail.com  
-**Adres:** [Açık adres]  
-**KVKK başvuru:** koztur.27@gmail.com
+**Veri sorumlusu / adres:** yayından önce doldurulmalı.
 
 ---
 
-## 12. Mağaza “Veri güvenliği” özeti (Google Play formu için)
+## 11. Google Play “Veri güvenliği” formu — önerilen işaretler
 
-- Veri toplanıyor mu? **Hayır** (hesap yok; veriler cihazda).
-- Veri paylaşılıyor mu? **Hayır** (reklam/analitik yok).
-- Veriler aktarım sırasında şifreli mi? **Evet** (HTTPS güncelleme).
-- Veriler silinebilir mi? **Evet** (uygulama içi sıfırlama / uygulamayı kaldırma).
-- Bağımsız güvenlik incelemesi: **Yok** (varsa güncellenir).
-- Toplanan veri türleri: **Yok** (yalnızca cihazda işlenen kullanıcı içeriği).
-
-> Not: Güncelleme hizmeti nedeniyle teknik veri işlenmesi varsa, mağaza formunda “Uygulama etkinliği / cihaz kimlikleri” bölümü sağlayıcı sözleşmesine göre işaretlenmelidir. Formu yayından önce Expo/EAS veri işleme koşullarıyla karşılaştır.
+| Soru | Yanıt |
+|---|---|
+| Veri toplanıyor mu? | **Evet** (uygulama içi kullanım verileri, tanımlayıcılar, satın alma bilgileri — aşağıdaki amaçlarla) |
+| Uygulama etkinliği | **Evet** (özellikle reklam ölçümü ve güncelleme kontrolü; AI koç kullanım sayısı cihazda) |
+| Cihaz kimlikleri / reklam kimliği | **Evet** (AdMob, izin/ayara bağlı) |
+| Satın alma bilgileri | **Evet** (Google Play Billing) |
+| Kişisel bilgiler | **Hayır** (ad/e-posta/telefon toplanmaz) |
+| Hassas bilgi (sağlık) | Uygulama içi veriler cihazda; sunucuya gönderilmez. AI koç serbest metni gönderir → formda **Evet, kullanıcı içeriği** olarak beyan edilmelidir. |
+| Amaçlar | Uygulama işlevleri, reklam, satın alma doğrulama, güvenlik |
+| Paylaşım | **Evet** — hizmet sağlayıcılar (Google/AdMob, Play Billing, Expo, AI sağlayıcısı) |
+| Satış | **Hayır** |
+| Şifreli aktarım | **Evet** (HTTPS) |
+| Silme | **Evet** (uygulama içi sıfırlama / kaldırma) |
+| Bağımsız güvenlik incelemesi | **Hayır** |

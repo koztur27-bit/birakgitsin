@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -36,7 +37,7 @@ type Props = {
 export function ProScreen({ visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { t, ta } = useI18n();
+  const { t, ta, locale } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { data, setPremium } = useApp();
   const [products, setProducts] = useState<ProductInfo[]>(FALLBACK_PRODUCTS);
@@ -80,9 +81,14 @@ export function ProScreen({ visible, onClose }: Props) {
     setBusyId(id);
     try {
       const res = await purchasePro(id);
-      if (res.ok) {
-        setPremium(true);
-        Alert.alert(t('alerts.success'), t('pro.active'));
+      if (res.started) {
+        // Yetki yalnızca Google Play'den gelen onaylı satın alma olayıyla verilir.
+        Alert.alert(
+          locale === 'en' ? 'Payment in progress' : 'Ödeme devam ediyor',
+          locale === 'en'
+            ? 'PRO will activate automatically once Google Play confirms your payment.'
+            : 'Google Play ödemeni onayladığında PRO otomatik olarak açılacak.',
+        );
       } else if (res.message) {
         Alert.alert(t('alerts.error'), res.message);
       }
@@ -183,6 +189,11 @@ export function ProScreen({ visible, onClose }: Props) {
 
           <View style={styles.legalBox}>
             <Text style={styles.legalText}>{t('pro.subscriptionLegal')}</Text>
+            <Pressable onPress={() => Linking.openURL('https://support.google.com/googleplay/answer/2476088').catch(() => {})}>
+              <Text style={styles.legalLink}>
+                {locale === 'en' ? 'Google Play refund policy' : 'Google Play iade politikası'}
+              </Text>
+            </Pressable>
             <View style={styles.legalLinks}>
               <Pressable onPress={() => setLegalDoc('privacy')}>
                 <Text style={styles.legalLink}>{t('pro.privacyPolicy')}</Text>

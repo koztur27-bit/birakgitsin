@@ -13,7 +13,7 @@ export type ProductInfo = {
 export const PRODUCT_IDS: ProductId[] = ['pro_monthly', 'pro_yearly'];
 // Lifetime pro is discontinued/cancelled as a purchasable plan, but keep recognizing
 // existing lifetime purchases for entitlement restore safety.
-const ENTITLEMENT_PRODUCT_IDS = ['pro_monthly', 'pro_yearly', 'pro_lifetime'];
+export const ENTITLEMENT_PRODUCT_IDS = ['pro_monthly', 'pro_yearly', 'pro_lifetime'];
 
 export const FALLBACK_PRODUCTS: ProductInfo[] = [
   {
@@ -138,13 +138,13 @@ export async function fetchProProducts(): Promise<ProductInfo[]> {
   }
 }
 
-export async function purchasePro(productId: ProductId): Promise<{ ok: boolean; message?: string }> {
+/** Yalnızca Play ödeme akışını başlatır; PRO yetkisi purchase listener ile verilir. */
+export async function purchasePro(productId: ProductId): Promise<{ started: boolean; message?: string }> {
   const iap = getIap();
   if (Platform.OS === 'web' || !iap?.requestPurchase) {
     return {
-      ok: false,
-      message:
-        'Satın alma şu anda bu ortamda kullanılamıyor. Gerçek cihazda ve Play Store sürümünde test edebilirsin (test kimlikleri hazır).',
+      started: false,
+      message: 'Satın alma bu ortamda kullanılamıyor. Google Play sürümünden deneyin.',
     };
   }
   try {
@@ -156,13 +156,13 @@ export async function purchasePro(productId: ProductId): Promise<{ ok: boolean; 
           ? { skus: [productId], subscriptionOffers: [] }
           : { sku: productId },
     } as any);
-    return { ok: true };
+    return { started: true };
   } catch (e: any) {
     const msg = e?.message || String(e);
     if (/cancel/i.test(msg) || e?.code === 'E_USER_CANCELLED') {
-      return { ok: false, message: 'Satın alma iptal edildi.' };
+      return { started: false, message: 'Satın alma iptal edildi.' };
     }
-    return { ok: false, message: msg || 'Satın alma başlatılamadı.' };
+    return { started: false, message: msg || 'Satın alma başlatılamadı.' };
   }
 }
 

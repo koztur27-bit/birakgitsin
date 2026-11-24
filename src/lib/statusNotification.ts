@@ -87,7 +87,7 @@ export async function ensureStatusChannel(): Promise<void> {
       enableVibrate: true,
       enableLights: false,
       showBadge: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
     });
     channelReady = true;
   } catch {

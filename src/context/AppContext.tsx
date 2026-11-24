@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Linking, Platform, Vibration } from 'react-native';
 import { badgeById, evaluateBadges } from '../lib/badges';
+import { addPurchaseListeners, ENTITLEMENT_PRODUCT_IDS } from '../lib/billing';
 import { maybeRequestStoreReview } from '../lib/storeReview';
 import { cigarettesAvoided, formatCountdown, formatMoney, getLog, todayKey, totalMoneySaved } from '../lib/calculations';
 import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
@@ -115,7 +116,7 @@ async function ensureCrisisChannel() {
       vibrationPattern: [0, 120],
       enableVibrate: true,
       showBadge: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
     });
   } catch {
     // ignore
@@ -265,6 +266,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setReady(true);
     })();
   }, []);
+
+  // PRO yetkisi yalnızca Google Play'den onaylanmış satın alma olaylarıyla verilir.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    return addPurchaseListeners(
+      (productId) => {
+        if (productId && ENTITLEMENT_PRODUCT_IDS.includes(productId)) {
+          setData((prev) => (prev.isPremium ? prev : { ...prev, isPremium: true }));
+        }
+      },
+      () => {},
+    );
+  }, []);
+
+  useEffect(() => {
+    if (ready && data.isPremium) persistData(data).catch(() => {});
+    // yalnızca satın alma durumu değiştiğinde kalıcı yaz
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, data.isPremium]);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -850,7 +870,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               enabled: r.enabled !== false,
             }))
         : [],
-      isPremium: !!incoming.isPremium,
+      // Yedekten PRO yetkisi devralınmaz; Play'den "Satın alımları geri yükle" ile doğrulanır.
+      isPremium: false,
       proUnlockUntil:
         typeof incoming.proUnlockUntil === 'number' && Number.isFinite(incoming.proUnlockUntil)
           ? incoming.proUnlockUntil

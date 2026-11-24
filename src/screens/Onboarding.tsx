@@ -433,6 +433,11 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                 </Pressable>
               ))}
             </View>
+            <Text style={{ fontSize: 11, color: '#64748B', marginTop: spacing.md, lineHeight: 15 }}>
+              {locale === 'en'
+                ? 'Nicotine gum and patches are medicines. This app does not prescribe them or recommend a dose; talk to a doctor or pharmacist before use, especially if you are pregnant or have a chronic condition.'
+                : 'Nikotin sakızı ve bandı ilaçtır. Bu uygulama bunları reçete etmez veya doz önermez; özellikle hamileyseniz veya kronik hastalığınız varsa kullanmadan önce doktorunuza ya da eczacınıza danışın.'}
+            </Text>
           </Card>
         )}
       </ScrollView>

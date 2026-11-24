@@ -43,6 +43,17 @@ export async function initAds(): Promise<boolean> {
   const ads = getAds();
   if (!ads?.default) return false;
   try {
+    // GDPR/EEA/UK: reklam amacıyla cihaz bilgilerine erişim öncesi onay iste.
+    if (ads.AdsConsent?.requestInfoUpdate) {
+      try {
+        const info = await ads.AdsConsent.requestInfoUpdate({ tagForUnderAgeOfConsent: false });
+        if (info?.isConsentFormAvailable && ads.AdsConsent.showForm) {
+          await ads.AdsConsent.showForm();
+        }
+      } catch {
+        // Onay altyapısı yoksa non-personalized reklam akışına devam et.
+      }
+    }
     if (!mobileAdsInitialized) {
       await ads.default().initialize();
       mobileAdsInitialized = true;

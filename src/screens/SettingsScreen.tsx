@@ -535,6 +535,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           </View>
         </Card>
 
+        {!IS_USER_RELEASE && (
         <Card>
           <Text style={styles.cardLabel}>Güncelleme</Text>
           <Text style={styles.planSub}>
@@ -554,6 +555,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
             </Pressable>
           </View>
         </Card>
+        )}
 
         {isWeb && (
           <Card>

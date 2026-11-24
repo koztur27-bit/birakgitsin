@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 95,
+      "versionCode": 96,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -89,6 +89,7 @@
         }
       ],
       "./plugins/withNotificationIcon.js",
+      "./plugins/withNoBackup.js",
       "./plugins/withProguardRules.js",
       "./plugins/withReleaseSigning.js",
       "./plugins/withAppNameLocalization.js"

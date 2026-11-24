@@ -99,7 +99,9 @@ export function HealthScreen() {
         ))}
 
         <Card style={styles.nextCard}>
-          <Text style={styles.nextLabel}>Sıradaki sağlık kazancı</Text>
+          <Text style={styles.nextLabel}>
+            {isEn ? 'Next information window' : 'Sıradaki bilgilendirme aralığı'}
+          </Text>
           {nextMilestone ? (
             <>
               <Text style={styles.nextTitle}>
@@ -120,14 +122,18 @@ export function HealthScreen() {
         <Card style={styles.overviewCard}>
           <View style={styles.overviewTop}>
             <View>
-              <Text style={styles.overviewLabel}>Genel iyileşme</Text>
+              <Text style={styles.overviewLabel}>
+                {isEn ? 'Overall information' : 'Genel bilgilendirme'}
+              </Text>
               <Text style={styles.overviewTime}>{formatDuration(elapsed)}</Text>
             </View>
             <Text style={styles.overviewPercent}>%{overall}</Text>
           </View>
           <ProgressBar progress={overall / 100} color={colors.success} height={10} />
           <Text style={styles.overviewHint}>
-            Dört kazanımın ortalama ilerlemesi. Her biri kendi süresinde tamamlanır.
+            {isEn
+              ? 'Average progress of four informational timelines. No medical measurement is performed.'
+              : 'Dört bilgilendirme zaman çizelgesinin ortalama ilerlemesi. Tıbbi ölçüm yapılmaz.'}
           </Text>
         </Card>
 
@@ -242,6 +248,11 @@ export function HealthScreen() {
                     : `Bu hedefte %100 için yaklaşık ${Math.max(0, Math.ceil(selected.remainingDays))} gün kaldı (${selected.targetDays} günlük hedef).`}
                 </Text>
               ) : null}
+              <Text style={[styles.modalText, { fontSize: 11, color: '#64748B', marginTop: 8 }]}>
+                {isEn
+                  ? 'General informational estimate only. Not a medical measurement, diagnosis, or guarantee.'
+                  : 'Yalnızca genel bilgilendirme tahmini. Tıbbi ölçüm, tanı veya garanti değildir.'}
+              </Text>
               <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedOrgan(null)}>
                 <Text style={styles.modalCloseText}>{t('health.bodyMapClose')}</Text>
               </Pressable>

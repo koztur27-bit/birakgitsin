@@ -46,7 +46,7 @@ NELER VAR?
 • Haftalık koç raporu ve paylaşılabilir özet
 • Kilit ekranı bildirimi ve dayanma sayacı
 • Karanlık modda okunabilen sade arayüz
-• Hesap yok, reklam yok, veriler cihazında
+• Hesap yok, veriler cihazında • İsteğe bağlı ödüllü reklam var
 
 NASIL ÇALIŞIR?
 1. Günde kaç sigara içtiğini ve haftada kaç azaltmak istediğini seç.
@@ -59,7 +59,7 @@ GİZLİLİK
 Bırak Gitsin hesap açmanı istemez. Planın, kayıtların ve kriz notların telefonunda saklanır. Verilerini istediğin zaman panoya kopyalayarak yedekleyebilirsin. Sağlık verisi satmıyoruz; reklam profili oluşturmuyoruz.
 
 ÖNEMLİ
-Bırak Gitsin bir tıbbi cihaz veya tedavi değildir; bir sağlık profesyonelinin yerini almaz. Hamilelik, kalp hastalığı, akciğer hastalığı veya ilaç kullanımı gibi durumlarda önce doktoruna danış. Nikotin yoksunluğu ciddi olabilir; destek almakta tereddüt etme.
+Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez (This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition). Tıbbi tavsiye, tanı veya tedavi için bir sağlık uzmanına danışın. Hamilelik, kalp hastalığı, akciğer hastalığı veya ilaç kullanımı gibi durumlarda önce doktoruna danış. Nikotin yoksunluğu ciddi olabilir; destek almakta tereddüt etme.
 
 Bırak Gitsin, sigarayı azaltarak bırakmak isteyenler için Türkçe, sade ve mahremiyete saygılı bir yol arkadaşıdır.
 ```
@@ -68,8 +68,8 @@ Bırak Gitsin, sigarayı azaltarak bırakmak isteyenler için Türkçe, sade ve 
 - Kategori: Sağlık ve Fitness
 - Etiketler: sigara bırakma, nikotin, sağlık, alışkanlık, yaşam tarzı
 - İçerik derecelendirmesi: 18+ / yetişkin (sigara ve nikotin içeriği)
-- Reklam: yok
-- Uygulama içi satın alma: varsa “var” olarak işaretle; yoksa “yok”
+- Reklam: var — isteğe bağlı ödüllü reklam (AdMob); gizlilik politikasında beyan edilir
+- Uygulama içi satın alma: **var** (`pro_monthly`, `pro_yearly`) — Play Console ürünleri tanımlanmalı
 
 ---
 

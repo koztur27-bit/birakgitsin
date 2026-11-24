@@ -23,6 +23,7 @@ import {
   dailyGoal,
   daysSinceStart,
   elapsedDays,
+  healthElapsedDays,
   formatDayShort,
   formatDuration,
   formatMoney,
@@ -125,7 +126,7 @@ export function StatsScreen() {
   const monthOver = monthLogs.filter((l) => (l.smoked || 0) > dailyGoal(plan, l.date, logs)).length;
   const officialDaysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
   const badgesWon = badges.length;
-  const elapsed = elapsedDays(plan);
+  const elapsed = healthElapsedDays(plan);
   const reachedCount = list.filter((m) => elapsed >= m.days).length;
   const nextHealth = list[reachedCount];
   const prevHealthDays = reachedCount > 0 ? list[reachedCount - 1].days : 0;
@@ -470,6 +471,11 @@ export function StatsScreen() {
 
         <Card>
           <Text style={styles.cardLabel}>{isEn ? 'Health milestones' : 'Sağlık kilometre taşları'}</Text>
+          <Text style={styles.cardHint}>
+            {isEn
+              ? 'General informational trends, not medical predictions. This app is not a medical device; consult a healthcare professional.'
+              : 'Bilgilendirme amaçlı genel eğilimlerdir, tıbbi tahmin değildir. Bu uygulama bir tıbbi cihaz değildir; bir sağlık uzmanına danışın.'}
+          </Text>
           {nextHealth ? (
             <>
               <Text style={styles.healthNext}>

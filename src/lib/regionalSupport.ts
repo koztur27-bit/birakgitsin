@@ -61,8 +61,9 @@ export function supportLines(region: Region, locale: 'tr' | 'en'): SupportLine[]
   if (region === 'TR') {
     return [
       { id: 'alo171', label: en ? 'ALO 171 Smoking Cessation Hotline' : 'ALO 171 Sigara Birakma Danisma Hatti', number: '171', action: 'call' },
+      { id: 'mental', label: en ? 'ALO 182 Mental Health Support' : 'ALO 182 Ruh Sagligi Destek Hatti', number: '182', action: 'call' },
       { id: 'yedam', label: en ? 'YEDAM (Green Crescent Counseling)' : 'YEDAM (Yesilay Danisma Merkezi)', number: '115', action: 'call' },
-      { id: 'emergency', label: en ? 'Emergency Services' : 'Acil Servis', number: '112 / 183', action: 'call' },
+      { id: 'emergency', label: en ? 'Emergency Services' : 'Acil Servis', number: '112', action: 'call' },
     ];
   }
   if (region === 'US') {
@@ -75,7 +76,8 @@ export function supportLines(region: Region, locale: 'tr' | 'en'): SupportLine[]
   if (region === 'GB') {
     return [
       { id: 'smokefree', label: en ? 'NHS Smokefree' : 'NHS Smokefree', number: '0300 123 1044', action: 'call' },
-      { id: 'emergency', label: en ? 'Emergency Services' : 'Acil Servis', number: '999 / 112', action: 'call' },
+      { id: 'samaritans', label: en ? 'Samaritans (mental health)' : 'Samaritans (ruh sagligi)', number: '116123', action: 'call' },
+      { id: 'emergency', label: en ? 'Emergency Services' : 'Acil Servis', number: '999', action: 'call' },
     ];
   }
   if (region === 'EU') {
