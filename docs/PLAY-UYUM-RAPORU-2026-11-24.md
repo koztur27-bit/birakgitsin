@@ -93,7 +93,7 @@ Google Play'in yapay zekâ içeren uygulamalar için öne çıkan gereksinimleri
 
 - Manifest'te yalnızca `POST_NOTIFICATIONS` var; kamera, konum, mikrofon, depolama, SYSTEM_ALERT_WINDOW blocked. ✅
 - `targetSdkVersion 36`, imza DN `CN=Birak Gitsin`, SHA-256 doğrulandı. ✅
-- `versionCode 98` (bu tur: vc97 yaş kapısı + yerelleştirme, vc98 R8/minify).
+- `versionCode 99` (vc97 yaş kapısı + yerelleştirme, vc98 R8/minify, vc99 R8 ayarlarını kalıcı Expo plugin’ine taşıma + klon/Resmi Kaynak dokümanları). CI: [#45475332005](https://github.com/koztur27-bit/birakgitsin/actions/runs/45475332005) ✅.
 - Kodi imzalı sürümlerde `expo-updates` var; Data Safety'de teknik veri olarak beyan edildi.
 
 ---
