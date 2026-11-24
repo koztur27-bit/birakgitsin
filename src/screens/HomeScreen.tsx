@@ -1008,7 +1008,7 @@ const createStyles = (colors: any) =>
     inviteShareBtnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
     inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
     heroTimerIcon: {
-      fontSize: fontSizes.lg,
+      fontSize: fontSizes.xl,
       color: 'rgba(255,255,255,0.85)',
     },
     heroTimerValue: {
