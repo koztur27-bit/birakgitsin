@@ -1,0 +1,38 @@
+# Birak Gitsin - R8/security keep rules (CI tarafindan android/app/proguard-rules.pro sonuna eklenir)
+# Hermes bytecode zaten akis/JS kaynagini duz metin olarak tasimaz; R8 native/kotlin tarafi kucultur ve karistirir.
+
+-keepattributes *Annotation*, InnerClasses, Signature, EnclosingMethod, SourceFile, LineNumberTable
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn org.conscrypt.**
+-dontwarn javax.annotation.**
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.firebase.**
+
+# React Native / Hermes / JSI - refleksle erisilen siniflar
+-keep class com.facebook.react.bridge.** { *; }
+-keep class com.facebook.react.turbomodule.** { *; }
+-keep class com.facebook.react.uimanager.** { *; }
+-keep class com.facebook.hermes.** { *; }
+-keep class com.facebook.jni.** { *; }
+-keep class com.facebook.soloader.** { *; }
+-keep class com.facebook.fbjni.** { *; }
+
+# Expo modules / generated module registry / task manager / notifications
+-keep class expo.modules.** { *; }
+-keep class com.birakgitsin.app.generated.** { *; }
+-keep @interface expo.modules.kotlin.modules.Module
+-keep class com.birakgitsin.app.BuildConfig { public static final *; }
+
+# Reanimated / gesture handler / screens
+-keep class com.swmansion.** { *; }
+
+# Google Play Billing, In-App Reviews, App Updates, AdMob
+-keep class com.google.android.play.core.** { *; }
+-keep class com.android.billingclient.** { *; }
+-keep class com.google.android.gms.ads.** { *; }
+-keep class com.google.android.gms.measurement.** { *; }
+-keep class com.google.firebase.** { *; }
+
+# WorkManager / foreground service altyapisi
+-keep class androidx.work.** { *; }
