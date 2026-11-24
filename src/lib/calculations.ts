@@ -508,7 +508,7 @@ export function healthRecovery(plan: Plan, now: number = Date.now()): HealthMetr
     {
       key: 'tasteSmell' as const,
       label: 'Tat / Koku',
-      emoji: '👃',
+      emoji: '🌼',
       days: 2,
       targetLabel: '2 gün',
       detail: 'Tat ve koku duyuların belirgin şekilde keskinleşir.',
@@ -556,7 +556,7 @@ export function bodyRenewalMap(plan: Plan, now: number = Date.now()): BodyRenewa
     { id: 'heart', emoji: '❤️', targetDays: 90 },
     { id: 'lungs', emoji: '🫁', targetDays: 270 },
     { id: 'blood', emoji: '🩸', targetDays: 1 },
-    { id: 'tasteSmell', emoji: '👃', targetDays: 14 },
+    { id: 'tasteSmell', emoji: '🌼', targetDays: 14 },
     { id: 'skinEnergy', emoji: '✨', targetDays: 60 },
   ];
   return defs.map((d) => {

@@ -1,4 +1,5 @@
 import { useTheme } from '../context/ThemeContext';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +20,21 @@ import {
   milestones,
 } from '../lib/calculations';
 import { fontSizes, radius, shadows, spacing } from '../theme';
+
+function OrganIconView({ id, size = 30 }: { id: BodyRenewalOrganId; size?: number }) {
+  switch (id) {
+    case 'heart':
+      return <MaterialCommunityIcons name="heart-pulse" size={size} color="#EF4444" />;
+    case 'lungs':
+      return <MaterialCommunityIcons name="lungs" size={size} color="#38BDF8" />;
+    case 'blood':
+      return <MaterialCommunityIcons name="water" size={size} color="#DC2626" />;
+    case 'tasteSmell':
+      return <MaterialCommunityIcons name="flower-outline" size={size} color="#F59E0B" />;
+    case 'skinEnergy':
+      return <Ionicons name="sparkles" size={size} color="#FACC15" />;
+  }
+}
 
 export function HealthScreen() {
   const { colors } = useTheme();
@@ -136,11 +152,11 @@ export function HealthScreen() {
                 ]}
                 onPress={() => setSelectedOrgan(organ.id)}
               >
-                <Text style={styles.organEmoji}>{organ.emoji}</Text>
-                <Text style={styles.organTitle} numberOfLines={2}>
+                <OrganIconView id={organ.id} size={30} />
+                <Text style={[styles.organTitle, done && styles.organTitleDone]} numberOfLines={2}>
                   {t(`health.bodyMapOrgans.${organ.id}.title`)}
                 </Text>
-                <Text style={[styles.organPercent, done && { color: '#059669' }]}>%{organ.percent}</Text>
+                <Text style={[styles.organPercent, done && styles.organPercentDone]}>%{organ.percent}</Text>
                 <View style={styles.organBarWrap}>
                   <View
                     style={[
@@ -149,7 +165,7 @@ export function HealthScreen() {
                     ]}
                   />
                 </View>
-                <Text style={styles.organTap}>{t('health.bodyMapTap')}</Text>
+                <Text style={[styles.organTap, done && styles.organTapDone]}>{t('health.bodyMapTap')}</Text>
               </Pressable>
             );
           })}
@@ -200,7 +216,7 @@ export function HealthScreen() {
           {selected ? (
             <View style={styles.modalCard}>
               <View style={styles.modalHead}>
-                <Text style={styles.modalEmoji}>{selected.emoji}</Text>
+                <OrganIconView id={selected.id} size={34} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.modalTitle}>{t(`health.bodyMapOrgans.${selected.id}.title`)}</Text>
                   <Text style={styles.modalPercent}>%{selected.percent} · {t('health.bodyMapProgress')}</Text>
@@ -294,12 +310,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     ...shadows.card,
   },
   organCardDone: { borderColor: '#34D399', backgroundColor: '#ECFDF5' },
-  organEmoji: { fontSize: 30 },
   organTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text, textAlign: 'center', minHeight: 36 },
+  organTitleDone: { color: '#064E3B' },
   organPercent: { fontSize: fontSizes.lg, fontWeight: '900', color: colors.primaryDark },
+  organPercentDone: { color: '#047857' },
   organBarWrap: { width: '100%', height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' },
   organBarFill: { height: '100%', borderRadius: 4 },
   organTap: { fontSize: fontSizes.xs, color: colors.textMuted, fontWeight: '600' },
+  organTapDone: { color: '#047857', fontWeight: '700' },
   metricCard: { gap: spacing.sm },
   metricTop: {
     flexDirection: 'row',
@@ -342,7 +360,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     ...shadows.card,
   },
   modalHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  modalEmoji: { fontSize: 36 },
   modalTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text },
   modalPercent: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark, marginTop: 2 },
   modalBarBg: { height: 10, borderRadius: 5, backgroundColor: colors.border, overflow: 'hidden', marginVertical: 4 },
