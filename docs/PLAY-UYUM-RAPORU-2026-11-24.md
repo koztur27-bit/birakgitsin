@@ -93,7 +93,7 @@ Google Play'in yapay zekâ içeren uygulamalar için öne çıkan gereksinimleri
 
 - Manifest'te yalnızca `POST_NOTIFICATIONS` var; kamera, konum, mikrofon, depolama, SYSTEM_ALERT_WINDOW blocked. ✅
 - `targetSdkVersion 36`, imza DN `CN=Birak Gitsin`, SHA-256 doğrulandı. ✅
-- `versionCode 96` (bu tur).
+- `versionCode 98` (bu tur: vc97 yaş kapısı + yerelleştirme, vc98 R8/minify).
 - Kodi imzalı sürümlerde `expo-updates` var; Data Safety'de teknik veri olarak beyan edildi.
 
 ---
@@ -141,6 +141,8 @@ Bölgesel destek hatları `detectRegion()` ile TR/US/GB/EU/JP/global seçiliyor;
 - `src/lib/legalContent.ts`, `docs/privacy-policy.html`, `docs/terms-of-use.html`, `docs/GIZLILIK-POLITIKASI.md`, `docs/MAGAZA-VE-LANSMAN.md` — yasal metinler
 - `docs/PLAY-UYUM-RAPORU-2026-11-24.md` — bu rapor
 
+**vc97/vc98 ekleri:** `src/components/AgeGate.tsx`, `src/i18n/translations.ts`, `src/lib/calculations.ts`, `plugins/withR8Security.js`, `proguard-rules.expo.append`, `.github/workflows/build.yml`, `docs/MAGAZA-VE-LANSMAN.md`.
+
 Doğrulama: `npx tsc --noEmit` ✅ · `npm run lint` ✅ (0 hata).
 
 ---
@@ -157,7 +159,36 @@ Doğrulama: `npx tsc --noEmit` ✅ · `npm run lint` ✅ (0 hata).
 
 ## 6. Ek önerilerim
 
-- **Yaş kapısı (opsiyonel ama önerilir):** İlk açılışta "18+ misin?" onayı ekleyebiliriz; Play content rating 18+ ile birlikte KVKK/çocuk verisi riskini daha da azaltır.
-- **Sunucu tarafı fatura doğrulaması:** Şu an client-side entitlement Play onayına bağlı ama root'lu cihazlarda manipülasyon teorik olarak mümkün. Ürün büyürse Play Developer API ile sunucu doğrulaması önerilir.
-- **Yerelleştirme temizliği:** `StatsScreen`/`HealthScreen` içinde hâlâ hardcoded Türkçe başlıklar var; İngilizce kullanıcı deneyimini etkiliyor. Sonraki turda tümünü `translations.ts`'e taşıyabiliriz.
+- ~~Yaş kapısı~~ **Tamamlandı (vc97):** `AgeGate` ilk açılışta 18+ onayı alıyor, yalnızca cihazda saklıyor; yedekten geri yüklemede tekrar soruluyor.
+- **Sunucu tarafı fatura doğrulaması (backend şartı):** Şu an client-side entitlement Play onayına bağlı ama root'lu cihazlarda manipülasyon teorik olarak mümkün. Play Developer API ile sunucu doğrulaması için backend gerekir.
+- ~~Yerelleştirme temizliği~~ **Tamamlandı (vc97):** Sağlık/istatistik başlıkları, 14 kilometre taşı, 4 sağlık kazanımı ve haftalık koç raporu `translations.ts`'e taşındı.
 - **Hukuki inceleme:** Özellikle KVKK açık rıza metni ve AB temsilcisi konusu bir avukat tarafından gözden geçirilmelidir.
+
+---
+
+## 7. Kod güvenliği, imza ve klon riski (vc98)
+
+**AAB şifrelenmez, imzalanır.** Şifreli AAB Play tarafından okunamaz ve reddedilir. Dosya HTTPS ile aktarılır, Play tarafında korunur; imza ise dosyanın bize ait olduğunu ve değişmediğini kanıtlar (dijital mühür). Aktarım güvenliği ile dosya şifrelemesi aynı şey değildir.
+
+**Play App Signing (Console'da yapılacak):**
+- İki anahtar vardır: **upload key** (`birakgitsin-release.jks`, CI'da AAB'yi imzalar; kaybolursa sıfırlanabilir) ve **app signing key** (Google'da saklanan asıl anahtar; kullanıcıya giden APK'ları imzalar).
+- İlk AAB yüklemesinde **“Use Google-generated app signing key”** seçilmelidir. Uygulama daha önce yayınlanmadığı için mevcut keystore'u app signing key olarak yüklemeye gerek yoktur.
+- Bundan sonra tüm AAB'ler aynı upload key ile imzalanmalıdır; farklı keystore Play tarafından reddedilir.
+- Keystore ve şifreler yalnızca GitHub Secrets + çevrimdışı yedekte; `.gitignore` ile repo dışında. ✅
+
+**Kod koruması:**
+- R8/minify + resource shrinking: `plugins/withR8Security.js` ile her prebuild'de açılır (`android.enableMinifyInReleaseBuilds=true`, `android.enableShrinkResourcesInReleaseBuilds=true`).
+- `proguard-rules.expo.append` → Expo Modules, React Native/Hermes/JSI, Reanimated, Play Billing/Review/Updates ve AdMob için keep kuralları.
+- R8 etkisi: kullanıcı APK **54.293.468 → 42.414.326 bayt** (~%22), AAB **41.8 MB → 36.6 MB**.
+- Hermes zaten açık (`hermesEnabled=true`); JS düz metin olarak paketlenmez.
+- **Sınır:** R8 ve Hermes kodu okunmayı **zorlaştırır**, imkânsız kılmaz. Metinler, görseller ve AI proxy adresi çıkarılabilir. Sırlar istemcide tutulmuyor (AI anahtarı yok, AdMob ID'leri sır değil). ✅
+
+**Kalan riskler ve backend gereksinimleri:**
+1. **Klon:** APK indirilip başka isimle yayınlanabilir. Mağaza açıklamasına “RESMİ KAYNAK” uyarısı eklendi. Tespitte Play IP/tedir formuyla kaldırtma yapılır; git commit geçmişi ve marka tescili delil olarak kullanılır.
+2. **Yerel PRO manipülasyonu:** Sunucu tarafı receipt doğrulaması olmadan root'lu cihazlarda aşılabilir → backend şartı.
+3. **Play Integrity API:** İstemcide token almak tek başına koruma sağlamaz; token'ın sunucuda doğrulanması gerekir → backend şartı. Backend gelince eklenecek.
+4. **AI proxy:** Endpoint görülebilir; gerçek AI açılırsa proxy'de API anahtarı, origin kontrolü ve rate limiting sunucuda olmalı.
+
+**Klon şikâyet şablonu (hazır metin):**
+
+> Merhaba, ben `com.birakgitsin.app` paket adlı “Bırak Gitsin / Let It Go” uygulamasının geliştiricisiyim. Resmi sürüm yalnızca Google Play ve App Store üzerinden yayınlanmaktadır. Aşağıdaki uygulama/URL bizim iznimiz olmadan adımızı, ikonumuzu ve/veya uygulama içeriğimizi kopyalamaktadır: [KLON PAKET ADI / URL]. Resmi sürüm: [PLAY STORE LINK]. Eser sahibi olduğuma dair deliller: özel GitHub deposundaki commit geçmişi ve [MARKA TESCİL NO, varsa]. İlgili içeriğin Google Play politikası uyarınca kaldırılmasını talep ediyorum. İletişim: koztur.27@gmail.com.
