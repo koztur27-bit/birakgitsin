@@ -202,6 +202,17 @@ jobs:
           cp "$AAB" ./birakgitsin-user-v${{ steps.ver.outputs.version }}.aab
           ls -lh ./birakgitsin-user-v${{ steps.ver.outputs.version }}.aab
 
+      - name: R8 mapping.txt topla
+        shell: bash
+        run: |
+          MAP="$(find android/app/build/outputs/mapping -type f -name 'mapping.txt' -print -quit 2>/dev/null)"
+          if [ -z "$MAP" ]; then
+            echo "UYARI: mapping.txt bulunamadi (R8 mapping ciktilanmadi)."
+            exit 0
+          fi
+          cp "$MAP" ./birakgitsin-mapping-v${{ steps.ver.outputs.version }}.txt
+          ls -lh ./birakgitsin-mapping-v${{ steps.ver.outputs.version }}.txt
+
       - name: Imza dogrulama (debug imza yasak)
         shell: bash
         run: |
@@ -227,6 +238,7 @@ jobs:
             ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk
             ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk
             ./birakgitsin-user-v${{ steps.ver.outputs.version }}.aab
+            ./birakgitsin-mapping-v${{ steps.ver.outputs.version }}.txt
           overwrite_files: true
           make_latest: true
         env:
@@ -241,5 +253,6 @@ jobs:
             ./birakgitsin-dev-v${{ steps.ver.outputs.version }}.apk
             ./birakgitsin-user-v${{ steps.ver.outputs.version }}.apk
             ./birakgitsin-user-v${{ steps.ver.outputs.version }}.aab
+            ./birakgitsin-mapping-v${{ steps.ver.outputs.version }}.txt
           if-no-files-found: error
           retention-days: 1

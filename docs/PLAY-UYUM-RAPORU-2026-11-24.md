@@ -93,7 +93,7 @@ Google Play'in yapay zekâ içeren uygulamalar için öne çıkan gereksinimleri
 
 - Manifest'te yalnızca `POST_NOTIFICATIONS` var; kamera, konum, mikrofon, depolama, SYSTEM_ALERT_WINDOW blocked. ✅
 - `targetSdkVersion 36`, imza DN `CN=Birak Gitsin`, SHA-256 doğrulandı. ✅
-- `versionCode 99` (vc97 yaş kapısı + yerelleştirme, vc98 R8/minify, vc99 R8 ayarlarını kalıcı Expo plugin’ine taşıma + klon/Resmi Kaynak dokümanları). CI: [#45475332005](https://github.com/koztur27-bit/birakgitsin/actions/runs/45475332005) ✅.
+- `versionCode 100` (vc97 yaş kapısı + yerelleştirme, vc98 R8/minify, vc99 R8 plugin’i + klon dokümanları, vc100 anti-tamper/cleartext/production log temizliği).
 - Kodi imzalı sürümlerde `expo-updates` var; Data Safety'de teknik veri olarak beyan edildi.
 
 ---
@@ -192,3 +192,25 @@ Doğrulama: `npx tsc --noEmit` ✅ · `npm run lint` ✅ (0 hata).
 **Klon şikâyet şablonu (hazır metin):**
 
 > Merhaba, ben `com.birakgitsin.app` paket adlı “Bırak Gitsin / Let It Go” uygulamasının geliştiricisiyim. Resmi sürüm yalnızca Google Play ve App Store üzerinden yayınlanmaktadır. Aşağıdaki uygulama/URL bizim iznimiz olmadan adımızı, ikonumuzu ve/veya uygulama içeriğimizi kopyalamaktadır: [KLON PAKET ADI / URL]. Resmi sürüm: [PLAY STORE LINK]. Eser sahibi olduğuma dair deliller: özel GitHub deposundaki commit geçmişi ve [MARKA TESCİL NO, varsa]. İlgili içeriğin Google Play politikası uyarınca kaldırılmasını talep ediyorum. İletişim: koztur.27@gmail.com.
+
+---
+
+## 8. vc100 — tersine mühendislik / repackaging zorlaştırma katmanları
+
+| Katman | Uygulama | Etki / not |
+| --- | --- | --- |
+| Hermes | `app.json` → `"jsEngine": "hermes"` (prebuild çıktısı: `hermesEnabled=true`) | JS kaynak kodu düz metin olarak paketlenmez. |
+| R8 / minify | `expo-build-properties` → `enableProguardInReleaseBuilds: true`, `enableMinifyInReleaseBuilds: true`, `enableShrinkResourcesInReleaseBuilds: true` | `android/gradle.properties` üzerinden `app/build.gradle` içindeki `minifyEnabled`/`shrinkResources` değerlerini açar. |
+| Keep kuralları | `proguard-rules.expo.append` + `plugins/withR8Security.js` | Expo, React Native, Hermes/JSI, Reanimated, Play/AdMob ve `@expo/vector-icons` sınıfları korunur; her prebuild’de tek kopya eklenir. |
+| Production log temizliği | `babel.config.js` + `babel-plugin-transform-remove-console` | Yalnızca `NODE_ENV=production` iken `log/warn/info` kaldırılır; **`console.error` korunur**. Dev derlemelerde davranış değişmez. |
+| Anti-tamper | `src/utils/appIntegrity.ts` → `App.tsx` içinde `useEffect` ile çağrılır | Yalnızca Android + release (`__DEV__ === false`) çalışır; `Application.applicationId` değerini `app.json → expo.android.package` ile karşılaştırır. Uyuşmazlıkta uygulamayı kapatmaz, `console.error` ile kayıt tutar (yanlış pozitif gerçek kullanıcıyı etkilemesin). iOS ve dev derlemeler atlanır. |
+| Cleartext trafik | `expo-build-properties` → `usesCleartextTraffic: false` | Üretim manifestinde `android:usesCleartextTraffic="false"`; şifresiz HTTP trafiği engellenir. Uygulamanın tüm uzak bağlantıları HTTPS/TLS. |
+
+**Doğrulama:** `NODE_OPTIONS=--max-old-space-size=3072 npx tsc --noEmit` ✅ · `npm run lint` ✅ · `npx expo prebuild --platform android --clean --no-install` ✅ · Babel dönüşümü: production → yalnızca `console.error(4)` kalıyor, development → 4 çağrı da duruyor. ✅
+
+**mapping.txt (Play Console deobfuscation dosyası):**
+- CI çalışma alanında: `android/app/build/outputs/mapping/release/mapping.txt`
+- Her sürüm için CI artifact’ı ve `apk-latest` release’i içinde: `birakgitsin-mapping-v<version>.txt` (ör. `birakgitsin-mapping-v2.5.0.txt`).
+- Play Console’da AAB’yi yüklerken çıkan “Deobfuscation file” adımında **Upload → mapping.txt** ile bu dosyayı seç. AAB ile aynı sürümün mapping dosyası olmalı; eski sürümün mapping dosyası çöktürme raporlarını yanlış okutur.
+
+**Sınırlar:** Bu katmanlar maliyeti artırır, kopyalamayı imkânsız kılmaz. Gerçek koruma için sunucu tarafı IAP doğrulaması ve Play Integrity token doğrulaması gerekir (backend şartı, bkz. bölüm 7).

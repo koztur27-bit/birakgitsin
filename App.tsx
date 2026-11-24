@@ -30,6 +30,7 @@ import { registerNotificationCategories } from './src/lib/statusNotification';
 import './src/lib/backgroundNotificationTask';
 import { colors, fontSizes, radius, spacing } from './src/theme';
 import { logError } from './src/lib/errorLog';
+import { checkAppIntegrity } from './src/utils/appIntegrity';
 import { Plan, TabKey } from './src/types';
 
 class ErrorBoundary extends Component<
@@ -204,6 +205,10 @@ function Root() {
 }
 
 export default function App() {
+  useEffect(() => {
+    checkAppIntegrity();
+  }, []);
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>

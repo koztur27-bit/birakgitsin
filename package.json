@@ -7,8 +7,10 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
     "expo": "~57.0.33",
+    "expo-application": "~57.0.3",
     "expo-asset": "~57.0.21",
     "expo-audio": "~57.0.5",
+    "expo-build-properties": "~57.0.24",
     "expo-clipboard": "~57.0.2",
     "expo-document-picker": "~57.0.3",
     "expo-file-system": "~57.0.7",
@@ -36,10 +38,11 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "babel-plugin-transform-remove-console": "^6.9.4",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
-    "typescript": "~6.0.3",
-    "expo-dev-client": "~57.0.21"
+    "expo-dev-client": "~57.0.21",
+    "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",

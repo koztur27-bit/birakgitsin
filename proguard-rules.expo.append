@@ -1,4 +1,4 @@
-# Birak Gitsin - R8/security keep rules (CI tarafindan android/app/proguard-rules.pro sonuna eklenir)
+# Birak Gitsin - R8/security keep rules (prebuild plugin tarafindan android/app/proguard-rules.pro sonuna eklenir)
 # Hermes bytecode zaten akis/JS kaynagini duz metin olarak tasimaz; R8 native/kotlin tarafi kucultur ve karistirir.
 
 -keepattributes *Annotation*, InnerClasses, Signature, EnclosingMethod, SourceFile, LineNumberTable
@@ -26,6 +26,10 @@
 
 # Reanimated / gesture handler / screens
 -keep class com.swmansion.** { *; }
+
+# @expo/vector-icons - ikon font/glyph map ve native module siniflari
+-keep class expo.modules.vectoricons.** { *; }
+-keep class com.expo.vectoricons.** { *; }
 
 # Google Play Billing, In-App Reviews, App Updates, AdMob
 -keep class com.google.android.play.core.** { *; }

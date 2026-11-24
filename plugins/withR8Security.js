@@ -1,27 +1,16 @@
-const { withDangerousMod, withGradleProperties } = require('@expo/config-plugins');
+const { withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
-
-const PROPERTIES = [
-  ['android.enableMinifyInReleaseBuilds', 'true'],
-  ['android.enableShrinkResourcesInReleaseBuilds', 'true'],
-];
 
 const RULES_PATH = path.resolve(__dirname, '..', 'proguard-rules.expo.append');
 const MARKER = 'Birak Gitsin - R8/security keep rules';
 
-function setProperty(props, key, value) {
-  const index = props.findIndex((p) => p.type === 'property' && p.key === key);
-  if (index >= 0) props[index] = { type: 'property', key, value };
-  else props.push({ type: 'property', key, value });
-}
-
+/**
+ * R8/minify ve resource shrinking ayarları expo-build-properties plugin'inden gelir.
+ * Bu plugin yalnızca proje keep kurallarını prebuild sırasında android/app/proguard-rules.pro
+ * dosyasına ekler; böylece CI ve yerel prebuild aynı korumayı üretir.
+ */
 module.exports = function withR8Security(config) {
-  config = withGradleProperties(config, (cfg) => {
-    for (const [key, value] of PROPERTIES) setProperty(cfg.modResults, key, value);
-    return cfg;
-  });
-
   return withDangerousMod(config, [
     'android',
     async (cfg) => {
