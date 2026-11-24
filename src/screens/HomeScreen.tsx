@@ -1,4 +1,5 @@
 import { useTheme } from '../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
@@ -429,7 +430,16 @@ export function HomeScreen(_props: HomeScreenProps) {
             <View style={styles.heroPanelDivider} />
 
             <View style={styles.heroPanelRight}>
-              <Text style={styles.heroTimerIcon}>⏱</Text>
+              <View style={styles.heroTimerHeader}>
+                <Ionicons
+                  name="timer-outline"
+                  size={16}
+                  color="rgba(255,255,255,0.85)"
+                />
+                <Text style={styles.heroTimerLabel}>
+                  {lang === 'en' ? 'Craving timer' : 'Dayanma sayacı'}
+                </Text>
+              </View>
               <View style={styles.heroTimerControlRow}>
                 {timer.status === 'idle' ? (
                   <Pressable
@@ -1007,8 +1017,15 @@ const createStyles = (colors: any) =>
     },
     inviteShareBtnTitle: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.primaryDark },
     inviteShareBtnSub: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
-    heroTimerIcon: {
-      fontSize: fontSizes.xl,
+    heroTimerHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5,
+    },
+    heroTimerLabel: {
+      fontSize: fontSizes.xs,
+      fontWeight: '700',
       color: 'rgba(255,255,255,0.85)',
     },
     heroTimerValue: {
