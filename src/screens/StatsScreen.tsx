@@ -11,7 +11,7 @@ import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessS
 import { ProgressBar } from '../components/ProgressBar';
 import { WeekChart } from '../components/WeekChart';
 import { useApp } from '../context/AppContext';
-import { useI18n } from '../i18n';
+import { AppLanguage, useI18n } from '../i18n';
 import { badgeDefs } from '../lib/badges';
 import { analyzeTriggers, adviceForTrigger, triggerLabel, formatHourRange } from '../lib/triggerAnalysis';
 import { computeMedals } from '../lib/medals';
@@ -57,6 +57,7 @@ export function StatsScreen() {
   const { t, ta, locale } = useI18n();
   const plan = data.plan;
   const isEn = (data.language || locale || 'tr') === 'en';
+  const lang = (data.language || locale || 'tr') as AppLanguage;
 
   const logs = Array.isArray(data.logs) ? data.logs : [];
   const cravings = Array.isArray(data.cravings) ? data.cravings : [];
@@ -116,7 +117,7 @@ export function StatsScreen() {
   };
 
   const smoked = totalSmoked(logs);
-  const list = milestones();
+  const list = milestones(lang);
   const todayRecord = getLog(logs, todayKey());
 
   const monthPrefix = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
@@ -138,7 +139,7 @@ export function StatsScreen() {
   const triggers = topTriggerCounts(cravings, 4);
   const hourHist = cravingHours(cravings);
   const avgIntensity = averageIntensity(cravings);
-  const report = weeklyReport(plan, logs, cravings);
+  const report = weeklyReport(plan, logs, cravings, todayKey(), lang);
   const months = isEn ? MONTHS_EN : MONTHS_TR;
 
   const shareWeekly = async () => {

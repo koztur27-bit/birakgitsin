@@ -8,7 +8,7 @@ import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { useApp } from '../context/AppContext';
-import { useI18n } from '../i18n';
+import { AppLanguage, useI18n } from '../i18n';
 import { detectRegion, supportLines } from '../lib/regionalSupport';
 import {
   bodyRenewalMap,
@@ -43,7 +43,8 @@ export function HealthScreen() {
   const { data } = useApp();
   const { t, locale } = useI18n();
   const plan = data.plan;
-  const isEn = (data.language || locale || 'tr') === 'en';
+  const lang = (data.language || locale || 'tr') as AppLanguage;
+  const isEn = lang === 'en';
   const region = detectRegion();
   const support = supportLines(region, isEn ? 'en' : 'tr');
 
@@ -56,13 +57,13 @@ export function HealthScreen() {
 
   const [selectedOrgan, setSelectedOrgan] = useState<BodyRenewalOrganId | null>(null);
 
-  const metrics = useMemo(() => (plan ? healthRecovery(plan, now) : []), [plan, now]);
+  const metrics = useMemo(() => (plan ? healthRecovery(plan, now, lang) : []), [plan, now, lang]);
   const organs = useMemo(() => (plan ? bodyRenewalMap(plan, now) : []), [plan, now]);
   const elapsed = plan ? healthElapsedDays(plan, now) : 0;
   const overall = metrics.length
     ? Math.round(metrics.reduce((sum, m) => sum + m.percent, 0) / metrics.length)
     : 0;
-  const [nextMilestone] = milestones().filter((m) => m.days > elapsed);
+  const [nextMilestone] = milestones(lang).filter((m) => m.days > elapsed);
 
   if (!plan) return null;
 
@@ -81,8 +82,8 @@ export function HealthScreen() {
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View style={styles.titleRow}><MapBadge code="9" /><Text style={styles.title}>Sağlık Durumum</Text></View>
-          <Text style={styles.subtitle}>Bırakmaya başladıktan sonra geçirdiğin süre</Text>
+          <View style={styles.titleRow}><MapBadge code="9" /><Text style={styles.title}>{t('health.myStatus')}</Text></View>
+          <Text style={styles.subtitle}>{t('health.sinceQuit')}</Text>
         </View>
 
         <Text style={{fontSize:11,color:'#64748B',paddingHorizontal:4,paddingBottom:8,lineHeight:15}}>
@@ -99,9 +100,7 @@ export function HealthScreen() {
         ))}
 
         <Card style={styles.nextCard}>
-          <Text style={styles.nextLabel}>
-            {isEn ? 'Next information window' : 'Sıradaki bilgilendirme aralığı'}
-          </Text>
+          <Text style={styles.nextLabel}>{t('health.nextInfoWindow')}</Text>
           {nextMilestone ? (
             <>
               <Text style={styles.nextTitle}>
@@ -109,32 +108,24 @@ export function HealthScreen() {
               </Text>
               <Text style={styles.nextDetail}>{nextMilestone.detail}</Text>
               <Text style={styles.nextTime}>
-                {formatUntil(nextMilestone.days - elapsed)} sonra
+                {formatUntil(nextMilestone.days - elapsed)} {t('common.later')}
               </Text>
             </>
           ) : (
-            <Text style={styles.nextDetail}>
-              🎉 Bugüne kadar tüm büyük sağlık kilometre taşlarını geçtin.
-            </Text>
+            <Text style={styles.nextDetail}>{t('health.allMilestonesPassed')}</Text>
           )}
         </Card>
 
         <Card style={styles.overviewCard}>
           <View style={styles.overviewTop}>
             <View>
-              <Text style={styles.overviewLabel}>
-                {isEn ? 'Overall information' : 'Genel bilgilendirme'}
-              </Text>
+              <Text style={styles.overviewLabel}>{t('health.overallInfo')}</Text>
               <Text style={styles.overviewTime}>{formatDuration(elapsed)}</Text>
             </View>
             <Text style={styles.overviewPercent}>%{overall}</Text>
           </View>
           <ProgressBar progress={overall / 100} color={colors.success} height={10} />
-          <Text style={styles.overviewHint}>
-            {isEn
-              ? 'Average progress of four informational timelines. No medical measurement is performed.'
-              : 'Dört bilgilendirme zaman çizelgesinin ortalama ilerlemesi. Tıbbi ölçüm yapılmaz.'}
-          </Text>
+          <Text style={styles.overviewHint}>{t('health.overviewHint')}</Text>
         </Card>
 
         <View style={styles.sectionTitleRow}>
@@ -142,7 +133,7 @@ export function HealthScreen() {
             <Text style={styles.sectionTitle}>{t('health.bodyMapTitle')}</Text>
             <Text style={styles.sectionSub}>{t('health.bodyMapSubtitle')}</Text>
           </View>
-          <Text style={styles.sectionHint}>canlı</Text>
+          <Text style={styles.sectionHint}>{t('health.live')}</Text>
         </View>
 
         <View style={styles.organGrid}>
@@ -178,8 +169,8 @@ export function HealthScreen() {
         </View>
 
         <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>Kazanımlar</Text>
-          <Text style={styles.sectionHint}>canlı</Text>
+          <Text style={styles.sectionTitle}>{t('health.gains')}</Text>
+          <Text style={styles.sectionHint}>{t('health.live')}</Text>
         </View>
 
         {metrics.map((metric, index) => {
@@ -191,7 +182,7 @@ export function HealthScreen() {
                   <Text style={styles.metricEmoji}>{metric.emoji}</Text>
                   <View>
                     <Text style={styles.metricLabel}>{metric.label}</Text>
-                    <Text style={styles.metricTarget}>{metric.targetLabel} hedefi</Text>
+                    <Text style={styles.metricTarget}>{t('health.metricTarget', { target: metric.targetLabel })}</Text>
                   </View>
                 </View>
                 <Text style={[styles.metricPercent, { color }]}>%{metric.percent}</Text>
@@ -203,15 +194,11 @@ export function HealthScreen() {
         })}
 
         <View style={styles.note}>
-          <Text style={styles.noteText}>
-            {isEn
-              ? 'These percentages show estimated progress based on your smoke-free time in the app. They are for general motivation and personal tracking, not a medical measurement or diagnosis.'
-              : 'Bu yüzdeler, uygulamadaki bırakma sürene göre hesaplanan tahmini ilerlemeyi gösterir. Genel motivasyon ve kişisel takip amaçlıdır; tıbbi ölçüm veya tanı değildir.'}
-          </Text>
+          <Text style={styles.noteText}>{t('health.percentNote')}</Text>
         </View>
 
         <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>Yoksunluk Belirtisi Rehberi</Text>
+          <Text style={styles.sectionTitle}>{t('health.withdrawalGuide')}</Text>
         </View>
         <WithdrawalGuide />
       </ScrollView>
@@ -243,15 +230,14 @@ export function HealthScreen() {
               </Text>
               {selected.percent < 100 ? (
                 <Text style={styles.modalText}>
-                  {isEn
-                    ? `About ${Math.max(0, Math.ceil(selected.remainingDays))} day(s) to reach 100% for this milestone (based on ${selected.targetDays} days target).`
-                    : `Bu hedefte %100 için yaklaşık ${Math.max(0, Math.ceil(selected.remainingDays))} gün kaldı (${selected.targetDays} günlük hedef).`}
+                  {t('health.modalEstimate', {
+                    days: Math.max(0, Math.ceil(selected.remainingDays)),
+                    daysTarget: selected.targetDays,
+                  })}
                 </Text>
               ) : null}
               <Text style={[styles.modalText, { fontSize: 11, color: '#64748B', marginTop: 8 }]}>
-                {isEn
-                  ? 'General informational estimate only. Not a medical measurement, diagnosis, or guarantee.'
-                  : 'Yalnızca genel bilgilendirme tahmini. Tıbbi ölçüm, tanı veya garanti değildir.'}
+                {t('health.modalDisclaimer')}
               </Text>
               <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedOrgan(null)}>
                 <Text style={styles.modalCloseText}>{t('health.bodyMapClose')}</Text>

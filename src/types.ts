@@ -105,6 +105,8 @@ export type AppData = {
   inviteRedeemed?: boolean;
   /** Günlük bırakma yemini verilen günler (YYYY-MM-DD). */
   dailyPledges?: string[];
+  /** İlk açılışta 18+ yaş onayı verildi mi? */
+  ageConfirmed?: boolean;
 };
 
 export type TabKey = 'home' | 'craving' | 'timer' | 'stats' | 'health' | 'settings';

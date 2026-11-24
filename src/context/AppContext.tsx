@@ -70,6 +70,7 @@ type AppContextValue = {
   grantProUnlockDays: (days: number) => void;
   setShowLockScreen: (value: boolean) => void;
   setLanguage: (language: AppLanguage) => void;
+  confirmAge: () => void;
   incrementCoachUsage: () => void;
   setQuitMotivation: (motivation: QuitMotivation | null) => void;
   markFutureOnboardingShown: () => void;
@@ -231,6 +232,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     happinessPrompts: {},
     inviteRedeemed: false,
     dailyPledges: [],
+    ageConfirmed: false,
   });
   const [ready, setReady] = useState(false);
   const [timer, setTimer] = useState<TimerState>(defaultTimer);
@@ -815,6 +817,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     persist({ ...data, futureOnboardingShown: true });
   };
 
+  const confirmAge = () => {
+    if (data.ageConfirmed) return;
+    persist({ ...data, ageConfirmed: true });
+  };
+
   const markHappinessPrompt = (action: 'positive' | 'negative' | 'dismiss') => {
     const prev = data.happinessPrompts || {};
     const next: HappinessPrompts = { ...prev, lastPromptAt: Date.now() };
@@ -872,6 +879,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         : [],
       // Yedekten PRO yetkisi devralınmaz; Play'den "Satın alımları geri yükle" ile doğrulanır.
       isPremium: false,
+      // Yaş onayı yedekle aktarılmaz; güvenli tarafta kalıp tekrar sorulur.
+      ageConfirmed: false,
       proUnlockUntil:
         typeof incoming.proUnlockUntil === 'number' && Number.isFinite(incoming.proUnlockUntil)
           ? incoming.proUnlockUntil
@@ -1039,6 +1048,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     grantProUnlockDays,
     setShowLockScreen,
     setLanguage,
+    confirmAge,
     incrementCoachUsage,
     setQuitMotivation,
     markFutureOnboardingShown,

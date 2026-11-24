@@ -1,3 +1,4 @@
+import { AppLanguage, tStatic } from '../i18n';
 import { CravingRecord, DayRecord, DayStat, Plan, SmokeWindow } from '../types';
 
 const MS_DAY = 86400000;
@@ -381,106 +382,29 @@ export type Milestone = {
   emoji: string;
 };
 
-export function milestones(): Milestone[] {
+export function milestones(locale: AppLanguage = 'tr'): Milestone[] {
+  const make = (id: string, days: number, emoji: string): Milestone => ({
+    id,
+    label: tStatic(locale, `health.milestoneItems.${id}.label`),
+    days,
+    emoji,
+    detail: tStatic(locale, `health.milestoneItems.${id}.detail`),
+  });
   return [
-    {
-      id: 'm1',
-      label: '20 dakika',
-      days: 20 / 1440,
-      emoji: '💓',
-      detail: 'Genel bilgilere göre nabız ve tansiyon ilk dakikalarda değişmeye başlayabilir; bireysel sonuçlar değişir.',
-    },
-    {
-      id: 'm2',
-      label: '12 saat',
-      days: 0.5,
-      emoji: '🫁',
-      detail: 'Kan karbonmonoksit düzeyinin ilk saatlerde düşmeye başladığı bildirilir; bu bir tıbbi ölçüm değildir.',
-    },
-    {
-      id: 'm3',
-      label: '1 gün',
-      days: 1,
-      emoji: '❤️',
-      detail: 'Popülasyon çalışmalarında kalp-damar riskinin ilk günlerde azalmaya başladığı bildirilir; kişisel risk tahmini değildir.',
-    },
-    {
-      id: 'm4',
-      label: '2 gün',
-      days: 2,
-      emoji: '👃',
-      detail: 'Tat ve koku duyularının ilk günlerde görece keskinleşebileceği bildirilir; etki kişiden kişiye değişir.',
-    },
-    {
-      id: 'm5',
-      label: '3 gün',
-      days: 3,
-      emoji: '🌬️',
-      detail: 'Nikotin temizlenme süreci kişiden kişiye farklılık gösterir; bu bir tedavi iddiası değildir.',
-    },
-    {
-      id: 'm6',
-      label: '1 hafta',
-      days: 7,
-      emoji: '⚡',
-      detail: 'Yoksunluk belirtileri genelde geçici olabilir; şiddetli veya uzun süren belirtilerde uzmana danışın.',
-    },
-    {
-      id: 'm7',
-      label: '2 hafta',
-      days: 14,
-      emoji: '🏃',
-      detail: 'Dolaşım ve solunum fonksiyonlarındaki değişimler bildirilen ortalama eğilimlerdir; bireysel ölçüm değildir.',
-    },
-    {
-      id: 'm8',
-      label: '1 ay',
-      days: 30,
-      emoji: '🧘',
-      detail: 'Öksürük ve nefes darlığı zamanla azalabilir; devam ederse sağlık uzmanına danışın.',
-    },
-    {
-      id: 'm9',
-      label: '3 ay',
-      days: 90,
-      emoji: '💪',
-      detail: 'Akciğer kapasitesi ve dayanıklılıkta kişiye göre değişen iyileşme bildirilir.',
-    },
-    {
-      id: 'm10',
-      label: '9 ay',
-      days: 270,
-      emoji: '🛡️',
-      detail: 'Solunum yolu enfeksiyonlarına karşı dirençle ilgili genel eğilimler bildirilir; garanti değildir.',
-    },
-    {
-      id: 'm11',
-      label: '1 yıl',
-      days: 365,
-      emoji: '🎉',
-      detail: 'Koroner kalp hastalığı riskine ilişkin popülasyon düzeyinde azalma bildirilir; bireysel risk tahmini değildir.',
-    },
-    {
-      id: 'm12',
-      label: '5 yıl',
-      days: 1825,
-      emoji: '🧠',
-      detail: 'İnme riskine dair genel istatistiksel eğilimler vardır; tanı veya risk hesaplaması yapılmaz.',
-    },
-    {
-      id: 'm13',
-      label: '10 yıl',
-      days: 3650,
-      emoji: '🏆',
-      detail: 'Akciğer kanseri riskine ilişkin popülasyon istatistikleri bilgilendirme amaçlıdır; bireysel tanı değildir.',
-    },
-    {
-      id: 'm14',
-      label: '15 yıl',
-      days: 5475,
-      emoji: '👑',
-      detail: 'Kalp hastalığı riskine dair uzun vadeli ortalamalar bilgilendirme amaçlıdır; garanti değildir.',
-    },
+    make('m1', 20 / 1440, '💓'),
+    make('m2', 0.5, '🫁'),
+    make('m3', 1, '❤️'),
+    make('m4', 2, '👃'),
+    make('m5', 3, '🌬️'),
+    make('m6', 7, '⚡'),
+    make('m7', 14, '🏃'),
+    make('m8', 30, '🧘'),
+    make('m9', 90, '💪'),
+    make('m10', 270, '🛡️'),
+    make('m11', 365, '🎉'),
+    make('m12', 1825, '🧠'),
+    make('m13', 3650, '🏆'),
+    make('m14', 5475, '👑'),
   ];
 }
 
@@ -498,56 +422,28 @@ export type HealthMetric = {
  * Tıbbi ölçüm değil; uygulamanın mevcut kilometre taşlarıyla aynı zaman
  * çizelgesini kullanan motive edici bir göstergedir.
  */
-export function healthRecovery(plan: Plan, now: number = Date.now()): HealthMetric[] {
+export function healthRecovery(
+  plan: Plan,
+  now: number = Date.now(),
+  locale: AppLanguage = 'tr',
+): HealthMetric[] {
   const elapsed = healthElapsedDays(plan, now);
   const defs = [
-    {
-      key: 'pulse' as const,
-      label: 'Nabız',
-      emoji: '💓',
-      days: 20 / 1440,
-      targetLabel: '20 dakika',
-      detail: 'Genel bilgilere göre nabız ve tansiyon ilk dakikalarda değişmeye başlayabilir; bireysel sonuçlar değişir.',
-      done: 'Bu bilgilendirme aralığı tamamlandı; bireysel ölçüm yapılmaz.',
-    },
-    {
-      key: 'carbonMonoxide' as const,
-      label: 'Karbonmonoksit',
-      emoji: '🩸',
-      days: 0.5,
-      targetLabel: '12 saat',
-      detail: 'Kan karbonmonoksit düzeyinin ilk saatlerde düşmeye başladığı bildirilir; bu bir tıbbi ölçüm değildir.',
-      done: 'Bu bilgilendirme aralığı tamamlandı; tıbbi ölçüm içermez.',
-    },
-    {
-      key: 'tasteSmell' as const,
-      label: 'Tat / Koku',
-      emoji: '🌼',
-      days: 2,
-      targetLabel: '2 gün',
-      detail: 'Tat ve koku duyularının ilk günlerde görece keskinleşebileceği bildirilir; etki kişiden kişiye değişir.',
-      done: 'Bu bilgilendirme aralığı tamamlandı; etkiler kişiden kişiye değişir.',
-    },
-    {
-      key: 'lungs' as const,
-      label: 'Akciğer',
-      emoji: '🫁',
-      days: 3,
-      targetLabel: '3 gün',
-      detail: 'Nikotin temizlenme süreci kişiden kişiye farklılık gösterir; bu bir tedavi iddiası değildir.',
-      done: 'Bu bilgilendirme aralığı tamamlandı; tedavi iddiası değildir.',
-    },
+    { key: 'pulse' as const, emoji: '💓', days: 20 / 1440 },
+    { key: 'carbonMonoxide' as const, emoji: '🩸', days: 0.5 },
+    { key: 'tasteSmell' as const, emoji: '🌼', days: 2 },
+    { key: 'lungs' as const, emoji: '🫁', days: 3 },
   ];
 
   return defs.map((d) => {
     const percent = Math.max(0, Math.min(100, Math.round((elapsed / d.days) * 100)));
     return {
       key: d.key,
-      label: d.label,
+      label: tStatic(locale, `health.metricItems.${d.key}.label`),
       emoji: d.emoji,
       percent,
-      targetLabel: d.targetLabel,
-      detail: percent >= 100 ? d.done : d.detail,
+      targetLabel: tStatic(locale, `health.metricItems.${d.key}.target`),
+      detail: tStatic(locale, `health.metricItems.${d.key}.${percent >= 100 ? 'done' : 'detail'}`),
     };
   });
 }
@@ -712,6 +608,7 @@ export function weeklyReport(
   logs: DayRecord[],
   cravings: CravingRecord[],
   endKey = todayKey(),
+  locale: AppLanguage = 'tr',
 ): WeeklyReport {
   const keys = lastNDays(7, endKey);
   const rows = keys.map((date) => ({
@@ -761,25 +658,23 @@ export function weeklyReport(
   const change = loggedRows.length && prevLogged.length ? averageSmoked - prevAverage : null;
 
   const adherence = loggedRows.length ? metDays / loggedRows.length : 0;
-  let headline = 'Veri toplanıyor';
-  let suggestion = 'Bugün tek bir kayıt ekle; rapor 3 gün sonra anlam kazanır.';
+  let headline = tStatic(locale, 'stats.reportCollecting');
+  let suggestion = tStatic(locale, 'stats.reportCollectingHint');
   if (loggedRows.length > 0) {
     if (adherence >= 0.85) {
-      headline = 'Harika bir hafta';
-      suggestion =
-        'Hedefini haftaya 1 sigara daha düşürmeyi dene. Uyarlanabilir plan bunu senin için otomatik yapar.';
+      headline = tStatic(locale, 'stats.reportGreatWeek');
+      suggestion = tStatic(locale, 'stats.reportGreatHint');
     } else if (adherence >= 0.5) {
-      headline = 'İyi gidiyorsun';
+      headline = tStatic(locale, 'stats.reportGood');
       suggestion = riskHour
-        ? `En riskli saat ${String(riskHour).padStart(2, '0')}:00 civarı. O saatte 5 dakikalık bir yürüyüş ekle.`
-        : 'Bir sonraki hafta için tek bir küçük hedef seç; hepsini aynı anda değiştirme.';
+        ? tStatic(locale, 'stats.reportGoodRiskHour', { hour: String(riskHour).padStart(2, '0') })
+        : tStatic(locale, 'stats.reportGoodGeneric');
     } else {
-      headline = 'Bu hafta zordu';
-      suggestion =
-        "Hedefi değiştirmeden 3 gün aynı planı dene. İstersen Ayarlar'dan uyarlanabilir planı kapat; tempo tamamen senin kontrolünde olsun.";
+      headline = tStatic(locale, 'stats.reportHardWeek');
+      suggestion = tStatic(locale, 'stats.reportHardHint');
     }
     if (topTrigger) {
-      suggestion += ` En sık tetikleyicin: ${topTrigger}.`;
+      suggestion += tStatic(locale, 'stats.reportTopTrigger', { trigger: topTrigger });
     }
   }
 

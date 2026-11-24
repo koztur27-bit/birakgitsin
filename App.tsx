@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AgeGate } from './src/components/AgeGate';
 import { TabBar } from './src/components/TabBar';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
@@ -93,7 +94,7 @@ const TABS: TabKey[] = ['home', 'craving', 'stats', 'health', 'settings'];
 function Root() {
   const { colors } = useTheme();
   const { t } = useI18n();
-  const { data, ready, setPlan, markFutureOnboardingShown, sosRequest, flashMessage } = useApp();
+  const { data, ready, setPlan, confirmAge, markFutureOnboardingShown, sosRequest, flashMessage } = useApp();
   const [tab, setTabState] = useState<TabKey>('home');
   const pagerRef = React.useRef<PagerView>(null);
   const [editing, setEditing] = useState(false);
@@ -128,6 +129,10 @@ function Root() {
         <Text style={{ color: colors.textMuted, marginTop: 12 }}>{t('app.loading')}</Text>
       </View>
     );
+  }
+
+  if (!data.ageConfirmed) {
+    return <AgeGate onConfirm={confirmAge} />;
   }
 
   if (!data.plan || editing) {

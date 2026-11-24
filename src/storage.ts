@@ -46,6 +46,7 @@ const defaultData: AppData = {
   happinessPrompts: {},
   inviteRedeemed: false,
   dailyPledges: [],
+  ageConfirmed: false,
 };
 
 export function generateInviteCode(): string {
@@ -97,6 +98,7 @@ export async function loadData(): Promise<AppData> {
       merged.dailyPledges = merged.dailyPledges.filter((x: any) => typeof x === 'string');
     }
     merged.inviteRedeemed = !!merged.inviteRedeemed;
+    merged.ageConfirmed = !!merged.ageConfirmed;
     merged.futureOnboardingShown = !!merged.futureOnboardingShown;
     if (merged.language !== 'tr' && merged.language !== 'en') {
       merged.language = 'tr';
