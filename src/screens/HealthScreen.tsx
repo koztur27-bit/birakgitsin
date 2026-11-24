@@ -13,9 +13,9 @@ import { detectRegion, supportLines } from '../lib/regionalSupport';
 import {
   bodyRenewalMap,
   BodyRenewalOrganId,
-  elapsedDays,
   formatDuration,
   formatUntil,
+  healthElapsedDays,
   healthRecovery,
   milestones,
 } from '../lib/calculations';
@@ -58,7 +58,7 @@ export function HealthScreen() {
 
   const metrics = useMemo(() => (plan ? healthRecovery(plan, now) : []), [plan, now]);
   const organs = useMemo(() => (plan ? bodyRenewalMap(plan, now) : []), [plan, now]);
-  const elapsed = plan ? elapsedDays(plan, now) : 0;
+  const elapsed = plan ? healthElapsedDays(plan, now) : 0;
   const overall = metrics.length
     ? Math.round(metrics.reduce((sum, m) => sum + m.percent, 0) / metrics.length)
     : 0;

@@ -7,6 +7,8 @@ export type CessationAid = 'none' | 'gum' | 'patch' | 'pill';
 
 export type Plan = {
   startDate: string;
+  /** Planın kurulduğu an; sağlık kazanımları gece yarısından değil bu andan hesaplanır. */
+  startedAt?: string;
   baselinePerDay: number;
   weeklyReduction: number;
   packPrice: number;

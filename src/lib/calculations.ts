@@ -123,6 +123,20 @@ export function elapsedDays(plan: Plan, now: number = Date.now()): number {
   return Math.max(0, (now - start.getTime()) / MS_DAY);
 }
 
+/**
+ * Sağlık kazanımları için gerçek bırakma anı kullanılır.
+ * Eski planlarda `startedAt` yoksa gün bazlı sayım yapılır; böylece ilk gün
+ * gece yarısından itibaren yanlış ilerleme gösterilmez.
+ */
+export function healthElapsedDays(plan: Plan, now: number = Date.now()): number {
+  if (plan.baselinePerDay <= 0) return 0;
+  const startedAt = plan.startedAt ? Date.parse(plan.startedAt) : NaN;
+  if (Number.isFinite(startedAt)) {
+    return Math.max(0, (now - startedAt) / MS_DAY);
+  }
+  return daysSinceStart(plan, dayKey(new Date(now)));
+}
+
 function addDaysKey(key: string, days: number): string {
   const d = parseKey(key);
   return dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() + days));
@@ -485,7 +499,7 @@ export type HealthMetric = {
  * çizelgesini kullanan motive edici bir göstergedir.
  */
 export function healthRecovery(plan: Plan, now: number = Date.now()): HealthMetric[] {
-  const elapsed = elapsedDays(plan, now);
+  const elapsed = healthElapsedDays(plan, now);
   const defs = [
     {
       key: 'pulse' as const,
@@ -551,7 +565,7 @@ export type BodyRenewalOrgan = {
 };
 
 export function bodyRenewalMap(plan: Plan, now: number = Date.now()): BodyRenewalOrgan[] {
-  const elapsed = elapsedDays(plan, now);
+  const elapsed = healthElapsedDays(plan, now);
   const defs: { id: BodyRenewalOrganId; emoji: string; targetDays: number }[] = [
     { id: 'heart', emoji: '❤️', targetDays: 90 },
     { id: 'lungs', emoji: '🫁', targetDays: 270 },

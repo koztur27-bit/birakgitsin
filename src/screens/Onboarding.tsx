@@ -125,6 +125,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
     });
     onComplete({
       startDate: initial?.startDate ?? new Date().toISOString().slice(0, 10),
+      startedAt: initial?.startedAt ?? new Date().toISOString(),
       baselinePerDay: draft.baselinePerDay,
       weeklyReduction: draft.weeklyReduction,
       packPrice: draft.packPrice,
