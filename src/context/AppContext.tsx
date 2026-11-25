@@ -6,6 +6,7 @@ import { Alert, AppState, AppStateStatus, Linking, Platform, Vibration } from 'r
 import { badgeById, evaluateBadges } from '../lib/badges';
 import { addPurchaseListeners, ENTITLEMENT_PRODUCT_IDS } from '../lib/billing';
 import { maybeRequestStoreReview } from '../lib/storeReview';
+import { adProUnlockUntil, adUnlockAvailability } from '../lib/proAccess';
 import { cigarettesAvoided, formatCountdown, formatMoney, getLog, todayKey, totalMoneySaved } from '../lib/calculations';
 import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
 import {
@@ -68,6 +69,7 @@ type AppContextValue = {
   setPremium: (value: boolean) => void;
   grantProUnlock24h: () => void;
   grantProUnlockDays: (days: number) => void;
+  grantAdProUnlock: () => { ok: boolean; reason?: 'premium' | 'active' | 'cooldown'; remainingMs?: number };
   setShowLockScreen: (value: boolean) => void;
   setLanguage: (language: AppLanguage) => void;
   confirmAge: () => void;
@@ -224,6 +226,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     savingsGoal: null,
     isPremium: false,
     proUnlockUntil: 0,
+    proTrialUsed: false,
+    welcomeTrialGrantedAt: 0,
+    lastAdProGrantAt: 0,
     showLockScreen: true,
     slipLogs: [],
     coachUsage: { date: '', count: 0 },
@@ -766,6 +771,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       crisisReminders: [],
       isPremium: false,
       proUnlockUntil: 0,
+      proTrialUsed: true,
+      welcomeTrialGrantedAt: Date.now(),
+      lastAdProGrantAt: 0,
       showLockScreen: true,
       language: data.language || 'tr',
       slipLogs: [],
@@ -783,13 +791,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const setPremium = (value: boolean) => persist({ ...data, isPremium: value });
 
-  const grantProUnlock24h = () =>
-    persist({ ...data, proUnlockUntil: Math.max(Date.now(), data.proUnlockUntil || 0) + 24 * 60 * 60 * 1000 });
-
   const grantProUnlockDays = (days: number) => {
     const ms = Math.max(1, Math.floor(days)) * 24 * 60 * 60 * 1000;
     persist({ ...data, proUnlockUntil: Math.max(Date.now(), data.proUnlockUntil || 0) + ms });
   };
+
+  // Haftada 1 reklam ödülü: aktif PRO varken hak tüketilmez, 7 gün bekleme süresi vardır.
+  const grantAdProUnlock = () => {
+    const availability = adUnlockAvailability(data);
+    if (!availability.available) {
+      return { ok: false, reason: availability.reason, remainingMs: availability.remainingMs };
+    }
+    const now = Date.now();
+    persist({
+      ...data,
+      lastAdProGrantAt: now,
+      proUnlockUntil: adProUnlockUntil(data),
+    });
+    return { ok: true };
+  };
+
+  // Mevcut çağrılar için geriye dönük uyumluluk; yeni akış haftalık kotaya bağlı.
+  const grantProUnlock24h = () => grantAdProUnlock();
 
   const setShowLockScreen = (value: boolean) => persist({ ...data, showLockScreen: value });
 
@@ -885,6 +908,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         typeof incoming.proUnlockUntil === 'number' && Number.isFinite(incoming.proUnlockUntil)
           ? incoming.proUnlockUntil
           : 0,
+      // Hediye hakkı cihaza bağlıdır; yedekten geri yüklenince yeniden verilmez.
+      proTrialUsed: true,
+      welcomeTrialGrantedAt:
+        typeof (incoming as any).welcomeTrialGrantedAt === 'number'
+          ? (incoming as any).welcomeTrialGrantedAt
+          : 0,
+      lastAdProGrantAt:
+        typeof (incoming as any).lastAdProGrantAt === 'number' ? (incoming as any).lastAdProGrantAt : 0,
       showLockScreen: incoming.showLockScreen !== false,
       language: incoming.language === 'tr' || incoming.language === 'en' ? incoming.language : (data.language || 'tr'),
       slipLogs: Array.isArray((incoming as any).slipLogs)
@@ -1046,6 +1077,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setPremium,
     grantProUnlock24h,
     grantProUnlockDays,
+    grantAdProUnlock,
     setShowLockScreen,
     setLanguage,
     confirmAge,

@@ -21,6 +21,7 @@ import { CoachChatModal } from '../components/CoachChatModal';
 import { HappinessPromptModal } from '../components/HappinessPromptModal';
 import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
+import { SavingsGoalCard } from '../components/SavingsGoalCard';
 import { ProScreen } from './ProScreen';
 import { SosBreathingModal } from '../components/SosBreathingModal';
 import { TimerScreen } from './TimerScreen';
@@ -53,7 +54,7 @@ import {
   windowSmokedOn,
 } from '../lib/calculations';
 import { celebrate, publishLockStatus } from '../lib/statusNotification';
-import { hasProAccess } from '../lib/proAccess';
+import { adBlockedText, hasProAccess } from '../lib/proAccess';
 import { updateWidgetData } from '../lib/widgetData';
 import { fontSizes, radius, shadows, spacing } from '../theme';
 
@@ -67,7 +68,7 @@ export function HomeScreen(_props: HomeScreenProps) {
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const { data, timer, resumeTimer, resetTimer, setTimerDuration, logCigarette, undoCigarette, logSlip, logCraving, showFlash, grantProUnlock24h, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
+  const { data, timer, resumeTimer, resetTimer, setTimerDuration, logCigarette, undoCigarette, logSlip, logCraving, showFlash, grantAdProUnlock, markHappinessPrompt, pledgeToday, sosRequest } = useApp();
   const plan = data.plan;
   const lang = data.language || 'tr';
 
@@ -180,14 +181,23 @@ export function HomeScreen(_props: HomeScreenProps) {
       {
         text: t('home.watchAdUnlock'),
         onPress: async () => {
+          const blocked = adBlockedText(data, t as any);
+          if (blocked) {
+            Alert.alert(t('home.adTitle'), blocked);
+            return;
+          }
           if (shareUnlocking) return;
           setShareUnlocking(true);
           try {
             const res = await showRewardedUnlockAd();
             if (res.rewarded) {
-              grantProUnlock24h();
-              Alert.alert(t('home.unlockedTitle'), t('home.unlockedMsg'));
-              triggerShareWithTheme(themeId);
+              const granted = grantAdProUnlock();
+              if (granted.ok) {
+                Alert.alert(t('home.unlockedTitle'), t('home.unlockedMsg'));
+                triggerShareWithTheme(themeId);
+              } else {
+                Alert.alert(t('home.adTitle'), t('pro.adNone'));
+              }
             } else if (res.message) {
               Alert.alert(t('home.adTitle'), res.message);
             }
@@ -515,6 +525,8 @@ export function HomeScreen(_props: HomeScreenProps) {
             </Pressable>
           </View>
         </LinearGradient>
+
+        <SavingsGoalCard />
 
         {/* Daily Quit Pledge */}
         <View style={[styles.pledgeCard, todayPledged && styles.pledgeCardDone]}>

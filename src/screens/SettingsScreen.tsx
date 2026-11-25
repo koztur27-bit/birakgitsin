@@ -816,7 +816,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
               ? 'PRO aktif. Gelişmiş simülatör senaryoları ve özel başarı kartı temaları açık.'
               : hasProAccess(data)
                 ? `Geçici PRO açık (${formatUnlockRemaining(proUnlockRemainingMs(data))} kaldı). Gelişmiş özellikleri deneyebilirsin.`
-                : 'Günde yarım paket sigara fiyatına kendi sağlığına ve geleceğine yatırım yap. Aylık, yıllık veya ömür boyu paketlerle PRO özellikleri aç.'}
+                : 'İlk açılışta 15 günlük PRO hediyen var. Sonrasında haftada bir reklam izleyerek 1 gün PRO kazanabilir, ya da aylık/yıllık paketle devam edebilirsin.'}
           </Text>
           <View style={styles.inlineRow}>
             <Pressable

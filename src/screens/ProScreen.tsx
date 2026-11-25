@@ -25,7 +25,8 @@ import {
   purchasePro,
   restorePurchases,
 } from '../lib/billing';
-import { hasProAccess, formatUnlockRemaining, proUnlockRemainingMs } from '../lib/proAccess';
+import { adBlockedText, adUnlockAvailability, hasProAccess, formatUnlockRemaining, proUnlockRemainingMs } from '../lib/proAccess';
+import { showRewardedUnlockAd } from '../lib/ads';
 import { fontSizes, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -39,7 +40,7 @@ export function ProScreen({ visible, onClose }: Props) {
   const { colors } = useTheme();
   const { t, ta, locale } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { data, setPremium } = useApp();
+  const { data, setPremium, grantAdProUnlock } = useApp();
   const [products, setProducts] = useState<ProductInfo[]>(FALLBACK_PRODUCTS);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<ProductId | null>(null);
@@ -48,6 +49,9 @@ export function ProScreen({ visible, onClose }: Props) {
 
   const isPro = hasProAccess(data);
   const unlockMs = proUnlockRemainingMs(data);
+  const adAvailability = adUnlockAvailability(data);
+  const blockedAdText = adBlockedText(data, t as any);
+  const [adBusy, setAdBusy] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -113,6 +117,26 @@ export function ProScreen({ visible, onClose }: Props) {
     }
   };
 
+  const handleAdUnlock = async () => {
+    if (adBusy) return;
+    if (blockedAdText) {
+      Alert.alert(t('home.adTitle'), blockedAdText);
+      return;
+    }
+    setAdBusy(true);
+    try {
+      const res = await showRewardedUnlockAd();
+      if (res.rewarded) {
+        const granted = grantAdProUnlock();
+        Alert.alert(t('home.unlockedTitle'), granted.ok ? t('pro.adUnlocked') : t('pro.adNone'));
+      } else if (res.message) {
+        Alert.alert(t('home.adTitle'), res.message);
+      }
+    } finally {
+      setAdBusy(false);
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={[styles.root, { paddingTop: insets.top + spacing.sm }]}>
@@ -134,6 +158,24 @@ export function ProScreen({ visible, onClose }: Props) {
               </View>
             ) : null}
           </LinearGradient>
+
+          <View style={styles.cardMuted}>
+            <Text style={styles.ruleTitle}>{t('pro.trialTitle')}</Text>
+            <Text style={styles.ruleText}>{t('pro.trialRule')}</Text>
+            <Text style={styles.ruleText}>{t('pro.adRule')}</Text>
+            <Text style={styles.ruleStatus}>
+              {adAvailability.available ? t('pro.adAvailable') : blockedAdText || t('pro.adNone')}
+            </Text>
+            <Pressable
+              style={[styles.adBtn, (!adAvailability.available || adBusy) && styles.adBtnDisabled]}
+              onPress={handleAdUnlock}
+              disabled={!adAvailability.available || adBusy}
+            >
+              <Text style={styles.adBtnText}>
+                {adBusy ? (locale === 'en' ? 'Loading ad…' : 'Reklam yükleniyor…') : t('pro.adBtn')}
+              </Text>
+            </Pressable>
+          </View>
 
           <Text style={styles.sectionTitle}>{t('pro.featuresTitle')}</Text>
           <View style={styles.card}>
@@ -233,6 +275,12 @@ const createStyles = (colors: any) =>
     sectionTitle: { fontSize: fontSizes.lg, fontWeight: '800', color: colors.text, marginBottom: spacing.sm, marginTop: spacing.sm },
     card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
     cardMuted: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, opacity: 0.9 },
+    ruleTitle: { fontSize: fontSizes.md, fontWeight: '800', color: colors.text, marginBottom: 4 },
+    ruleText: { fontSize: fontSizes.sm, color: colors.textMuted, lineHeight: 20, marginBottom: 4 },
+    ruleStatus: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primary, marginTop: 6, marginBottom: spacing.sm },
+    adBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 12, alignItems: 'center' },
+    adBtnDisabled: { opacity: 0.45 },
+    adBtnText: { color: colors.white, fontWeight: '800', fontSize: fontSizes.sm },
     featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
     featureIcon: { color: '#FFD700', fontSize: 16, marginTop: 1 },
     featureIconMuted: { color: colors.textMuted, fontSize: 16, marginTop: 1 },

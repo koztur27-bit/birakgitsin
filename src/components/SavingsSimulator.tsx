@@ -3,7 +3,7 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n';
 import { showRewardedUnlockAd } from '../lib/ads';
-import { hasProAccess } from '../lib/proAccess';
+import { adBlockedText, hasProAccess } from '../lib/proAccess';
 import { useTheme } from '../context/ThemeContext';
 import {
   avoidedCigarettesTotal,
@@ -32,7 +32,7 @@ export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
   const { colors } = useTheme();
   const { t, locale } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
-  const { data, grantProUnlock24h } = useApp();
+  const { data, grantAdProUnlock } = useApp();
   const pro = hasProAccess(data);
   const [customDays, setCustomDays] = useState('45');
 
@@ -49,10 +49,18 @@ export function SavingsSimulator({ plan, logs }: SavingsSimulatorProps) {
   const whatIfExtra = todaySmoked * pricePerCigarette(plan);
 
   const unlockWithAd = async () => {
+    const blocked = adBlockedText(data, t as any);
+    if (blocked) {
+      Alert.alert(t('home.adTitle'), blocked);
+      return;
+    }
     const res = await showRewardedUnlockAd();
     if (res.rewarded) {
-      grantProUnlock24h();
-      Alert.alert(t('home.unlockedTitle'), t('home.unlockedMsg'));
+      const granted = grantAdProUnlock();
+      Alert.alert(
+        t('home.unlockedTitle'),
+        granted.ok ? t('home.unlockedMsg') : t('pro.adNone'),
+      );
     } else {
       Alert.alert(t('home.adTitle'), res.message || t('home.adNotReady'));
     }

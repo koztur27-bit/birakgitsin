@@ -86,6 +86,12 @@ export type AppData = {
   isPremium: boolean;
   /** Ödüllü reklamla açılan geçici PRO erişiminin bitiş zamanı (ms). */
   proUnlockUntil?: number;
+  /** 15 günlük hoş geldin PRO hediyesi daha önce verildi mi? Tek seferlik. */
+  proTrialUsed?: boolean;
+  /** Hoş geldin hediyesinin verildiği zaman (ms). */
+  welcomeTrialGrantedAt?: number;
+  /** Son reklam ödülüyle PRO açılışının zamanı (ms). Haftada 1 hak için kullanılır. */
+  lastAdProGrantAt?: number;
   showLockScreen: boolean;
   /** Uygulama dili. İlk açılışta sistem dilinden algılanır ve kalıcı saklanır. */
   language?: AppLanguage;

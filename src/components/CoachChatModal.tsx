@@ -20,7 +20,7 @@ import { showRewardedUnlockAd } from '../lib/ads';
 import { SUPPORT_EMAIL } from '../lib/legalContent';
 import { todayKey } from '../lib/calculations';
 import { CoachQuickId, coachIntro, coachReply, coachReplyAsync } from '../lib/coachChat';
-import { hasProAccess } from '../lib/proAccess';
+import { adBlockedText, hasProAccess } from '../lib/proAccess';
 import { fontSizes, radius, spacing } from '../theme';
 
 type Msg = { id: string; role: 'user' | 'coach'; text: string };
@@ -36,7 +36,7 @@ export function CoachChatModal({ visible, onClose }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { data, incrementCoachUsage, grantProUnlock24h } = useApp();
+  const { data, incrementCoachUsage, grantAdProUnlock } = useApp();
   const { t, locale } = useI18n();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -105,13 +105,18 @@ export function CoachChatModal({ visible, onClose }: Props) {
   };
 
   const unlockByAd = async () => {
+    const blocked = adBlockedText(data, t as any);
+    if (blocked) {
+      Alert.alert(t('coach.unlimited'), blocked);
+      return;
+    }
     if (unlocking) return;
     setUnlocking(true);
     try {
       const res = await showRewardedUnlockAd();
       if (res.rewarded) {
-        grantProUnlock24h();
-        Alert.alert(t('coach.unlimited'), t('coach.unlocked24h'));
+        const granted = grantAdProUnlock();
+        Alert.alert(t('coach.unlimited'), granted.ok ? t('coach.unlocked24h') : t('pro.adNone'));
       } else if (res.message) {
         Alert.alert(t('alerts.error', undefined as any) || 'Bilgi', res.message || t('coach.adNotReady'));
       } else {

@@ -37,6 +37,9 @@ const defaultData: AppData = {
   crisisReminders: [],
   isPremium: false,
   proUnlockUntil: 0,
+  proTrialUsed: false,
+  welcomeTrialGrantedAt: 0,
+  lastAdProGrantAt: 0,
   showLockScreen: true,
   language: 'tr',
   slipLogs: [],
@@ -56,11 +59,26 @@ export function generateInviteCode(): string {
   return out;
 }
 
+const WELCOME_TRIAL_DAYS = 15;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** 15 günlük PRO hediyesini yalnızca bir kez verir; sonraki açılışlarda tekrar vermez. */
+function applyWelcomeTrial(data: AppData): AppData {
+  if (data.proTrialUsed) return data;
+  const now = Date.now();
+  return {
+    ...data,
+    proTrialUsed: true,
+    welcomeTrialGrantedAt: now,
+    proUnlockUntil: data.isPremium ? (data.proUnlockUntil || 0) : Math.max(now, data.proUnlockUntil || 0) + WELCOME_TRIAL_DAYS * DAY_MS,
+  };
+}
+
 export async function loadData(): Promise<AppData> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const fresh = { ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() };
+      const fresh = applyWelcomeTrial({ ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() });
       // İlk açılışta varsayılan dili (Türkçe) kalıcı sakla (widget/native senkronu için de).
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
@@ -68,7 +86,7 @@ export async function loadData(): Promise<AppData> {
       return fresh;
     }
     const parsed = JSON.parse(raw);
-    const merged = { ...defaultData, ...parsed } as AppData;
+    const merged = applyWelcomeTrial({ ...defaultData, ...parsed } as AppData);
     if (!Array.isArray(merged.slipLogs)) merged.slipLogs = [];
     if (!merged.coachUsage || typeof merged.coachUsage !== 'object') {
       merged.coachUsage = { date: '', count: 0 };
@@ -98,6 +116,9 @@ export async function loadData(): Promise<AppData> {
       merged.dailyPledges = merged.dailyPledges.filter((x: any) => typeof x === 'string');
     }
     merged.inviteRedeemed = !!merged.inviteRedeemed;
+    merged.proTrialUsed = !!merged.proTrialUsed;
+    merged.welcomeTrialGrantedAt = Number.isFinite(merged.welcomeTrialGrantedAt as any) ? Number(merged.welcomeTrialGrantedAt) : 0;
+    merged.lastAdProGrantAt = Number.isFinite(merged.lastAdProGrantAt as any) ? Number(merged.lastAdProGrantAt) : 0;
     merged.ageConfirmed = !!merged.ageConfirmed;
     merged.futureOnboardingShown = !!merged.futureOnboardingShown;
     if (merged.language !== 'tr' && merged.language !== 'en') {
@@ -108,7 +129,7 @@ export async function loadData(): Promise<AppData> {
     } catch {}
     return merged;
   } catch {
-    return { ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() };
+    return applyWelcomeTrial({ ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() });
   }
 }
 
