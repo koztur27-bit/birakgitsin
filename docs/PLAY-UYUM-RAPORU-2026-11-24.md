@@ -230,7 +230,18 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45592903573](https://github
 - Alt sekmeler **SOS → Sağlık → İstatistik → Ayarlar** sırasına getirildi. `App.tsx` `TABS` dizisi, `PagerView` çocuk sırası ve `TabBar` sırası aynı düzende güncellendi; `initialPage`/`onPageSelected` eşleşmesi korundu.
 - **Yoksunluk Belirtisi Rehberi** Ayarlar ekranından kaldırıldı (kart, modal, state ve import’lar temizlendi) ve **SOS (Kriz Anı)** sekmesine taşındı: “Kriz Karnen” kartının altında yeni bir kart + “Rehberi Gör” butonu ve modal açılışı eklendi.
 - Sağlık ekranındaki aynı rehber kopyası da kaldırıldı; böylece rehber tek yerde, SOS sekmesinde toplandı ve önceki sürümdeki tekrar şikâyeti tekrar etmedi.
-- Yeni TR/EN metinleri: `craving.withdrawalGuideCard`, `withdrawalGuideCardSub`, `withdrawalGuideOpen`, `withdrawalGuideClose`.
+- Bu sürümde rehber buton/modal ile açılıyordu; vc103’te doğrudan sayfaya alındığı için bu geçici `craving.withdrawalGuide*` anahtarları kaldırıldı (bkz. bölüm 11).
 
-Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45625243183](https://github.com/koztur27-bit/birakgitsin/actions/runs/45625243183) ✅ (`versionCode 102`, AAB + mapping dahil).")}
+Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45625243183](https://github.com/koztur27-bit/birakgitsin/actions/runs/45625243183) ✅ (`versionCode 102`, AAB + mapping dahil).
+
+---
+
+## 11. vc103 — Yoksunluk rehberi doğrudan görünür ve genişletildi
+
+- Rehber artık SOS sayfasında **Kriz Karnen** kartının hemen altında doğrudan gösteriliyor; “Rehberi Gör” butonu ve modal kaldırıldı. `Modal`, `guideOpen` state’i ve kullanılmayan stiller temizlendi.
+- Geçici `craving.withdrawalGuide*` çeviri anahtarları kaldırıldı; içerik tek kaynak olarak `withdrawal.*` anahtarlarından geliyor.
+- 5 dönem korundu; her döneme ek belirtiler ve öneriler eklendi: titreme/terleme, uykuya dalma zorluğu, öksürük/boğaz hassasiyeti, iştah/kilo değişimi, duygusal tetikleyiciler ve destek hattına dönüş.
+- Uyarı metni güçlendirildi: TR “Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez…”; EN “This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition…”.
+
+Doğrulama: `tsc` ✅ · `npm run lint` ✅.
 [Tool result]: Edited / verification needed

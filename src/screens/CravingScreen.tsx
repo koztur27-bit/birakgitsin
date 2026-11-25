@@ -1,7 +1,7 @@
 import { useTheme } from '../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
@@ -64,7 +64,6 @@ export function CravingScreen() {
 
   const [tool, setTool] = useState<Tool>('breath');
   const [coachOpen, setCoachOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
   const { t, locale } = useI18n();
   const region = detectRegion();
   const support = supportLines(region, locale === 'en' ? 'en' : 'tr');
@@ -473,28 +472,9 @@ export function CravingScreen() {
           </View>
         </Card>
 
-        <Card>
-          <Text style={styles.statsTitle}>{t('craving.withdrawalGuideCard')}</Text>
-          <Text style={styles.guideSub}>{t('craving.withdrawalGuideCardSub')}</Text>
-          <Pressable style={styles.ghostBtn} onPress={() => setGuideOpen(true)}>
-            <Text style={styles.ghostBtnText}>{t('craving.withdrawalGuideOpen')}</Text>
-          </Pressable>
-        </Card>
+        <WithdrawalGuide />
       </ScrollView>
       <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
-      <Modal visible={guideOpen} animationType="slide" onRequestClose={() => setGuideOpen(false)}>
-        <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
-          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.title}>{t('craving.withdrawalGuideCard')}</Text>
-              <Pressable style={styles.ghostBtn} onPress={() => setGuideOpen(false)}>
-                <Text style={styles.ghostBtnText}>{t('craving.withdrawalGuideClose')}</Text>
-              </Pressable>
-            </View>
-            <WithdrawalGuide />
-          </ScrollView>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -754,18 +734,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.md,
-  },
-  guideSub: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    lineHeight: 20,
-  },
-  modalHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
     marginBottom: spacing.md,
   },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
