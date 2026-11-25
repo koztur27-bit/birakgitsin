@@ -90,7 +90,7 @@ function I18nBridge({ children }: { children: React.ReactNode }) {
   return <I18nProvider locale={data.language || 'tr'}>{children}</I18nProvider>;
 }
 
-const TABS: TabKey[] = ['home', 'craving', 'stats', 'health', 'settings'];
+const TABS: TabKey[] = ['home', 'craving', 'health', 'stats', 'settings'];
 
 function Root() {
   const { colors } = useTheme();
@@ -184,11 +184,11 @@ function Root() {
         <View key="craving" style={styles.page} collapsable={false}>
           <CravingScreen />
         </View>
-        <View key="stats" style={styles.page} collapsable={false}>
-          <StatsScreen />
-        </View>
         <View key="health" style={styles.page} collapsable={false}>
           <HealthScreen />
+        </View>
+        <View key="stats" style={styles.page} collapsable={false}>
+          <StatsScreen />
         </View>
         <View key="settings" style={styles.page} collapsable={false}>
           <SettingsScreen onEditPlan={() => setEditing(true)} />

@@ -222,3 +222,15 @@ Doğrulama: `npx tsc --noEmit` ✅ · `npm run lint` ✅ (0 hata).
 Bölgesel destek/criz hatları (`supportLines`) hem **Kriz Anı** hem **Sağlık Durumum** ekranında aynı kartlarla gösteriliyordu. Sağlık ekranındaki kopya kaldırıldı; hatlar yalnızca **Kriz Anı** sekmesinde kalıyor. Sağlık ekranındaki tıbbi uyarı, vücut haritası, kazanımlar, kilometre taşı ve çekilme rehberi olduğu gibi korundu. Kullanılmayan `Linking`, `detectRegion`, `supportLines` import’ları ve `support/region` değişkenleri temizlendi.
 
 Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45592903573](https://github.com/koztur27-bit/birakgitsin/actions/runs/45592903573) ✅ (`versionCode 101`, AAB + mapping dahil).
+
+---
+
+## 10. vc102 — Sekme düzeni ve yoksunluk rehberi
+
+- Alt sekmeler **SOS → Sağlık → İstatistik → Ayarlar** sırasına getirildi. `App.tsx` `TABS` dizisi, `PagerView` çocuk sırası ve `TabBar` sırası aynı düzende güncellendi; `initialPage`/`onPageSelected` eşleşmesi korundu.
+- **Yoksunluk Belirtisi Rehberi** Ayarlar ekranından kaldırıldı (kart, modal, state ve import’lar temizlendi) ve **SOS (Kriz Anı)** sekmesine taşındı: “Kriz Karnen” kartının altında yeni bir kart + “Rehberi Gör” butonu ve modal açılışı eklendi.
+- Sağlık ekranındaki aynı rehber kopyası da kaldırıldı; böylece rehber tek yerde, SOS sekmesinde toplandı ve önceki sürümdeki tekrar şikâyeti tekrar etmedi.
+- Yeni TR/EN metinleri: `craving.withdrawalGuideCard`, `withdrawalGuideCardSub`, `withdrawalGuideOpen`, `withdrawalGuideClose`.
+
+Doğrulama: `tsc` ✅ · `npm run lint` ✅.")}
+[Tool result]: Edited / verification needed

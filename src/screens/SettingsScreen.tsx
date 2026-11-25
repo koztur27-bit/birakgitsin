@@ -12,7 +12,6 @@ import {
   Alert,
   Image,
   Linking,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -29,7 +28,6 @@ import { MapBadge } from '../components/MapBadge';
 import { ScreenMapModal } from '../components/ScreenMapModal';
 import { LegalModal } from '../components/LegalModal';
 import { StatusPopup } from '../components/StatusPopup';
-import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { WidgetGalleryScreen } from './WidgetGalleryScreen';
 import { ProScreen } from './ProScreen';
 import { useApp } from '../context/AppContext';
@@ -83,7 +81,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [shortcutStatus, setShortcutStatus] = useState('');
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [motivationText, setMotivationText] = useState(data.quitMotivation?.text || '');
   const [motivationPhoto, setMotivationPhoto] = useState<string | undefined>(data.quitMotivation?.photoUri);
@@ -771,20 +768,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         </Card>
 
         <Card>
-          <Text style={styles.cardLabel}>Yoksunluk Belirtisi Rehberi</Text>
-          <Text style={styles.planSub}>
-            Bırakma sonrası ilk saatlerden aylara uzanan yaygın belirtileri ve pratik baş etme
-            önerilerini gör. Bilgilendiricidir; tıbbi tavsiye yerine geçmez.
-          </Text>
-          <View style={styles.inlineRow}>
-            <Pressable style={[styles.smallBtn, styles.smallBtnFill]} onPress={() => setGuideOpen(true)}>
-              <Text style={styles.smallBtnText}>Rehberi Gör</Text>
-            </Pressable>
-          </View>
-        </Card>
-
-
-        <Card>
           <Text style={styles.cardLabel}>Akıllı Kriz Bildirimleri</Text>
           <Text style={styles.planSub}>
             Gün içinde zorlandığın 1–3 saati seç. Seçtiğin saatlerde biriken paranı ve hedefini
@@ -973,19 +956,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         <WidgetGalleryScreen visible={widgetsOpen} onClose={() => setWidgetsOpen(false)} />
       )}
       <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
-      <Modal visible={guideOpen} animationType="slide" onRequestClose={() => setGuideOpen(false)}>
-        <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
-          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.title}>Yoksunluk Rehberi</Text>
-              <Pressable style={styles.smallBtn} onPress={() => setGuideOpen(false)}>
-                <Text style={styles.smallBtnText}>Kapat</Text>
-              </Pressable>
-            </View>
-            <WithdrawalGuide />
-          </ScrollView>
-        </View>
-      </Modal>
     </View>
   );
 }

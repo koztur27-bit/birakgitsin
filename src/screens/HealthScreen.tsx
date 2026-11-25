@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
 import { ProgressBar } from '../components/ProgressBar';
-import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { useApp } from '../context/AppContext';
 import { AppLanguage, useI18n } from '../i18n';
 import {
@@ -187,10 +186,6 @@ export function HealthScreen() {
           <Text style={styles.noteText}>{t('health.percentNote')}</Text>
         </View>
 
-        <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>{t('health.withdrawalGuide')}</Text>
-        </View>
-        <WithdrawalGuide />
       </ScrollView>
 
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelectedOrgan(null)}>

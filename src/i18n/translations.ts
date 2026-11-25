@@ -309,6 +309,10 @@ export const translations = {
       statsResisted: 'Direnilen: {count}',
       statsTotal: 'Toplam kriz: {count}',
       statsRate: 'Başarı: %{rate}',
+      withdrawalGuideCard: 'Yoksunluk Belirtisi Rehberi',
+      withdrawalGuideCardSub: 'İlk saatlerden aylara uzanan yaygın belirtiler ve pratik baş etme önerileri. Bilgilendiricidir; tıbbi tavsiye yerine geçmez.',
+      withdrawalGuideOpen: 'Rehberi Gör',
+      withdrawalGuideClose: 'Kapat',
     },
     timer: {
       title: 'Sayaç',
@@ -1089,6 +1093,10 @@ export const translations = {
       statsResisted: 'Resisted: {count}',
       statsTotal: 'Total cravings: {count}',
       statsRate: 'Success: {rate}%',
+      withdrawalGuideCard: 'Withdrawal Symptom Guide',
+      withdrawalGuideCardSub: 'Common symptoms from the first hours to months, with practical coping tips. Informational only; not medical advice.',
+      withdrawalGuideOpen: 'View guide',
+      withdrawalGuideClose: 'Close',
     },
     timer: {
       title: 'Timer',
