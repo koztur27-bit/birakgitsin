@@ -232,5 +232,5 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45592903573](https://github
 - Sağlık ekranındaki aynı rehber kopyası da kaldırıldı; böylece rehber tek yerde, SOS sekmesinde toplandı ve önceki sürümdeki tekrar şikâyeti tekrar etmedi.
 - Yeni TR/EN metinleri: `craving.withdrawalGuideCard`, `withdrawalGuideCardSub`, `withdrawalGuideOpen`, `withdrawalGuideClose`.
 
-Doğrulama: `tsc` ✅ · `npm run lint` ✅.")}
+Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45625243183](https://github.com/koztur27-bit/birakgitsin/actions/runs/45625243183) ✅ (`versionCode 102`, AAB + mapping dahil).")}
 [Tool result]: Edited / verification needed
