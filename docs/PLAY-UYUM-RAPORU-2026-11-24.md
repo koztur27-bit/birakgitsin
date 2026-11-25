@@ -289,5 +289,15 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45695191948](https://github
 
 ## vc108 — Tedarik zinciri güvenliği (2.5.2 / versionCode 108)
 
-- `npm audit --omit=dev` içindeki yüksek风险 `node-forge` (1.4.0) uyarısı `overrides.node-forge = 1.4.4` ile kapatıldı; prod high/critical sayısı **0** (4 moderate kaldı, Expo toolchain kaynaklı).
+- `npm audit --omit=dev` içindeki yüksek riskli `node-forge` (1.4.0) uyarısı `overrides.node-forge = 1.4.4` ile kapatıldı; prod high/critical sayısı **0** (4 moderate kaldı, Expo toolchain kaynaklı).
 - `tsc` ve `npm run lint` sıfır hata; paket sürümü 2.5.2, versionCode 108.
+
+### Son derleme referansı (vc108)
+
+- GitHub Actions: `45711136417` (başarılı; ilk iki denemede Maven Central 429, üçüncü denemede başarı).
+- User APK SHA-256: `926fe0787bc05a1750fef9cab94ccaf5b70050771dce844fd2022f508dc66796`
+- Dev APK SHA-256: `29ffd177cd9e989ad972676b2f12aea081c51e72f8cc6ea2153c9d7698dac8c2`
+- AAB SHA-256: `a652a6fc65262e12f6b4a69a2d0753485e654d82930f25404904d7dcc3f2b214`
+- mapping.txt SHA-256: `a3b6cc951aec4efeb4a337b3528180f5a31fbf5e8fd1eb5b29c15179f348d63f`
+- `versionCode 108`, `versionName 2.5.2`, imza SHA-256 `85a453d977a3fcbe340c80ada2d164576120d3b4c95ee785cd992dce855017ff`.
+- `mapping.txt` yolu: `android/app/build/outputs/mapping/release/mapping.txt`; Play Console'a AAB ile aynı sürümün mapping'si yüklenmelidir.
