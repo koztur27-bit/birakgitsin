@@ -243,5 +243,5 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45625243183](https://github
 - 5 dönem korundu; her döneme ek belirtiler ve öneriler eklendi: titreme/terleme, uykuya dalma zorluğu, öksürük/boğaz hassasiyeti, iştah/kilo değişimi, duygusal tetikleyiciler ve destek hattına dönüş.
 - Uyarı metni güçlendirildi: TR “Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez…”; EN “This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition…”.
 
-Doğrulama: `tsc` ✅ · `npm run lint` ✅.
+Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45634416472](https://github.com/koztur27-bit/birakgitsin/actions/runs/45634416472) ✅ (`versionCode 103`, AAB + mapping dahil).
 [Tool result]: Edited / verification needed
