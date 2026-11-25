@@ -253,5 +253,4 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45634416472](https://github
 - **Bırakma Sebebim** kartının düzenlenebilir hâli Ayarlar’dan SOS sekmesine taşındı: metin, fotoğraf ekleme/değiştirme/kaldırma artık SOS’ta yapılıyor. Ayarlar’daki kart, state, fotoğraf seçme mantığı ve import’lar kaldırıldı. `motivation.empty` metni SOS’u işaret ediyor.
 - Platforma göre değişen 💙 emoji’si yerine SOS, Ana Sayfa ve SOS nefes modalındaki kalp görselleri `Ionicons name="heart"` vektör ikonuna çevrildi; renk `#2563EB` sabitlendi. Böylece “kalp görseli yine değişti” sorunu ortadan kalktı.
 
-Doğrulama: `tsc` ✅ · `npm run lint` ✅.
-[Tool result]: Edited / verification needed
+Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45661114675](https://github.com/koztur27-bit/birakgitsin/actions/runs/45661114675) ✅ (ilk denemede Maven Central 429, yeniden çalıştırmada başarılı; `versionCode 104`, AAB + mapping dahil).
