@@ -286,3 +286,8 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45695191948](https://github
 - AdMob ID, `app-ads.txt`, Veri Sorumlusu ve izin verilen imza parmak izleri tek merkezi dosyada toplandı: `src/config/releaseConfig.ts`. Placeholder'lar `TODO: YAYIN ÖNCESİ DOLDUR` ile işaretli; yayında test ID yerine güvenli "reklam hazırlanıyor" mesajı.
 - Yüksek riskli borçlar: `AdRewardModal` ödül zaman aşımı timer'ı temizleniyor, `AppProvider` unmount'ta flash/ticker timer'larını temizliyor, `resetAll` veri temizliğini await ediyor, `ThemeContext` promise reddi yakalanıyor.
 - `tsc` ve `npm run lint` sıfır hata; prebuild native modül + keep rules doğrulandı.
+
+## vc108 — Tedarik zinciri güvenliği (2.5.2 / versionCode 108)
+
+- `npm audit --omit=dev` içindeki yüksek风险 `node-forge` (1.4.0) uyarısı `overrides.node-forge = 1.4.4` ile kapatıldı; prod high/critical sayısı **0** (4 moderate kaldı, Expo toolchain kaynaklı).
+- `tsc` ve `npm run lint` sıfır hata; paket sürümü 2.5.2, versionCode 108.
