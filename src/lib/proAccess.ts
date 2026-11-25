@@ -1,4 +1,5 @@
 import { AppData } from '../types';
+import { proNow } from './proEntitlementStore';
 
 export const WELCOME_TRIAL_DAYS = 15;
 export const AD_UNLOCK_DAYS = 1;
@@ -14,13 +15,13 @@ export type AdUnlockAvailability =
 export function hasProAccess(data: AppData): boolean {
   if (data.isPremium) return true;
   const until = data.proUnlockUntil ?? 0;
-  return typeof until === 'number' && until > Date.now();
+  return typeof until === 'number' && until > proNow();
 }
 
 export function proUnlockRemainingMs(data: AppData): number {
   const until = data.proUnlockUntil ?? 0;
   if (!until || data.isPremium) return 0;
-  return Math.max(0, until - Date.now());
+  return Math.max(0, until - proNow());
 }
 
 /** 15 günlük hediye hâlâ kullanılabilir mi (yedekten geri yüklemede yeniden verilmez). */
@@ -33,7 +34,7 @@ export function adUnlockAvailability(data: AppData): AdUnlockAvailability {
   if (data.isPremium) return { available: false, reason: 'premium', remainingMs: 0 };
   if (hasProAccess(data)) return { available: false, reason: 'active', remainingMs: proUnlockRemainingMs(data) };
   const last = data.lastAdProGrantAt ?? 0;
-  const elapsed = last > 0 ? Date.now() - last : AD_UNLOCK_COOLDOWN_MS;
+  const elapsed = last > 0 ? proNow() - last : AD_UNLOCK_COOLDOWN_MS;
   if (elapsed < AD_UNLOCK_COOLDOWN_MS) {
     return { available: false, reason: 'cooldown', remainingMs: AD_UNLOCK_COOLDOWN_MS - elapsed };
   }
@@ -41,7 +42,7 @@ export function adUnlockAvailability(data: AppData): AdUnlockAvailability {
 }
 
 export function adProUnlockUntil(data: AppData): number {
-  return Math.max(Date.now(), data.proUnlockUntil ?? 0) + AD_UNLOCK_DAYS * DAY_MS;
+  return Math.max(proNow(), data.proUnlockUntil ?? 0) + AD_UNLOCK_DAYS * DAY_MS;
 }
 
 /** Kullanıcıya gösterilecek engel mesajı; reklamı boşa izletmemek için öğrenilir. */

@@ -1,5 +1,6 @@
 import { useTheme } from '../context/ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { persistMotivationPhoto } from '../lib/motivationPhoto';
 import React, { useState } from 'react';
 import {
@@ -382,7 +383,7 @@ export function Onboarding({ initial, onComplete, onCancel }: OnboardingProps) {
                 <Image source={{ uri: motivationPhoto }} style={styles.motivationPhotoPreview} />
               ) : (
                 <View style={styles.motivationPhotoPlaceholder}>
-                  <Text style={styles.motivationPhotoPlaceholderText}>❤️</Text>
+                  <Ionicons name="heart" size={34} color="#EF4444" />
                 </View>
               )}
               <View style={{ flex: 1, gap: spacing.sm }}>
@@ -638,7 +639,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  motivationPhotoPlaceholderText: { fontSize: 34 },
   smallActionBtn: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,

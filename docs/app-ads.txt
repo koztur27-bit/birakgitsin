@@ -1,1 +1,4 @@
-google.com, pub-XXXXXXXXXXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# TODO: YAYIN ÖNCESİ DOLDUR
+# Gerçek publisher ID ve developer domain için src/config/releaseConfig.ts dosyasına bakın.
+# Format:
+google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

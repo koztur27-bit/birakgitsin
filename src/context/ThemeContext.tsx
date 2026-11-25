@@ -27,6 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           setModeState(raw);
         }
       })
+      .catch(() => {})
       .finally(() => setReady(true));
   }, []);
 

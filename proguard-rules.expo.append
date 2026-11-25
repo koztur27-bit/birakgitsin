@@ -40,3 +40,9 @@
 
 # WorkManager / foreground service altyapisi
 -keep class androidx.work.** { *; }
+
+# SignatureCheck (release imza dogrulama) - R8 bu siniflari silmesin
+-keep class com.birakgitsin.app.SignatureCheckModule { *; }
+-keep class com.birakgitsin.app.SignatureCheckPackage { *; }
+-keepnames class com.birakgitsin.app.SignatureCheckModule
+-keepnames class com.birakgitsin.app.SignatureCheckPackage

@@ -789,6 +789,9 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
                 style={styles.inviteInput}
                 value={inviteInput}
                 onChangeText={setInviteInput}
+                onSubmitEditing={onRedeemInvite}
+                returnKeyType="done"
+                blurOnSubmit
                 placeholder={t('invite.enterPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="characters"

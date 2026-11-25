@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { RELEASE_CONFIG, isPlaceholder } from '../config/releaseConfig';
 
 // Google'ın resmi test kimlikleri. Play Console / AdMob hesap kimlikleriyle
 // yayın öncesi değiştirilecek.
@@ -12,11 +13,28 @@ export const TEST_BANNER_AD_UNIT_ID =
     ? 'ca-app-pub-3940256099942544/2934735716'
     : 'ca-app-pub-3940256099942544/6300978111';
 
+/** Ortam değişkeni > merkezi config > test ID sırası. Yayında placeholder asla kullanılmaz. */
+function resolveAdUnit(envValue: string, configured: string, testId: string): string {
+  if (!isPlaceholder(envValue)) return envValue;
+  if (!isPlaceholder(configured)) return configured;
+  if (__DEV__) return testId;
+  console.error(
+    '[ads] TODO: YAYIN ÖNCESİ DOLDUR — AdMob unit ID eksik; test ID yayında kullanılmayacak.',
+  );
+  return '';
+}
+
 export const ADS_CONFIG = {
-  rewardedAdUnitId: TEST_REWARDED_AD_UNIT_ID,
-  bannerAdUnitId: TEST_BANNER_AD_UNIT_ID,
-  // Yayına geçerken AdMob App ID'lerini app.json içindeki
-  // react-native-google-mobile-ads plugin alanına girin.
+  rewardedAdUnitId: resolveAdUnit(
+    RELEASE_CONFIG.admob.env.rewardedAdUnitId,
+    RELEASE_CONFIG.admob.rewardedAdUnitId,
+    TEST_REWARDED_AD_UNIT_ID,
+  ),
+  bannerAdUnitId: resolveAdUnit(
+    RELEASE_CONFIG.admob.env.bannerAdUnitId,
+    RELEASE_CONFIG.admob.bannerAdUnitId,
+    TEST_BANNER_AD_UNIT_ID,
+  ),
 };
 
 type AdsModule = any;
@@ -80,9 +98,15 @@ export async function showRewardedUnlockAd(): Promise<{ rewarded: boolean; messa
         'Reklam modülü şu anda hazır değil. Bu sürümde AdMob altyapısı test kimlikleriyle yapılandırıldı; gerçek cihazda ve doğru kurulumda çalışır.',
     };
   }
+  const adUnitId = __DEV__ ? ads.TestIds.REWARDED : ADS_CONFIG.rewardedAdUnitId;
+  if (!adUnitId) {
+    return {
+      rewarded: false,
+      message: 'Reklam ödülü yayına hazırlanıyor. Lütfen daha sonra tekrar deneyin.',
+    };
+  }
   try {
     await initAds();
-    const adUnitId = __DEV__ ? ads.TestIds.REWARDED : ADS_CONFIG.rewardedAdUnitId;
     const rewarded = ads.RewardedAd.createForAdRequest(adUnitId, {
       requestNonPersonalizedAdsOnly: true,
     });
@@ -90,9 +114,11 @@ export async function showRewardedUnlockAd(): Promise<{ rewarded: boolean; messa
     return await new Promise((resolve) => {
       let earned = false;
       let settled = false;
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
       const finish = (result: { rewarded: boolean; message?: string }) => {
         if (settled) return;
         settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
         try {
           unsubLoaded();
           unsubEarned();
@@ -133,7 +159,7 @@ export async function showRewardedUnlockAd(): Promise<{ rewarded: boolean; messa
       }
 
       // Güvenlik zaman aşımı
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         if (!settled) finish({ rewarded: false, message: 'Reklam zaman aşımına uğradı.' });
       }, 45000);
     });

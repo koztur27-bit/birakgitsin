@@ -1,41 +1,66 @@
 import * as Application from 'expo-application';
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
 import appConfig from '../../app.json';
+import { RELEASE_CONFIG, isPlaceholder } from '../config/releaseConfig';
+import { clockRollbackDetected } from '../lib/proEntitlementStore';
 
-/**
- * Resmi Android paket adı app.json'dan okunur; ikinci bir sabit tanımlanmaz.
- * iOS bundle id aynı olsa da bu kontrol yalnızca Android release derlemelerinde çalışır.
- */
 const OFFICIAL_ANDROID_PACKAGE: string =
   appConfig.expo.android?.package ?? 'com.birakgitsin.app';
 
-/**
- * Hafif anti-tamper kontrolü.
- *
- * - Geliştirme derlemelerinde (__DEV__ === true) ve iOS'ta hiçbir şey yapmaz.
- * - Release Android derlemelerinde çalışma anındaki applicationId'yi app.json
- *   içindeki resmi paket adıyla karşılaştırır.
- * - Uyuşmazlıkta uygulamayı kapatmaz (yanlış pozitifler gerçek kullanıcıyı
- *   etkilemesin diye); yalnızca production'da korunan console.error ile kayıt tutar.
- *
- * @returns Paket adı doğrulandığında veya kontrol atlandığında true.
- */
+const ALLOWED_SIGNATURES = RELEASE_CONFIG.appIntegrity.allowedSignatureSha256
+  .filter((value) => !isPlaceholder(value))
+  .map((value) => value.toLowerCase().replace(/:/g, ''));
+
+let lastIntegrityResult: boolean | null = null;
+
+function normalize(value: unknown): string {
+  return typeof value === 'string' ? value.toLowerCase().replace(/:/g, '') : '';
+}
+
 export function checkAppIntegrity(): boolean {
-  if (__DEV__ || Platform.OS !== 'android') return true;
+  if (__DEV__ || Platform.OS !== 'android') {
+    lastIntegrityResult = true;
+    return true;
+  }
+
+  let packageOk = false;
+  let signatureOk = false;
 
   try {
-    const actualPackage = Application.applicationId;
-    if (actualPackage !== OFFICIAL_ANDROID_PACKAGE) {
+    packageOk = Application.applicationId === OFFICIAL_ANDROID_PACKAGE;
+    if (!packageOk) {
       console.error('[appIntegrity] Unexpected applicationId (repackaged build?)', {
-        actual: actualPackage,
+        actual: Application.applicationId,
         expected: OFFICIAL_ANDROID_PACKAGE,
       });
-      return false;
     }
-    return true;
   } catch (error) {
     console.error('[appIntegrity] Package check failed', error);
-    return false;
   }
+
+  try {
+    const actual = normalize(NativeModules.SignatureCheck?.getSignatureSha256?.());
+    signatureOk = !!actual && ALLOWED_SIGNATURES.includes(actual);
+    if (!signatureOk) {
+      console.error('[appIntegrity] Signature mismatch', {
+        actual: actual || '(okunamadı)',
+        allowedCount: ALLOWED_SIGNATURES.length,
+        hint: 'Play App Signing etkinse SHA-256 değerini src/config/releaseConfig.ts içine ekleyin.',
+      });
+    }
+  } catch (error) {
+    console.error('[appIntegrity] Signature check failed', error);
+  }
+
+  lastIntegrityResult = packageOk && signatureOk;
+  return lastIntegrityResult;
+}
+
+export function getLastIntegrityResult(): boolean | null {
+  return lastIntegrityResult;
+}
+
+export function integrityClockRollbackDetected(): boolean {
+  return clockRollbackDetected();
 }

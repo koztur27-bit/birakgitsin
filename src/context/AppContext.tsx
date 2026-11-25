@@ -7,6 +7,7 @@ import { badgeById, evaluateBadges } from '../lib/badges';
 import { addPurchaseListeners, ENTITLEMENT_PRODUCT_IDS } from '../lib/billing';
 import { maybeRequestStoreReview } from '../lib/storeReview';
 import { adProUnlockUntil, adUnlockAvailability } from '../lib/proAccess';
+import { proNow } from '../lib/proEntitlementStore';
 import { cigarettesAvoided, formatCountdown, formatMoney, getLog, todayKey, totalMoneySaved } from '../lib/calculations';
 import { playAlarmFor, stopAlarm, vibrateFive } from '../lib/alarm';
 import {
@@ -261,6 +262,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const prevSmokedRef = useRef(0);
   const permRequestedRef = useRef(false);
   const remoteActionRef = useRef<Record<string, () => void>>({});
+
+  // Bileşen kaldırıldığında zamanlayıcıları temizle (unmount sonrası setState / sızıntı yok).
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      if (tickerRef.current) clearInterval(tickerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -748,8 +757,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await syncCrisisReminderSchedules(reminders, next);
   };
 
-  const resetAll = () => {
-    clearData();
+  const resetAll = async () => {
+    await clearData();
     clearLockStatus();
     if (Platform.OS !== 'web') {
       Notifications.getAllScheduledNotificationsAsync()
@@ -772,7 +781,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isPremium: false,
       proUnlockUntil: 0,
       proTrialUsed: true,
-      welcomeTrialGrantedAt: Date.now(),
+      welcomeTrialGrantedAt: proNow(),
       lastAdProGrantAt: 0,
       showLockScreen: true,
       language: data.language || 'tr',
@@ -786,14 +795,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dailyPledges: [],
     };
     setData(fresh);
-    persistData(fresh).catch(() => {});
+    await persistData(fresh);
   };
 
   const setPremium = (value: boolean) => persist({ ...data, isPremium: value });
 
   const grantProUnlockDays = (days: number) => {
     const ms = Math.max(1, Math.floor(days)) * 24 * 60 * 60 * 1000;
-    persist({ ...data, proUnlockUntil: Math.max(Date.now(), data.proUnlockUntil || 0) + ms });
+    persist({ ...data, proUnlockUntil: Math.max(proNow(), data.proUnlockUntil || 0) + ms });
   };
 
   // Haftada 1 reklam ödülü: aktif PRO varken hak tüketilmez, 7 gün bekleme süresi vardır.
@@ -802,7 +811,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!availability.available) {
       return { ok: false, reason: availability.reason, remainingMs: availability.remainingMs };
     }
-    const now = Date.now();
+    const now = proNow();
     persist({
       ...data,
       lastAdProGrantAt: now,
@@ -865,7 +874,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { ok: false, message: 'invalid' };
     }
     const ms = 7 * 24 * 60 * 60 * 1000;
-    const nextUntil = Math.max(Date.now(), data.proUnlockUntil || 0) + ms;
+    const nextUntil = Math.max(proNow(), data.proUnlockUntil || 0) + ms;
     persist({ ...data, proUnlockUntil: nextUntil, inviteRedeemed: true });
     return { ok: true };
   };

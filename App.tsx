@@ -207,6 +207,10 @@ function Root() {
 export default function App() {
   useEffect(() => {
     checkAppIntegrity();
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') checkAppIntegrity();
+    });
+    return () => sub.remove();
   }, []);
 
   return (

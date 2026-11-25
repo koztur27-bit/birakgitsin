@@ -2,7 +2,7 @@
   "expo": {
     "name": "Let It Go",
     "slug": "birakgitsin",
-    "version": "2.5.0",
+    "version": "2.5.1",
     "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 106,
+      "versionCode": 107,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -79,7 +79,8 @@
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "_releaseTodo": "TODO: YAYIN ÖNCESİ DOLDUR — gerçek AdMob App ID'lerini src/config/releaseConfig.ts veya EXPO_PUBLIC_ADMOB_* env ile verin."
         }
       ],
       [
@@ -94,6 +95,7 @@
       "./plugins/withProguardRules.js",
       "./plugins/withR8Security.js",
       "./plugins/withReleaseSigning.js",
+      "./plugins/withSignatureCheck.js",
       "./plugins/withAppNameLocalization.js",
       [
         "expo-build-properties",
@@ -105,7 +107,8 @@
             "usesCleartextTraffic": false
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearProState, loadProState, saveProState } from './lib/proEntitlementStore';
 import { AppData, AppLanguage } from './types';
 
 const STORAGE_KEY = '@birakgitsin/data/v1';
@@ -83,7 +84,7 @@ export async function loadData(): Promise<AppData> {
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
       } catch {}
-      return fresh;
+      return loadProState(fresh);
     }
     const parsed = JSON.parse(raw);
     const merged = applyWelcomeTrial({ ...defaultData, ...parsed } as AppData);
@@ -124,12 +125,14 @@ export async function loadData(): Promise<AppData> {
     if (merged.language !== 'tr' && merged.language !== 'en') {
       merged.language = 'tr';
     }
+    const secured = await loadProState(merged);
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(secured));
     } catch {}
-    return merged;
+    return secured;
   } catch {
-    return applyWelcomeTrial({ ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() });
+    const fallback = applyWelcomeTrial({ ...defaultData, language: 'tr' as AppLanguage, inviteCode: generateInviteCode() });
+    return loadProState(fallback);
   }
 }
 
@@ -139,8 +142,11 @@ export async function persistData(data: AppData): Promise<void> {
   } catch {
     // Keep running even if persistence fails.
   }
+  // PRO hakları düz JSON'a ek olarak imzalı SecureStore kaydına da yazılır.
+  await saveProState(data);
 }
 
-export function clearData(): Promise<void> {
-  return AsyncStorage.removeItem(STORAGE_KEY);
+export async function clearData(): Promise<void> {
+  await AsyncStorage.removeItem(STORAGE_KEY);
+  await clearProState();
 }

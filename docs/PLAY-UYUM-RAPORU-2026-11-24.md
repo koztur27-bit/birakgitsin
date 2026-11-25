@@ -275,3 +275,14 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45668276380](https://github
 - PRO ekranında hediye ve haftalık hak açıkça gösteriliyor; “ücretsiz deneme sunulmaz” ifadesi kaldırıldı. Ayarlar’daki PRO kartı da yeni planı anlatıyor.
 
 Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45695191948](https://github.com/koztur27-bit/birakgitsin/actions/runs/45695191948) ✅ (`versionCode 106`, AAB + mapping dahil; ilk denemede sürüm numarası 105 kaldığı için elle yeniden derlendi).
+
+## vc107 — Yayın öncesi sıkılaştırma (2.5.1 / versionCode 107)
+
+- Ayarlar davet kodu `TextInput` alanına `onSubmitEditing={onRedeemInvite}` eklendi; Enter/Gönder tuşu girilen kodu doğrular (artık `data.inviteCode` kullanılmıyor).
+- Onboarding'deki emoji kalp kaldırıldı; SOS ekranıyla aynı `@expo/vector-icons` `heart` / `#EF4444` vektör ikonu kullanılıyor.
+- PRO hakları `expo-secure-store` + `expo-crypto` HMAC imzalı envelope'a taşındı (`src/lib/proEntitlementStore.ts`). `proNow()` monotonic yüksek su işaretiyle geri sarılan saate karşı koruma sağlıyor; tüm PRO süre hesapları bu saati kullanıyor.
+- Android release başlangıcında ve foreground geçişinde paket adı + imza SHA-256 doğrulaması yapılıyor (`NativeModules.SignatureCheck`). Beklenen parmak izleri `src/config/releaseConfig.ts` içinde; Play App Signing key'i placeholder olarak bekliyor.
+- Yeni native modül config plugin ile prebuild sırasında yazılıyor; R8 keep kuralları `proguard-rules.expo.append` ve `android/app/proguard-rules.pro` içinde.
+- AdMob ID, `app-ads.txt`, Veri Sorumlusu ve izin verilen imza parmak izleri tek merkezi dosyada toplandı: `src/config/releaseConfig.ts`. Placeholder'lar `TODO: YAYIN ÖNCESİ DOLDUR` ile işaretli; yayında test ID yerine güvenli "reklam hazırlanıyor" mesajı.
+- Yüksek riskli borçlar: `AdRewardModal` ödül zaman aşımı timer'ı temizleniyor, `AppProvider` unmount'ta flash/ticker timer'larını temizliyor, `resetAll` veri temizliğini await ediyor, `ThemeContext` promise reddi yakalanıyor.
+- `tsc` ve `npm run lint` sıfır hata; prebuild native modül + keep rules doğrulandı.
