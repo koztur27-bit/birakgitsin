@@ -359,7 +359,7 @@ export function HomeScreen(_props: HomeScreenProps) {
             {data.quitMotivation.photoUri ? (
               <Image source={{ uri: data.quitMotivation.photoUri }} style={styles.motivationPhoto} />
             ) : (
-              <View style={styles.motivationIconWrap}><Ionicons name="heart" size={22} color="#2563EB" /></View>
+              <View style={styles.motivationIconWrap}><Ionicons name="heart" size={22} color="#EF4444" /></View>
             )}
             <View style={styles.motivationTextWrap}>
               <Text style={styles.motivationLabel}>{t('motivation.ribbonLabel')}</Text>
@@ -711,7 +711,7 @@ const createStyles = (colors: any) =>
       width: 46,
       height: 46,
       borderRadius: 23,
-      backgroundColor: colors.primarySoft,
+      backgroundColor: 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
     },

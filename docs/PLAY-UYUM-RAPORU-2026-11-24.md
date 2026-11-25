@@ -254,3 +254,13 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45634416472](https://github
 - Platforma göre değişen 💙 emoji’si yerine SOS, Ana Sayfa ve SOS nefes modalındaki kalp görselleri `Ionicons name="heart"` vektör ikonuna çevrildi; renk `#2563EB` sabitlendi. Böylece “kalp görseli yine değişti” sorunu ortadan kalktı.
 
 Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45661114675](https://github.com/koztur27-bit/birakgitsin/actions/runs/45661114675) ✅ (ilk denemede Maven Central 429, yeniden çalıştırmada başarılı; `versionCode 104`, AAB + mapping dahil).
+
+---
+
+## 13. vc105 — Kalp ve destek kutuları
+
+- Bırakma Sebebim kartındaki kalp ikonu `#EF4444` kırmızıya alındı; çevresindeki açık zemin (`#EEF2FF`) kaldırıldı. Aynı kalp görselleri Ana Sayfa ve SOS nefes modalında da kırmızı ve zeminsiz yapıldı.
+- SOS sekmesindeki 4 destek hattı kutusu artık sayfanın **en altında**, yoksunluk rehberinden sonra gösteriliyor.
+- Kutuların parlak kırmızı zemini kaldırıldı; tema `card` zeminı, `border` çerçevesi ve `text` / `textMuted` yazı renkleri kullanılıyor. Telefon tıklama ve URL açma davranışı korundu.
+
+Doğrulama: `tsc` ✅ · `npm run lint` ✅.

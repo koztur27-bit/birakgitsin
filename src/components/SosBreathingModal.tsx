@@ -229,7 +229,7 @@ export function SosBreathingModal({ visible, onClose, onGamePassed }: SosBreathi
                   {data.quitMotivation.photoUri ? (
                     <Image source={{ uri: data.quitMotivation.photoUri }} style={styles.motivationPhoto} />
                   ) : (
-                    <View style={styles.motivationIconWrap}><Ionicons name="heart" size={26} color="#2563EB" /></View>
+                    <View style={styles.motivationIconWrap}><Ionicons name="heart" size={26} color="#EF4444" /></View>
                   )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.motivationTitle}>{t('motivation.sosTitle')}</Text>
@@ -367,7 +367,7 @@ const createStyles = (colors: any) =>
     motivationBox: { backgroundColor: colors.primarySoft, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.primary },
     motivationHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     motivationPhoto: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.bg },
-    motivationIconWrap: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+    motivationIconWrap: { width: 54, height: 54, borderRadius: 27, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
     motivationTitle: { fontSize: fontSizes.xs, fontWeight: '800', color: colors.primaryDark, letterSpacing: 0.4, marginBottom: 2 },
     motivationBody: { fontSize: fontSizes.md, fontWeight: '700', color: colors.text, lineHeight: 22 },
     eyebrow: { fontSize: fontSizes.xs, fontWeight: '800', letterSpacing: 1.2, color: colors.danger },

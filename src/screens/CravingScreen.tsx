@@ -231,7 +231,7 @@ export function CravingScreen() {
               <Image source={{ uri: motivationPhoto }} style={styles.motivationAvatar} />
             ) : (
               <View style={styles.motivationAvatarPlaceholder}>
-                <Ionicons name="heart" size={28} color="#2563EB" />
+                <Ionicons name="heart" size={28} color="#EF4444" />
               </View>
             )}
             <View style={styles.motivationField}>
@@ -260,13 +260,6 @@ export function CravingScreen() {
             </View>
           </View>
         </Card>
-
-        {support.map((ln) => (
-          <Pressable key={ln.id} onPress={() => { if (ln.action === 'call') { try { Linking.openURL('tel:' + ln.number.replace(/\s/g, '')); } catch {} } else if (ln.url) { try { Linking.openURL(ln.url); } catch {} } }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel={ln.label}>
-            <Text style={{fontWeight:'800',color:'#991B1B'}}>{ln.label}</Text>
-            <Text style={{color:'#7F1D1D',fontSize:12,marginTop:2}}>{ln.number}</Text>
-          </Pressable>
-        ))}
 
         <Pressable
           accessibilityRole="button"
@@ -529,6 +522,25 @@ export function CravingScreen() {
         </Card>
 
         <WithdrawalGuide />
+
+        {support.map((ln) => (
+          <Pressable
+            key={ln.id}
+            onPress={() => {
+              if (ln.action === 'call') {
+                try { Linking.openURL('tel:' + ln.number.replace(/\s/g, '')); } catch {}
+              } else if (ln.url) {
+                try { Linking.openURL(ln.url); } catch {}
+              }
+            }}
+            style={styles.supportCard}
+            accessibilityRole="button"
+            accessibilityLabel={ln.label}
+          >
+            <Text style={styles.supportLabel}>{ln.label}</Text>
+            <Text style={styles.supportNumber}>{ln.number}</Text>
+          </Pressable>
+        ))}
       </ScrollView>
       <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
     </View>
@@ -803,7 +815,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -827,6 +839,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderColor: colors.primary,
   },
   smallBtnText: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
+  supportCard: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    marginBottom: 8,
+  },
+  supportLabel: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.text },
+  supportNumber: { fontSize: fontSizes.xs, color: colors.textMuted, marginTop: 2 },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   stat: { flex: 1, alignItems: 'center', gap: 2 },
   statValue: {
