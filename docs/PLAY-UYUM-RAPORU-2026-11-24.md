@@ -274,4 +274,4 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45668276380](https://github
 - **Haftalık reklam ödülü:** Reklam tamamlandığında **1 gün PRO** veriliyor; hak **her 7 günde bir** yenileniyor (`lastAdProGrantAt`). Aktif PRO varken hak tüketilmiyor. Özel tema, gelişmiş simülatör ve sınırsız koç sohbeti aynı kotayı kullanıyor; reklam gösterilmeden önce kalan hak kontrol ediliyor.
 - PRO ekranında hediye ve haftalık hak açıkça gösteriliyor; “ücretsiz deneme sunulmaz” ifadesi kaldırıldı. Ayarlar’daki PRO kartı da yeni planı anlatıyor.
 
-Doğrulama: `tsc` ✅ · `npm run lint` ✅.
+Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45695191948](https://github.com/koztur27-bit/birakgitsin/actions/runs/45695191948) ✅ (`versionCode 106`, AAB + mapping dahil; ilk denemede sürüm numarası 105 kaldığı için elle yeniden derlendi).
