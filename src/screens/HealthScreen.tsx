@@ -1,7 +1,7 @@
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
@@ -9,7 +9,6 @@ import { ProgressBar } from '../components/ProgressBar';
 import { WithdrawalGuide } from '../components/WithdrawalGuide';
 import { useApp } from '../context/AppContext';
 import { AppLanguage, useI18n } from '../i18n';
-import { detectRegion, supportLines } from '../lib/regionalSupport';
 import {
   bodyRenewalMap,
   BodyRenewalOrganId,
@@ -45,8 +44,6 @@ export function HealthScreen() {
   const plan = data.plan;
   const lang = (data.language || locale || 'tr') as AppLanguage;
   const isEn = lang === 'en';
-  const region = detectRegion();
-  const support = supportLines(region, isEn ? 'en' : 'tr');
 
   // Yüzdeler bırakma süresine bağlı olduğu için ekran açıkken canlı güncellenir.
   const [now, setNow] = useState(() => Date.now());
@@ -91,13 +88,6 @@ export function HealthScreen() {
             ? 'This app does not provide medical advice, diagnosis, or treatment. Consult a healthcare professional for health decisions.'
             : 'Bu uygulama tibbi tavsiye, teshis veya tedavi sunmaz. Saglik kararlariniz icin bir saglik uzmanina danisin.'}
         </Text>
-
-        {support.map((ln) => (
-          <Pressable key={ln.id} onPress={() => { if (ln.action === 'call') { try { Linking.openURL('tel:' + ln.number.replace(/\s/g, '')); } catch {} } else if (ln.url) { try { Linking.openURL(ln.url); } catch {} } }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel={ln.label}>
-            <Text style={{fontWeight:'800',color:'#991B1B'}}>{ln.label}</Text>
-            <Text style={{color:'#7F1D1D',fontSize:12,marginTop:2}}>{ln.number}</Text>
-          </Pressable>
-        ))}
 
         <Card style={styles.nextCard}>
           <Text style={styles.nextLabel}>{t('health.nextInfoWindow')}</Text>

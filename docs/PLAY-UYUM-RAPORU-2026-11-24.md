@@ -214,3 +214,11 @@ Doğrulama: `npx tsc --noEmit` ✅ · `npm run lint` ✅ (0 hata).
 - Play Console’da AAB’yi yüklerken çıkan “Deobfuscation file” adımında **Upload → mapping.txt** ile bu dosyayı seç. AAB ile aynı sürümün mapping dosyası olmalı; eski sürümün mapping dosyası çöktürme raporlarını yanlış okutur.
 
 **Sınırlar:** Bu katmanlar maliyeti artırır, kopyalamayı imkânsız kılmaz. Gerçek koruma için sunucu tarafı IAP doğrulaması ve Play Integrity token doğrulaması gerekir (backend şartı, bkz. bölüm 7).
+
+---
+
+## 9. vc101 — Sağlık ekranındaki tekrar temizliği
+
+Bölgesel destek/criz hatları (`supportLines`) hem **Kriz Anı** hem **Sağlık Durumum** ekranında aynı kartlarla gösteriliyordu. Sağlık ekranındaki kopya kaldırıldı; hatlar yalnızca **Kriz Anı** sekmesinde kalıyor. Sağlık ekranındaki tıbbi uyarı, vücut haritası, kazanımlar, kilometre taşı ve çekilme rehberi olduğu gibi korundu. Kullanılmayan `Linking`, `detectRegion`, `supportLines` import’ları ve `support/region` değişkenleri temizlendi.
+
+Doğrulama: `tsc` ✅ · `npm run lint` ✅.
