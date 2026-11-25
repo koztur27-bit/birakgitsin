@@ -244,4 +244,14 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45625243183](https://github
 - Uyarı metni güçlendirildi: TR “Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez…”; EN “This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition…”.
 
 Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45634416472](https://github.com/koztur27-bit/birakgitsin/actions/runs/45634416472) ✅ (`versionCode 103`, AAB + mapping dahil).
+
+---
+
+## 12. vc104 — Rehber katlanabilir, sebep SOS’ta, kalp vektör
+
+- Yoksunluk rehberi artık varsayılan olarak yalnızca **İlk 1 saat (0–1 saat)** kartını gösteriyor. Diğer dönemler “Sonrakileri Gör / See later stages” butonuyla açılıyor, tekrar “Daha Az Göster / Show less” ile kapanıyor. İkinci dönem etiketi **1–24 saat / 1–24 hours** olarak netleştirildi.
+- **Bırakma Sebebim** kartının düzenlenebilir hâli Ayarlar’dan SOS sekmesine taşındı: metin, fotoğraf ekleme/değiştirme/kaldırma artık SOS’ta yapılıyor. Ayarlar’daki kart, state, fotoğraf seçme mantığı ve import’lar kaldırıldı. `motivation.empty` metni SOS’u işaret ediyor.
+- Platforma göre değişen 💙 emoji’si yerine SOS, Ana Sayfa ve SOS nefes modalındaki kalp görselleri `Ionicons name="heart"` vektör ikonuna çevrildi; renk `#2563EB` sabitlendi. Böylece “kalp görseli yine değişti” sorunu ortadan kalktı.
+
+Doğrulama: `tsc` ✅ · `npm run lint` ✅.
 [Tool result]: Edited / verification needed

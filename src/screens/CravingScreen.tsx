@@ -1,7 +1,9 @@
 import { useTheme } from '../context/ThemeContext';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
@@ -13,6 +15,7 @@ import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n';
 import { detectRegion, supportLines } from '../lib/regionalSupport';
 import { triggerAction } from '../lib/coach';
+import { persistMotivationPhoto } from '../lib/motivationPhoto';
 import { fontSizes, radius, spacing } from '../theme';
 
 type Phase = 'inhale' | 'hold' | 'exhale';
@@ -58,7 +61,7 @@ export function CravingScreen() {
   const { colors } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { data, logCraving } = useApp();
+  const { data, logCraving, setQuitMotivation } = useApp();
   const plan = data.plan;
   const heavyMode = !!plan?.heavySmokerMode && (plan?.baselinePerDay ?? 0) >= 20;
 
@@ -81,7 +84,36 @@ export function CravingScreen() {
   const [trigger, setTrigger] = useState<string | null>(null);
   const [intensity, setIntensity] = useState<number | null>(null);
   const [logged, setLogged] = useState<string | null>(null);
+  const [motivationText, setMotivationText] = useState(data.quitMotivation?.text || '');
+  const [motivationPhoto, setMotivationPhoto] = useState<string | undefined>(data.quitMotivation?.photoUri);
   const action = triggerAction(trigger);
+
+  const saveMotivation = (text?: string, photoUri?: string | null) => {
+    const nextText = (text ?? motivationText).trim();
+    const nextPhoto = photoUri === null ? undefined : (photoUri ?? motivationPhoto);
+    setMotivationText(nextText);
+    setMotivationPhoto(nextPhoto);
+    setQuitMotivation({ text: nextText, photoUri: nextPhoto });
+  };
+
+  const pickMotivationPhoto = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return;
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!res.canceled && res.assets?.[0]?.uri) {
+        const persisted = await persistMotivationPhoto(res.assets[0].uri);
+        saveMotivation(undefined, persisted);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const [scale] = useState(() => new Animated.Value(1));
   const breathTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -191,19 +223,43 @@ export function CravingScreen() {
           tepe noktasını geç.
         </Text>
 
-        {data.quitMotivation && (data.quitMotivation.text || data.quitMotivation.photoUri) ? (
-          <View style={{flexDirection:'row',alignItems:'center',gap:10,padding:12,borderRadius:12,backgroundColor:'#EEF2FF',marginBottom:12}}>
-            {data.quitMotivation.photoUri ? (
-              <Image source={{ uri: data.quitMotivation.photoUri }} style={{width:48,height:48,borderRadius:8}} />
+        <Card>
+          <Text style={styles.statsTitle}>{t('motivation.title')}</Text>
+          <Text style={styles.subtitle}>{t('motivation.subtitle')}</Text>
+          <View style={styles.motivationRow}>
+            {motivationPhoto ? (
+              <Image source={{ uri: motivationPhoto }} style={styles.motivationAvatar} />
             ) : (
-              <Text style={{fontSize:28}}>💙</Text>
+              <View style={styles.motivationAvatarPlaceholder}>
+                <Ionicons name="heart" size={28} color="#2563EB" />
+              </View>
             )}
-            <View style={{flex:1}}>
-              <Text style={{fontWeight:'800',color:'#1E3A8A',fontSize:13}}>{locale==='en'?'Why I quit':'Neden biraktim'}</Text>
-              {data.quitMotivation.text ? <Text style={{color:'#1E40AF',fontSize:12,marginTop:2}}>{data.quitMotivation.text}</Text> : null}
+            <View style={styles.motivationField}>
+              <TextInput
+                style={styles.motivationInput}
+                value={motivationText}
+                onChangeText={setMotivationText}
+                onEndEditing={() => saveMotivation(motivationText, motivationPhoto)}
+                placeholder={t('motivation.placeholder')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={200}
+              />
+              <View style={styles.inlineRow}>
+                <Pressable style={styles.smallBtn} onPress={pickMotivationPhoto}>
+                  <Text style={styles.smallBtnText}>
+                    {motivationPhoto ? t('motivation.changePhoto') : t('motivation.addPhoto')}
+                  </Text>
+                </Pressable>
+                {motivationPhoto ? (
+                  <Pressable style={styles.smallBtn} onPress={() => saveMotivation(motivationText, null)}>
+                    <Text style={styles.smallBtnText}>{t('motivation.removePhoto')}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
           </View>
-        ) : null}
+        </Card>
 
         {support.map((ln) => (
           <Pressable key={ln.id} onPress={() => { if (ln.action === 'call') { try { Linking.openURL('tel:' + ln.number.replace(/\s/g, '')); } catch {} } else if (ln.url) { try { Linking.openURL(ln.url); } catch {} } }} style={{padding:12,borderRadius:12,backgroundColor:'#FEE2E2',marginBottom:8}} accessibilityRole="button" accessibilityLabel={ln.label}>
@@ -736,6 +792,41 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.md,
   },
+  motivationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  motivationAvatar: { width: 48, height: 48, borderRadius: 8 },
+  motivationAvatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  motivationField: { flex: 1, gap: spacing.sm },
+  motivationInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    color: colors.text,
+    fontSize: fontSizes.sm,
+    minHeight: 56,
+    textAlignVertical: 'top',
+  },
+  inlineRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  smallBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  smallBtnText: { fontSize: fontSizes.xs, fontWeight: '700', color: colors.primary },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   stat: { flex: 1, alignItems: 'center', gap: 2 },
   statValue: {

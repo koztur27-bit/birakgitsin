@@ -3,14 +3,11 @@ import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImagePicker from 'expo-image-picker';
-import { persistMotivationPhoto } from '../lib/motivationPhoto';
 import { readErrorLog, clearErrorLog } from '../lib/errorLog';
 import React, { useEffect, useMemo, useState } from 'react';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   Alert,
-  Image,
   Linking,
   Platform,
   Pressable,
@@ -67,7 +64,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
     restoreData,
     exportedJson,
     setCrisisReminders,
-    setQuitMotivation,
     redeemInviteCode,
   } = useApp();
   const plan = data.plan;
@@ -82,17 +78,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [proOpen, setProOpen] = useState(false);
-  const [motivationText, setMotivationText] = useState(data.quitMotivation?.text || '');
-  const [motivationPhoto, setMotivationPhoto] = useState<string | undefined>(data.quitMotivation?.photoUri);
   const [inviteInput, setInviteInput] = useState('');
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setMotivationText(data.quitMotivation?.text || '');
-      setMotivationPhoto(data.quitMotivation?.photoUri);
-    }, 0);
-    return () => clearTimeout(t);
-  }, [data.quitMotivation?.text, data.quitMotivation?.photoUri]);
 
   const defaultCrisis = useMemo<CrisisReminder[]>(
     () => [
@@ -140,33 +126,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
     if (!id || event.type === 'dismissed' || !date) return;
     await updateCrisis(id, { time: fmtTime(date) });
     if (Platform.OS === 'ios') setPickerFor(null);
-  };
-
-  const saveMotivation = (text?: string, photoUri?: string | null) => {
-    const nextText = (text ?? motivationText).trim();
-    const nextPhoto = photoUri === null ? undefined : (photoUri ?? motivationPhoto);
-    setMotivationText(nextText);
-    setMotivationPhoto(nextPhoto);
-    setQuitMotivation({ text: nextText, photoUri: nextPhoto });
-  };
-
-  const pickMotivationPhoto = async () => {
-    try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-      if (!res.canceled && res.assets?.[0]?.uri) {
-        const persisted = await persistMotivationPhoto(res.assets[0].uri);
-        saveMotivation(undefined, persisted);
-      }
-    } catch {
-      // ignore
-    }
   };
 
   useEffect(() => {
@@ -809,42 +768,6 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
         </Card>
 
         <Card>
-          <Text style={styles.cardLabel}>{t('motivation.title')}</Text>
-          <Text style={styles.planSub}>{t('motivation.subtitle')}</Text>
-          <View style={styles.motivationRow}>
-            {motivationPhoto ? (
-              <Image source={{ uri: motivationPhoto }} style={styles.motivationAvatar} />
-            ) : (
-              <View style={styles.motivationAvatarPlaceholder}><Text style={{ fontSize: 28 }}>💙</Text></View>
-            )}
-            <View style={{ flex: 1, gap: spacing.sm }}>
-              <TextInput
-                style={styles.motivationInput}
-                value={motivationText}
-                onChangeText={(v) => setMotivationText(v)}
-                onEndEditing={() => saveMotivation(motivationText, motivationPhoto)}
-                placeholder={t('motivation.placeholder')}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                maxLength={200}
-              />
-              <View style={styles.inlineRow}>
-                <Pressable style={styles.smallBtn} onPress={pickMotivationPhoto}>
-                  <Text style={styles.smallBtnText}>
-                    {motivationPhoto ? t('motivation.changePhoto') : t('motivation.addPhoto')}
-                  </Text>
-                </Pressable>
-                {motivationPhoto ? (
-                  <Pressable style={styles.smallBtn} onPress={() => saveMotivation(motivationText, null)}>
-                    <Text style={styles.smallBtnText}>{t('motivation.removePhoto')}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-          </View>
-        </Card>
-
-        <Card>
           <Text style={styles.cardLabel}>{t('invite.title')}</Text>
           <Text style={styles.planSub}>{t('invite.subtitle')}</Text>
           <View style={styles.inviteCodeBox}>
@@ -1091,37 +1014,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     textAlign: 'center',
-  },
-  motivationRow: {
-    marginTop: spacing.sm,
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'flex-start',
-  },
-  motivationAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.bg,
-  },
-  motivationAvatarPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  motivationInput: {
-    minHeight: 64,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: fontSizes.sm,
-    color: colors.text,
-    backgroundColor: colors.bg,
-    textAlignVertical: 'top',
   },
   inviteCodeBox: {
     marginTop: spacing.sm,

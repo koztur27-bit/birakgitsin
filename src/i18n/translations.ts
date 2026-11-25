@@ -131,7 +131,7 @@ export const translations = {
       removePhoto: 'Fotoğrafı kaldır',
       ribbonLabel: 'Bırakma sebebim',
       sosTitle: 'Bunu hatırla',
-      empty: 'Henüz bir sebep eklemedin. Ayarlar’dan ekleyebilirsin.',
+      empty: 'Henüz bir sebep eklemedin. SOS sekmesinden ekleyebilirsin.',
     },
     happiness: {
       title: 'Yolculuğun Nasıl Gidiyor?',
@@ -536,15 +536,17 @@ export const translations = {
       title: 'Yoksunluk Belirtisi Rehberi',
       disclaimer: 'Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez; genel motivasyon ve kişisel takip amaçlıdır.',
       subtitle: 'Bıraktıktan sonra bedeninin verdiği tepkiler normaldir ve geçicidir.',
+      showMore: 'Sonrakileri Gör',
+      showLess: 'Daha Az Göster',
       items: [
         {
-          period: 'İlk saatler (0–8 saat)',
+          period: 'İlk 1 saat (0–1 saat)',
           emoji: '⏳',
           symptoms: ['Sigara isteği dalgalar halinde artabilir', 'Huzursuzluk, odaklanmada güçlük', 'Bazı kişilerde hafif titreme veya terleme olabilir'],
           tips: ['Su için, derin nefes al (4-7-8)', 'SOS araçlarını kullan: 60 sn baloncuk oyunu veya nefes', 'Ellerini meşgul edecek kısa bir iş bul'],
         },
         {
-          period: '24 saat',
+          period: '1–24 saat',
           emoji: '🌬️',
           symptoms: ['İstekler daha sık hissedilebilir', 'Sinirlilik, hafif baş ağrısı, iştah değişimi', 'Uykuya dalmakta zorlanma olabilir'],
           tips: ['Kısa yürüyüşler yap, bol su tüket', 'Kafein ve tetikleyici ortamları mümkünse azalt', 'Krizi “dalga” gibi düşün: gelir ve geçer', 'Akşam ekran süresini azalt, gevşeme rutini oluştur'],
@@ -911,7 +913,7 @@ export const translations = {
       removePhoto: 'Remove photo',
       ribbonLabel: 'My reason to quit',
       sosTitle: 'Remember this',
-      empty: 'No reason added yet. You can add one in Settings.',
+      empty: 'No reason added yet. You can add one on the SOS tab.',
     },
     happiness: {
       title: 'How Is Your Journey Going?',
@@ -1316,15 +1318,17 @@ export const translations = {
       title: 'Withdrawal Symptom Guide',
       disclaimer: 'This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition; it is intended for general motivation and personal tracking.',
       subtitle: 'Your body’s reactions after quitting are normal and temporary.',
+      showMore: 'See later stages',
+      showLess: 'Show less',
       items: [
         {
-          period: 'First hours (0–8 hours)',
+          period: 'First hour (0–1 hour)',
           emoji: '⏳',
           symptoms: ['Cravings may come in waves', 'Restlessness, trouble focusing', 'Some people notice mild tremor or sweating'],
           tips: ['Drink water and take deep breaths (4-7-8)', 'Use SOS tools: 60s bubble game or breathing', 'Keep your hands busy with a short task'],
         },
         {
-          period: '24 hours',
+          period: '1–24 hours',
           emoji: '🌬️',
           symptoms: ['Cravings may feel more frequent', 'Irritability, mild headache, appetite changes', 'Difficulty falling asleep may occur'],
           tips: ['Take short walks and drink plenty of water', 'Reduce caffeine and triggers if possible', 'Think of a craving as a wave: it rises and passes', 'Limit screen time in the evening and wind down'],

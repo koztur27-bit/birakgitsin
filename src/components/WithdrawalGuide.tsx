@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../i18n';
 import { fontSizes, spacing } from '../theme';
@@ -17,6 +17,8 @@ export function WithdrawalGuide() {
   const { t, ta, locale } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const items = ta<GuideItem[]>('withdrawal.items') || [];
+  const [showAll, setShowAll] = useState(false);
+  const visibleItems = showAll ? items : items.slice(0, 1);
   const symptomsLabel = locale === 'en' ? 'What you may feel' : 'Neler hissedebilirsin';
   const tipsLabel = locale === 'en' ? 'Helpful tips' : 'İyi gelebilecek öneriler';
 
@@ -26,8 +28,8 @@ export function WithdrawalGuide() {
       <Text style={styles.sub}>{t('withdrawal.subtitle')}</Text>
 
       <View style={styles.timeline}>
-        {items.map((item, idx) => {
-          const last = idx === items.length - 1;
+        {visibleItems.map((item, idx) => {
+          const last = idx === visibleItems.length - 1;
           return (
             <View key={`${item.period}-${idx}`} style={styles.row}>
               <View style={styles.rail}>
@@ -60,6 +62,13 @@ export function WithdrawalGuide() {
           );
         })}
       </View>
+      {items.length > 1 ? (
+        <Pressable style={styles.moreBtn} onPress={() => setShowAll((v) => !v)}>
+          <Text style={styles.moreBtnText}>
+            {showAll ? t('withdrawal.showLess') : t('withdrawal.showMore')}
+          </Text>
+        </Pressable>
+      ) : null}
       <View style={styles.disclaimerBox}>
         <Text style={styles.disclaimerText}>{t('withdrawal.disclaimer')}</Text>
       </View>
@@ -69,6 +78,19 @@ export function WithdrawalGuide() {
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
+    moreBtn: {
+      marginTop: spacing.sm,
+      paddingVertical: spacing.sm,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+    },
+    moreBtnText: {
+      fontSize: fontSizes.sm,
+      fontWeight: '700',
+      color: colors.primary,
+    },
     disclaimerBox: {
       marginTop: spacing.md,
       borderWidth: 1,
