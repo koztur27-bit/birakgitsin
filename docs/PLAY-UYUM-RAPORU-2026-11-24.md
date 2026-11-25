@@ -263,4 +263,4 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45661114675](https://github
 - SOS sekmesindeki 4 destek hattı kutusu artık sayfanın **en altında**, yoksunluk rehberinden sonra gösteriliyor.
 - Kutuların parlak kırmızı zemini kaldırıldı; tema `card` zeminı, `border` çerçevesi ve `text` / `textMuted` yazı renkleri kullanılıyor. Telefon tıklama ve URL açma davranışı korundu.
 
-Doğrulama: `tsc` ✅ · `npm run lint` ✅.
+Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45668276380](https://github.com/koztur27-bit/birakgitsin/actions/runs/45668276380) ✅ (`versionCode 105`, AAB + mapping dahil).
