@@ -59,7 +59,7 @@ GİZLİLİK
 Bırak Gitsin hesap açmanı istemez. Planın, kayıtların ve kriz notların telefonunda saklanır. Verilerini istediğin zaman panoya kopyalayarak yedekleyebilirsin. Sağlık verisi satmıyoruz; reklam profili oluşturmuyoruz.
 
 RESMİ KAYNAK
-Uygulamanın resmi sürümü yalnızca Google Play ve App Store üzerinden yayınlanır. Başka sitelerden indirilen APK'ların güvenliği garanti edilmez. Şüpheli bir sürüm veya taklit uygulama görürsen koztur.27@gmail.com adresine bildir.
+Uygulamanın resmi sürümü yalnızca Google Play ve App Store üzerinden yayınlanır. Başka sitelerden indirilen APK'ların güvenliği garanti edilmez. Şüpheli bir sürüm veya taklit uygulama görürsen k27dijital@gmail.com adresine bildir.
 
 ÖNEMLİ
 Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez (This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition). Tıbbi tavsiye, tanı veya tedavi için bir sağlık uzmanına danışın. Hamilelik, kalp hastalığı, akciğer hastalığı veya ilaç kullanımı gibi durumlarda önce doktoruna danış. Nikotin yoksunluğu ciddi olabilir; destek almakta tereddüt etme.

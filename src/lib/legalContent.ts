@@ -8,7 +8,7 @@ export const PRIVACY_POLICY_URL =
   'https://koztur27-bit.github.io/birakgitsin/privacy-policy.html';
 export const TERMS_OF_USE_URL =
   'https://koztur27-bit.github.io/birakgitsin/terms-of-use.html';
-export const SUPPORT_EMAIL = 'koztur.27@gmail.com';
+export const SUPPORT_EMAIL = 'k27dijital@gmail.com';
 export const DEVELOPER_NAME = RELEASE_CONFIG.developerName;
 export const DATA_CONTROLLER_NAME = RELEASE_CONFIG.dataController.name;
 export const DATA_CONTROLLER_EMAIL = RELEASE_CONFIG.dataController.email;

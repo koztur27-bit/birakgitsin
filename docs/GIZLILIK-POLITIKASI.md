@@ -2,7 +2,7 @@
 
 **Yürürlük tarihi:** 24 Kasım 2026  
 **Son güncelleme:** 26 Kasım 2026  
-**E-posta / destek / KVKK başvurusu:** koztur.27@gmail.com  
+**E-posta / destek / KVKK başvurusu:** k27dijital@gmail.com  
 **Veri sorumlusu:** Kazım Özturan - K27 Dijital  
 **Veri sorumlusu e-postası:** k27dijital@gmail.com  
 **Adres:** 29 Ekim Mah. 59008 Nolu Sk. No: 7, Şehitkamil / Gaziantep, Türkiye  
@@ -74,9 +74,9 @@ Yurt dışına aktarım yalnızca yukarıdaki teknik sağlayıcıların hizmeti 
 
 ## 4. Bölgesel haklar
 
-- **Türkiye (KVKK):** erişim, düzeltme, silme, itiraz, taşınabilirlik ve rızayı geri çekme. Başvuru: koztur.27@gmail.com — 30 gün içinde yanıt.
+- **Türkiye (KVKK):** erişim, düzeltme, silme, itiraz, taşınabilirlik ve rızayı geri çekme. Başvuru: k27dijital@gmail.com — 30 gün içinde yanıt.
 - **AB/EEA (GDPR) ve İngiltere (UK GDPR):** erişim, düzeltme, silme, kısıtlama, itiraz, taşınabilirlik; ayrıca yetkili denetleyici kuruma şikâyet hakkı. Veri sorumlusu kimliği yukarıda belirtilmelidir.
-- **Kaliforniya (CCPA/CPRA):** Veri satışı veya "sharing" yapılmaz; hassas kişisel bilgi satışı yapılmaz. Silme/düzeltme/erişim ve ayrımcılığa uğramama hakları geçerlidir; koztur.27@gmail.com üzerinden kullanılabilir.
+- **Kaliforniya (CCPA/CPRA):** Veri satışı veya "sharing" yapılmaz; hassas kişisel bilgi satışı yapılmaz. Silme/düzeltme/erişim ve ayrımcılığa uğramama hakları geçerlidir; k27dijital@gmail.com üzerinden kullanılabilir.
 
 ---
 
@@ -114,7 +114,7 @@ AI koç, yapay zekâ tarafından üretilen metinler sunar. Sistem, tıbbi tavsiy
 
 Politika güncellenirse tarih değiştirilir; önemli değişiklikler uygulama/mağaza üzerinden duyurulur.
 
-**E-posta:** koztur.27@gmail.com  
+**E-posta:** k27dijital@gmail.com  
 **Veri sorumlusu:** Kazım Özturan - K27 Dijital  
 **Veri sorumlusu e-postası:** k27dijital@gmail.com  
 **Adres:** 29 Ekim Mah. 59008 Nolu Sk. No: 7, Şehitkamil / Gaziantep, Türkiye

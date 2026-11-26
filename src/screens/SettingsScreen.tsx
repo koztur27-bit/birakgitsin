@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   Alert,
+  Image,
   Linking,
   Platform,
   Pressable,
@@ -634,6 +635,21 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
               thumbColor={colors.white}
             />
           </View>
+          <View style={styles.notificationPreviewCard}>
+            <View style={styles.notificationPreviewIconWrap}>
+              <Image
+                source={require('../../assets/notification-large-icon.png')}
+                style={styles.notificationPreviewIcon}
+                resizeMode="contain"
+                accessibilityLabel="Bırak Gitsin bildirim ikonu"
+              />
+            </View>
+            <View style={styles.notificationPreviewText}>
+              <Text style={styles.notificationPreviewTitle}>Bırak Gitsin</Text>
+              <Text style={styles.notificationPreviewBody}>{t('notifications.timerDone')}</Text>
+              <Text style={styles.notificationPreviewMeta}>Bildirim önizlemesi</Text>
+            </View>
+          </View>
           {!IS_USER_RELEASE && (
           <Pressable style={styles.rowBtn} onPress={testNotification}>
             <Text style={styles.rowBtnText}>Bildirimi test et</Text>
@@ -854,8 +870,8 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
               <Text style={styles.smallBtnText}>Kullanım Koşulları</Text>
             </Pressable>
           </View>
-          <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('mailto:koztur.27@gmail.com')}>
-            <Text style={styles.smallBtnText}>Destek: koztur.27@gmail.com</Text>
+          <Pressable style={styles.smallBtn} onPress={() => Linking.openURL('mailto:k27dijital@gmail.com')}>
+            <Text style={styles.smallBtnText}>Destek: k27dijital@gmail.com</Text>
           </Pressable>
         </Card>
 
@@ -863,7 +879,7 @@ export function SettingsScreen({ onEditPlan }: SettingsScreenProps) {
           <Text style={styles.dangerText}>Tüm Verileri Sıfırla</Text>
         </Pressable>
 
-        <Text style={styles.footer}>Bırak Gitsin v2.5.0</Text>
+        <Text style={styles.footer}>Bırak Gitsin v2.5.4</Text>
       </ScrollView>
 
       <LegalModal
@@ -930,6 +946,49 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: '800',
     color: colors.primaryDark,
+  },
+  // Bildirim önizlemesinde logo kapsayıcıya contain ile ve iç boşlukla
+  // yerleştirilir; yuvarlak/kare maske kenarları logo kesmez.
+  notificationPreviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+  },
+  notificationPreviewIconWrap: {
+    width: 52,
+    height: 52,
+    padding: 8,
+    borderRadius: 16,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationPreviewIcon: {
+    width: '100%',
+    height: '100%',
+  },
+  notificationPreviewText: {
+    flex: 1,
+    gap: 2,
+  },
+  notificationPreviewTitle: {
+    fontSize: fontSizes.sm,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  notificationPreviewBody: {
+    fontSize: fontSizes.sm,
+    color: colors.text,
+  },
+  notificationPreviewMeta: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
   },
   inlineRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   toolGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },

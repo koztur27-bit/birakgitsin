@@ -7,7 +7,7 @@
 export const TODO_MARKER = 'TODO: YAYIN ÖNCESİ DOLDUR';
 
 export const RELEASE_CONFIG = {
-  supportEmail: 'koztur.27@gmail.com',
+  supportEmail: 'k27dijital@gmail.com',
   developerName: 'K27 Dijital',
 
   admob: {
@@ -56,12 +56,14 @@ export const RELEASE_CONFIG = {
     /**
      * İzin verilen imza sertifikası SHA-256 parmak izleri (büyük/küçük harf duyarsız).
      * 1) Yerel/CI upload key zaten doğrulandı.
-     * 2) Play App Signing etkinleştirilirse Google'ın app signing key parmak izi BURAYA eklenmeli.
-     *    Eklenmezse Play'den yüklenen sürüm "imza uyuşmazlığı" loglar (uygulama kapanmaz).
+     * 2) Play App Signing sertifikası eklendi (Google Play Console'dan alınan parmak izi).
+     *    İkisi de izinlidir; Play'den yüklenen sürüm "imza uyuşmazlığı" loglamaz.
      */
     allowedSignatureSha256: [
       '85a453d977a3fcbe340c80ada2d164576120d3b4c95ee785cd992dce855017ff',
-      TODO_MARKER,
+      // Play App Signing sertifikası (Google Play Console'dan alındı).
+      // appIntegrity tarafından ':' kaldırılıp küçük harfe çevrilir.
+      '50:d7:ab:9a:c3:7c:e2:d6:ea:5e:69:e6:b2:62:26:b9:b9:b6:83:e7:85:73:f2:aa:57:16:15:0a:31:b0:d6:3b',
     ],
   },
 } as const;

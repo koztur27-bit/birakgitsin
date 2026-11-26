@@ -25,8 +25,12 @@ const SMALL_ICON_META_KEYS = [
 // Android/OEM bildirim maskeleri kenarları kırpabildiği için logoyu
 // hedef tuvalin içine güvenli alanda yerleştiriyoruz. Kaynak PNG'lerdeki
 // mevcut paylar korunur; ek ölçek yalnızca kırpılma riskini azaltır.
-const LARGE_ICON_SAFE_RATIO = 0.88;
-const SMALL_ICON_SAFE_RATIO = 0.92;
+// Küçük ikon: kaynak içerik ~%92 olduğundan 0.80 çarpanı nihai ~%74 merkez
+// alan bırakır (Android durum çubuğu için önerilen %70-75 bandı).
+// Büyük ikon: bildirim kartı largeIcon kare/yuvarlak maskesinde kenar
+// kırpılmasın diye biraz daha geniş pay bırakılır.
+const LARGE_ICON_SAFE_RATIO = 0.82;
+const SMALL_ICON_SAFE_RATIO = 0.80;
 
 async function writePng(src, dest, size, safeRatio = 1) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });

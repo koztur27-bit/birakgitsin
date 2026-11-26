@@ -57,7 +57,7 @@ Google Play'in yapay zekâ içeren uygulamalar için öne çıkan gereksinimleri
 
 **Yapılanlar:**
 - `src/lib/coachChat.ts` baştan yazıldı: API anahtarı kaldırıldı, sunucu proxy (`EXPO_PUBLIC_AI_PROXY_URL`) üzerinden anahtarsız istek, 10 sn timeout, çıktı filtresi (ilaç/doz/tanı/cure kelimeleri → güvenli yerel yanıt), her AI yanıtına ayrı feragatname, anonim bağlam açıklaması, doğrulanmış kriz hatları.
-- `CoachChatModal`: her koç yanıtının altına "AI-generated · may be inaccurate · not medical advice" etiketi ve **"⚠ Bu yanıtı bildir"** butonu (mailto: koztur.27@gmail.com) eklendi; giriş mesajına veri işleme şeffaflığı eklendi.
+- `CoachChatModal`: her koç yanıtının altına "AI-generated · may be inaccurate · not medical advice" etiketi ve **"⚠ Bu yanıtı bildir"** butonu (mailto: k27dijital@gmail.com) eklendi; giriş mesajına veri işleme şeffaflığı eklendi.
 - Kriz mesajları: TR **ALO 182** (ruh sağlığı), **ALO 171** (bırakma), **112** (acil); ABD **988**, **911**; İngiltere **116 123 Samaritans**, **999/112**; AB **112**.
 - `src/lib/regionalSupport.ts`: TR acil satırındaki yanlış `112 / 183` düzeltildi, ayrı `ALO 182` satırı eklendi; GB'de `999 / 112` yerine `999` + Samaritans eklendi.
 
@@ -102,7 +102,7 @@ Google Play'in yapay zekâ içeren uygulamalar için öne çıkan gereksinimleri
 
 ### 3.1 Türkiye — KVKK
 
-Sigara kullanımı, kriz kayıtları ve yoksunluk verileri **özel nitelikli kişisel veri** (sağlık verisi) sayılabilir. KVKK m.11 açık rıza veya m.28 istisnaları gerekir. Uygulamada veriler yalnızca cihazda; AI koç isteğe bağlı ve şeffaf. Başvuru e-posta adresi `koztur.27@gmail.com`. 112 acil, ALO 171 bırakma, ALO 182 ruh sağlığı, YEDAM 115 hatları eklendi.
+Sigara kullanımı, kriz kayıtları ve yoksunluk verileri **özel nitelikli kişisel veri** (sağlık verisi) sayılabilir. KVKK m.11 açık rıza veya m.28 istisnaları gerekir. Uygulamada veriler yalnızca cihazda; AI koç isteğe bağlı ve şeffaf. Başvuru e-posta adresi `k27dijital@gmail.com`. 112 acil, ALO 171 bırakma, ALO 182 ruh sağlığı, YEDAM 115 hatları eklendi.
 
 **Eksik:** Veri sorumlusu gerçek ad/şirket unvanı ve açık adres hâlâ placeholder. Yayından önce doldurulmalı; gerçek kişi ise KVKK başvuru sürecine hazır olunmalı.
 
@@ -191,7 +191,7 @@ Doğrulama: `npx tsc --noEmit` ✅ · `npm run lint` ✅ (0 hata).
 
 **Klon şikâyet şablonu (hazır metin):**
 
-> Merhaba, ben `com.birakgitsin.app` paket adlı “Bırak Gitsin / Let It Go” uygulamasının geliştiricisiyim. Resmi sürüm yalnızca Google Play ve App Store üzerinden yayınlanmaktadır. Aşağıdaki uygulama/URL bizim iznimiz olmadan adımızı, ikonumuzu ve/veya uygulama içeriğimizi kopyalamaktadır: [KLON PAKET ADI / URL]. Resmi sürüm: [PLAY STORE LINK]. Eser sahibi olduğuma dair deliller: özel GitHub deposundaki commit geçmişi ve [MARKA TESCİL NO, varsa]. İlgili içeriğin Google Play politikası uyarınca kaldırılmasını talep ediyorum. İletişim: koztur.27@gmail.com.
+> Merhaba, ben `com.birakgitsin.app` paket adlı “Bırak Gitsin / Let It Go” uygulamasının geliştiricisiyim. Resmi sürüm yalnızca Google Play ve App Store üzerinden yayınlanmaktadır. Aşağıdaki uygulama/URL bizim iznimiz olmadan adımızı, ikonumuzu ve/veya uygulama içeriğimizi kopyalamaktadır: [KLON PAKET ADI / URL]. Resmi sürüm: [PLAY STORE LINK]. Eser sahibi olduğuma dair deliller: özel GitHub deposundaki commit geçmişi ve [MARKA TESCİL NO, varsa]. İlgili içeriğin Google Play politikası uyarınca kaldırılmasını talep ediyorum. İletişim: k27dijital@gmail.com.
 
 ---
 
