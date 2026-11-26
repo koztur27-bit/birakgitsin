@@ -2,7 +2,7 @@
   "expo": {
     "name": "Let It Go",
     "slug": "birakgitsin",
-    "version": "2.5.3",
+    "version": "2.5.4",
     "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 109,
+      "versionCode": 110,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -83,6 +83,7 @@
           "_releaseTodo": "TODO: YAYIN ÖNCESİ DOLDUR — gerçek AdMob App ID'lerini src/config/releaseConfig.ts veya EXPO_PUBLIC_ADMOB_* env ile verin."
         }
       ],
+      "./plugins/withNotificationIcon.js",
       [
         "expo-notifications",
         {
@@ -90,7 +91,6 @@
           "color": "#1E62D0"
         }
       ],
-      "./plugins/withNotificationIcon.js",
       "./plugins/withNoBackup.js",
       "./plugins/withProguardRules.js",
       "./plugins/withR8Security.js",

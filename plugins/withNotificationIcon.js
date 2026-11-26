@@ -3,6 +3,11 @@ const {
   withAndroidManifest,
   AndroidConfig,
 } = require('@expo/config-plugins');
+const {
+  compositeImagesAsync,
+  createSquareAsync,
+  jimpAsync,
+} = require('@expo/image-utils');
 const fs = require('fs');
 const path = require('path');
 
@@ -11,14 +16,49 @@ const { addMetaDataItemToMainApplication, getMainApplicationOrThrow } =
 
 const LARGE_ICON_META = 'expo.modules.notifications.large_notification_icon';
 const LARGE_ICON_DRAWABLE = 'ic_notification_large';
+const SMALL_ICON_DRAWABLE = 'ic_notification';
+const SMALL_ICON_META_KEYS = [
+  'expo.modules.notifications.default_notification_icon',
+  'com.google.firebase.messaging.default_notification_icon',
+];
 
-async function writePng(src, dest, size, sharp) {
+// Android/OEM bildirim maskeleri kenarları kırpabildiği için logoyu
+// hedef tuvalin içine güvenli alanda yerleştiriyoruz. Kaynak PNG'lerdeki
+// mevcut paylar korunur; ek ölçek yalnızca kırpılma riskini azaltır.
+const LARGE_ICON_SAFE_RATIO = 0.88;
+const SMALL_ICON_SAFE_RATIO = 0.92;
+
+async function writePng(src, dest, size, safeRatio = 1) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
-  if (sharp) {
-    await sharp(src).resize(size, size).png().toFile(dest);
-  } else {
-    fs.copyFileSync(src, dest);
+
+  const inner = Math.max(1, Math.round(size * safeRatio));
+  const offset = Math.round((size - inner) / 2);
+  const resized = await jimpAsync(
+    { input: src, originalInput: src, format: 'image/png' },
+    [
+      {
+        operation: 'resize',
+        width: inner,
+        height: inner,
+        fit: 'contain',
+        position: 'center',
+      },
+    ],
+  );
+
+  if (inner === size) {
+    fs.writeFileSync(dest, resized);
+    return;
   }
+
+  const canvas = await createSquareAsync({ size, color: '#00000000' });
+  const safe = await compositeImagesAsync({
+    foreground: resized,
+    background: canvas,
+    x: offset,
+    y: offset,
+  });
+  fs.writeFileSync(dest, safe);
 }
 
 module.exports = function withNotificationIcon(config) {
@@ -32,6 +72,16 @@ module.exports = function withNotificationIcon(config) {
       `@drawable/${LARGE_ICON_DRAWABLE}`,
       'resource',
     );
+    // Expo/FCM, notification_icon.png dosyasını kendi üretir ve bizim safe-area
+    // kopyamızın üzerine yazabilir. Manifest'i her zaman alias'a yönlendir.
+    SMALL_ICON_META_KEYS.forEach((key) => {
+      addMetaDataItemToMainApplication(
+        app,
+        key,
+        `@drawable/${SMALL_ICON_DRAWABLE}`,
+        'resource',
+      );
+    });
     return config;
   });
 
@@ -46,13 +96,6 @@ module.exports = function withNotificationIcon(config) {
         'main',
         'res',
       );
-      let sharp = null;
-      try {
-        sharp = require('sharp');
-      } catch {
-        sharp = null;
-      }
-
       // --- Küçük beyaz silüet (status bar) ---
       const srcSmall = path.join(projectRoot, 'assets', 'notification-icon.png');
       const densities = {
@@ -80,14 +123,14 @@ module.exports = function withNotificationIcon(config) {
             srcSmall,
             path.join(dir, 'notification_icon.png'),
             sz,
-            sharp,
+            SMALL_ICON_SAFE_RATIO,
           );
           // Notifee tarzı resource adıyla da erişilebilsin (alias).
           await writePng(
             srcSmall,
             path.join(dir, 'ic_notification.png'),
             sz,
-            sharp,
+            SMALL_ICON_SAFE_RATIO,
           );
         }
       }
@@ -105,7 +148,7 @@ module.exports = function withNotificationIcon(config) {
           srcLarge,
           path.join(resDir, 'drawable', `${LARGE_ICON_DRAWABLE}.png`),
           192,
-          sharp,
+          LARGE_ICON_SAFE_RATIO,
         );
         const largeDensities = {
           'drawable-mdpi': 48,
@@ -119,7 +162,7 @@ module.exports = function withNotificationIcon(config) {
             srcLarge,
             path.join(resDir, folder, `${LARGE_ICON_DRAWABLE}.png`),
             sz,
-            sharp,
+            LARGE_ICON_SAFE_RATIO,
           );
         }
       }
