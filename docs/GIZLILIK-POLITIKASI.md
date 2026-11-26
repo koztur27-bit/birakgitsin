@@ -1,13 +1,14 @@
 # Bırak Gitsin / Let It Go — Gizlilik Politikası
 
 **Yürürlük tarihi:** 24 Kasım 2026  
-**Son güncelleme:** 24 Kasım 2026  
+**Son güncelleme:** 26 Kasım 2026  
 **E-posta / destek / KVKK başvurusu:** koztur.27@gmail.com  
-**Veri sorumlusu:** [GERÇEK AD SOYAD / ŞİRKET UNVANI — YAYINDAN ÖNCE DOLDURULMALI]  
-**Adres:** [GERÇEK AÇIK ADRES — YAYINDAN ÖNCE DOLDURULMALI]  
+**Veri sorumlusu:** Kazım Özturan - K27 Dijital  
+**Veri sorumlusu e-postası:** k27dijital@gmail.com  
+**Adres:** 29 Ekim Mah. 59008 Nolu Sk. No: 7, Şehitkamil / Gaziantep, Türkiye  
 **Web:** https://koztur27-bit.github.io/birakgitsin/
 
-> **YAYIN ÖNESİ ZORUNLULUK:** Köşeli parantezli veri sorumlusu kimliği ve adresi gerçek bilgilerle değiştirilmelidir. Bu alanlar doldurulmadan Play Console'da yayın yapılmamalıdır.
+> Veri sorumlusu kimliği ve açık adresi günceldir. Yayın öncesi Play Console “Veri güvenliği” beyanlarını ve App Signing sertifikasını kontrol edin.
 
 ---
 
@@ -114,7 +115,9 @@ AI koç, yapay zekâ tarafından üretilen metinler sunar. Sistem, tıbbi tavsiy
 Politika güncellenirse tarih değiştirilir; önemli değişiklikler uygulama/mağaza üzerinden duyurulur.
 
 **E-posta:** koztur.27@gmail.com  
-**Veri sorumlusu / adres:** yayından önce doldurulmalı.
+**Veri sorumlusu:** Kazım Özturan - K27 Dijital  
+**Veri sorumlusu e-postası:** k27dijital@gmail.com  
+**Adres:** 29 Ekim Mah. 59008 Nolu Sk. No: 7, Şehitkamil / Gaziantep, Türkiye
 
 ---
 

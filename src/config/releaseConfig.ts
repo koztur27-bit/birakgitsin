@@ -8,16 +8,17 @@ export const TODO_MARKER = 'TODO: YAYIN ÖNCESİ DOLDUR';
 
 export const RELEASE_CONFIG = {
   supportEmail: 'koztur.27@gmail.com',
+  developerName: 'K27 Dijital',
 
   admob: {
-    /** Gerçek App ID: ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY */
-    androidAppId: TODO_MARKER,
-    /** Gerçek App ID (iOS): ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY */
+    /** Canlı Android App ID */
+    androidAppId: 'ca-app-pub-7698693668186375~8325768371',
+    /** Gerçek App ID (iOS): henüz verilmedi */
     iosAppId: TODO_MARKER,
-    /** Ödüllü reklam unit ID: ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY */
-    rewardedAdUnitId: TODO_MARKER,
-    /** Banner unit ID (opsiyonel) */
-    bannerAdUnitId: TODO_MARKER,
+    /** Canlı ödüllü reklam unit ID */
+    rewardedAdUnitId: 'ca-app-pub-7698693668186375/1821290960',
+    /** Banner kullanılmıyor; boş bırakılır, yayında test ID'ye düşülmez. */
+    bannerAdUnitId: '',
     /** Ortam değişkeni override'ları: EXPO_PUBLIC_ADMOB_* */
     env: {
       androidAppId: (process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID || '').trim(),
@@ -28,20 +29,20 @@ export const RELEASE_CONFIG = {
   },
 
   appAdsTxt: {
-    /** Google AdMob publisher ID: pub-XXXXXXXXXXXXXXXX */
-    publisherId: TODO_MARKER,
-    /** Geliştirici domaini, ör. birakgitsin.com */
-    developerDomain: TODO_MARKER,
-    /** https://<domain>/app-ads.txt adresi yayında olmalı */
-    url: TODO_MARKER,
+    /** Google AdMob publisher ID */
+    publisherId: 'pub-7698693668186375',
+    /** GitHub Pages domaini (docs/ klasörü) */
+    developerDomain: 'koztur27-bit.github.io',
+    /** app-ads.txt yayın URL'si */
+    url: 'https://koztur27-bit.github.io/birakgitsin/app-ads.txt',
   },
 
   dataController: {
     /** Gerçek ad soyad / şirket unvanı (KVKK / GDPR / CCPA) */
-    name: TODO_MARKER,
+    name: 'Kazım Özturan (K27 Dijital)',
     /** Açık posta adresi */
-    address: TODO_MARKER,
-    email: 'koztur.27@gmail.com',
+    address: '29 Ekim Mah. 59008 Nolu Sk. No: 7, Şehitkamil / Gaziantep, Türkiye',
+    email: 'k27dijital@gmail.com',
     /** AB'de yerleşik değilse GDPR Art.27 temsilcisi gerekebilir */
     euRepresentative: TODO_MARKER,
   },

@@ -2,11 +2,17 @@
 // Canlı web sayfaları GitHub Pages (docs/) üzerinden yayınlanır.
 // Uygulama içi LegalModal, internet olmadan da okunabilsin diye aynı metni içerir.
 
+import { RELEASE_CONFIG } from '../config/releaseConfig';
+
 export const PRIVACY_POLICY_URL =
   'https://koztur27-bit.github.io/birakgitsin/privacy-policy.html';
 export const TERMS_OF_USE_URL =
   'https://koztur27-bit.github.io/birakgitsin/terms-of-use.html';
 export const SUPPORT_EMAIL = 'koztur.27@gmail.com';
+export const DEVELOPER_NAME = RELEASE_CONFIG.developerName;
+export const DATA_CONTROLLER_NAME = RELEASE_CONFIG.dataController.name;
+export const DATA_CONTROLLER_EMAIL = RELEASE_CONFIG.dataController.email;
+export const DATA_CONTROLLER_ADDRESS = RELEASE_CONFIG.dataController.address;
 
 export type LegalDocId = 'privacy' | 'terms';
 export type LegalLang = 'tr' | 'en';
@@ -28,7 +34,7 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
   privacy: {
     tr: {
       title: 'Gizlilik Politikası',
-      updated: 'Son güncelleme: 24 Kasım 2026',
+      updated: 'Son güncelleme: 26 Kasım 2026',
       intro: `Bırak Gitsin ("Uygulama"), sigarayı azaltma ve bırakma sürecinde kullanıcılara destek olmayı amaçlayan bir mobil uygulamadır. Bu gizlilik politikası, uygulamanın hangi verileri işleyebileceğini, bu verilerin nasıl kullanıldığını ve kullanıcı haklarını açıklar.`,
       sections: [
         {
@@ -119,19 +125,22 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         },
         {
           heading: '10. İletişim',
-          body: [`Gizlilikle ilgili sorularınız için: ${SUPPORT_EMAIL}`],
+          body: [
+            `Gizlilikle ilgili sorularınız için: ${SUPPORT_EMAIL}`,
+            `Veri sorumlusu: ${DATA_CONTROLLER_NAME} — ${DATA_CONTROLLER_EMAIL} — ${DATA_CONTROLLER_ADDRESS}`,
+          ],
         },
         {
           heading: '11. Play Uyum Ek Maddesi',
           body: [
-            `Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez. Tıbbi tavsiye, tanı veya tedavi için bir sağlık uzmanına danışın. Sağlık yüzdeleri genel bilgilendirme amaçlı tahminlerdir, tıbbi ölçüm değildir. Android yedekleme kapalıdır, kilit ekranı bildirimleri gizlidir. AI koç yanıtları hatalı olabilir; her yanıtın altından bildirilebilir. Veri sorumlusu kimliği/adresi yayından önce doldurulmalıdır.`,
+            `Bu uygulama bir tıbbi cihaz değildir ve herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemez. Tıbbi tavsiye, tanı veya tedavi için bir sağlık uzmanına danışın. Sağlık yüzdeleri genel bilgilendirme amaçlı tahminlerdir, tıbbi ölçüm değildir. Android yedekleme kapalıdır, kilit ekranı bildirimleri gizlidir. AI koç yanıtları hatalı olabilir; her yanıtın altından bildirilebilir. Veri sorumlusu: ${DATA_CONTROLLER_NAME} — ${DATA_CONTROLLER_EMAIL} — ${DATA_CONTROLLER_ADDRESS}.`,
           ],
         },
       ],
     },
     en: {
       title: 'Privacy Policy',
-      updated: 'Last updated: 22 November 2026',
+      updated: 'Last updated: 26 November 2026',
       intro: `Let It Go (Bırak Gitsin) (the "App") is a mobile application designed to support users in reducing and quitting smoking. This Privacy Policy explains what data may be processed, how it is used, and your rights.`,
       sections: [
         {
@@ -222,12 +231,15 @@ export const LEGAL_DOCS: Record<LegalDocId, Record<LegalLang, LegalDocument>> = 
         },
         {
           heading: '10. Contact',
-          body: [`If you have questions about this Privacy Policy, contact: ${SUPPORT_EMAIL}`],
+          body: [
+            `If you have questions about this Privacy Policy, contact: ${SUPPORT_EMAIL}`,
+            `Data controller: ${DATA_CONTROLLER_NAME} — ${DATA_CONTROLLER_EMAIL} — ${DATA_CONTROLLER_ADDRESS}`,
+          ],
         },
         {
           heading: '11. Google Play Compliance Supplement',
           body: [
-            `This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition. Consult a healthcare professional for medical advice, diagnosis, or treatment. Health percentages are general informational estimates, not medical measurements. Android backup is disabled and lock-screen notifications are private. AI coach replies may be inaccurate and can be reported in-app. Controller identity/address must be completed before publication.`,
+            `This app is not a medical device and does not diagnose, treat, cure, or prevent any medical condition. Consult a healthcare professional for medical advice, diagnosis, or treatment. Health percentages are general informational estimates, not medical measurements. Android backup is disabled and lock-screen notifications are private. AI coach replies may be inaccurate and can be reported in-app. Data controller: ${DATA_CONTROLLER_NAME} — ${DATA_CONTROLLER_EMAIL} — ${DATA_CONTROLLER_ADDRESS}.`,
           ],
         },
       ],
