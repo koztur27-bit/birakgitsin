@@ -7,7 +7,12 @@ import { StreakCalendar } from '../components/StreakCalendar';
 import { Card } from '../components/Card';
 import { MapBadge } from '../components/MapBadge';
 import { SavingsSimulator } from '../components/SavingsSimulator';
-import { SuccessShareCard, SuccessShareCardHandle } from '../components/SuccessShareCard';
+import {
+  SuccessShareCard,
+  SuccessShareCardHandle,
+  ShareThemeId,
+  useLocalizedShareThemes,
+} from '../components/SuccessShareCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { WeekChart } from '../components/WeekChart';
 import { useApp } from '../context/AppContext';
@@ -15,6 +20,8 @@ import { AppLanguage, useI18n } from '../i18n';
 import { badgeDefs } from '../lib/badges';
 import { analyzeTriggers, adviceForTrigger, triggerLabel, formatHourRange } from '../lib/triggerAnalysis';
 import { computeMedals } from '../lib/medals';
+import { hasProAccess } from '../lib/proAccess';
+import { ProScreen } from './ProScreen';
 import {
   averageIntensity,
   buildDaysStat,
@@ -71,6 +78,22 @@ export function StatsScreen() {
     await shareCardRef.current?.share();
   };
 
+  const isPro = hasProAccess(data);
+  const [proOpen, setProOpen] = useState(false);
+  const openPro = () => {
+    setShareModalOpen(false);
+    setProOpen(true);
+  };
+  const localizedShareThemes = useLocalizedShareThemes();
+  const [shareTheme, setShareTheme] = useState<ShareThemeId>('classic');
+  const selectShareTheme = (themeId: ShareThemeId, proOnly: boolean) => {
+    if (proOnly && !isPro) {
+      openPro();
+      return;
+    }
+    setShareTheme(themeId);
+  };
+
   const now = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
   const cursor = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
@@ -123,6 +146,30 @@ export function StatsScreen() {
   const avgIntensity = averageIntensity(cravings);
   const report = weeklyReport(plan, logs, cravings, todayKey(), lang);
   const months = isEn ? MONTHS_EN : MONTHS_TR;
+
+  const lockedCard = (title: string, description: string) => (
+    <Card>
+      <View style={styles.lockHead}>
+        <Text style={styles.cardLabel}>{title}</Text>
+        <View style={styles.proPill}>
+          <Text style={styles.proPillText}>PRO</Text>
+        </View>
+      </View>
+      <Text style={styles.cardHint}>{description}</Text>
+      <View style={styles.lockedPreview} pointerEvents="none">
+        <View style={[styles.lockedBar, { width: '92%' }]} />
+        <View style={[styles.lockedBar, { width: '74%' }]} />
+        <View style={[styles.lockedBar, { width: '85%' }]} />
+        <View style={[styles.lockedBar, { width: '58%' }]} />
+        <View style={[styles.lockedBar, { width: '80%' }]} />
+      </View>
+      <Pressable style={styles.lockedCta} onPress={openPro}>
+        <Text style={styles.lockedCtaText}>
+          {isEn ? 'Unlock with PRO' : 'PRO ile aç'}
+        </Text>
+      </Pressable>
+    </Card>
+  );
 
   const shareWeekly = async () => {
     try {
@@ -254,57 +301,64 @@ export function StatsScreen() {
           </Text>
         </Card>
 
-        <Card>
-          <View style={styles.monthHead}>
-            <Pressable
-              onPress={() => setMonthOffset(monthOffset - 1)}
-              style={styles.monthNav}
-              hitSlop={8}
-            >
-              <Text style={styles.monthNavText}>‹</Text>
-            </Pressable>
-            <Text style={styles.monthTitle} numberOfLines={1} adjustsFontSizeToFit>
-              {months[cursor.getMonth()]} {cursor.getFullYear()}
+        {isPro ? (
+          <Card>
+            <View style={styles.monthHead}>
+              <Pressable
+                onPress={() => setMonthOffset(monthOffset - 1)}
+                style={styles.monthNav}
+                hitSlop={8}
+              >
+                <Text style={styles.monthNavText}>‹</Text>
+              </Pressable>
+              <Text style={styles.monthTitle} numberOfLines={1} adjustsFontSizeToFit>
+                {months[cursor.getMonth()]} {cursor.getFullYear()}
+              </Text>
+              <Pressable
+                onPress={() => setMonthOffset(monthOffset + 1)}
+                style={styles.monthNav}
+                hitSlop={8}
+                disabled={monthOffset >= 0}
+              >
+                <Text style={[styles.monthNavText, monthOffset >= 0 && styles.monthNavDisabled]}>›</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.calendarLegend}>
+              {isEn ? (
+                <Text><Text style={{ color: colors.success, fontWeight: '800' }}>green</Text> under goal · <Text style={{ color: colors.danger, fontWeight: '800' }}>red</Text> over goal · border = today</Text>
+              ) : (
+                <Text><Text style={{ color: colors.success, fontWeight: '800' }}>yeşil</Text> hedef altı · <Text style={{ color: colors.danger, fontWeight: '800' }}>kırmızı</Text> hedef üstü · çerçeve bugün</Text>
+              )}
             </Text>
-            <Pressable
-              onPress={() => setMonthOffset(monthOffset + 1)}
-              style={styles.monthNav}
-              hitSlop={8}
-              disabled={monthOffset >= 0}
-            >
-              <Text style={[styles.monthNavText, monthOffset >= 0 && styles.monthNavDisabled]}>›</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.calendarLegend}>
-            {isEn ? (
-              <Text><Text style={{ color: colors.success, fontWeight: '800' }}>green</Text> under goal · <Text style={{ color: colors.danger, fontWeight: '800' }}>red</Text> over goal · border = today</Text>
+            <View style={styles.calendarWrap}>
+              <CalendarGrid
+                plan={plan}
+                logs={logs}
+                year={cursor.getFullYear()}
+                month={cursor.getMonth()}
+              />
+            </View>
+            {monthSmoked > 0 ? (
+              <Text style={styles.avgText}>
+                {isEn
+                  ? `${months[cursor.getMonth()]}: ${monthSmoked} smoked · ${monthOK} days under · ${monthOver} over${monthLogs.length > 0 ? ` · avg ${(monthSmoked / monthLogs.length).toFixed(1)}/day` : ''}`
+                  : `${months[cursor.getMonth()]} özeti: ${monthSmoked} sigara içildi · ${monthOK} gün hedefin altında · ${monthOver} gün üstünde${monthLogs.length > 0 ? ` · ortalama ${(monthSmoked / monthLogs.length).toFixed(1)} /gün` : ''}`}
+              </Text>
             ) : (
-              <Text><Text style={{ color: colors.success, fontWeight: '800' }}>yeşil</Text> hedef altı · <Text style={{ color: colors.danger, fontWeight: '800' }}>kırmızı</Text> hedef üstü · çerçeve bugün</Text>
+              <Text style={styles.avgText}>{isEn ? 'No records for this month yet.' : 'Bu ay şimdilik kayıt yok.'}</Text>
             )}
-          </Text>
-          <View style={styles.calendarWrap}>
-            <CalendarGrid
-              plan={plan}
-              logs={logs}
-              year={cursor.getFullYear()}
-              month={cursor.getMonth()}
-            />
-          </View>
-          {monthSmoked > 0 ? (
-            <Text style={styles.avgText}>
+            <Text style={styles.calendarHint}>
               {isEn
-                ? `${months[cursor.getMonth()]}: ${monthSmoked} smoked · ${monthOK} days under · ${monthOver} over${monthLogs.length > 0 ? ` · avg ${(monthSmoked / monthLogs.length).toFixed(1)}/day` : ''}`
-                : `${months[cursor.getMonth()]} özeti: ${monthSmoked} sigara içildi · ${monthOK} gün hedefin altında · ${monthOver} gün üstünde${monthLogs.length > 0 ? ` · ortalama ${(monthSmoked / monthLogs.length).toFixed(1)} /gün` : ''}`}
+                ? `${Math.round((monthOK / Math.max(1, officialDaysInMonth)) * 100)}% on-target rate (month)`
+                : `${Math.round((monthOK / Math.max(1, officialDaysInMonth)) * 100)}% hedefi tutturma oranı (ay başına göre)`}
             </Text>
-          ) : (
-            <Text style={styles.avgText}>{isEn ? 'No records for this month yet.' : 'Bu ay şimdilik kayıt yok.'}</Text>
-          )}
-          <Text style={styles.calendarHint}>
-            {isEn
-              ? `${Math.round((monthOK / Math.max(1, officialDaysInMonth)) * 100)}% on-target rate (month)`
-              : `${Math.round((monthOK / Math.max(1, officialDaysInMonth)) * 100)}% hedefi tutturma oranı (ay başına göre)`}
-          </Text>
-        </Card>
+          </Card>
+        ) : lockedCard(
+          isEn ? 'Monthly Calendar' : 'Aylık Takvim',
+          isEn
+            ? 'See your daily goals, target rate and monthly overview with PRO. Watch an ad for 1 day of PRO or subscribe to unlock it.'
+            : 'Günlük hedeflerini, hedefi tutturma oranını ve aylık özetini PRO ile gör. Reklam izleyerek 1 gün PRO açabilir veya abone olabilirsin.',
+        )}
 
         <Card>
           <Text style={styles.cardLabel}>{t('stats.streakCalendarTitle')}</Text>
@@ -418,7 +472,9 @@ export function StatsScreen() {
           </View>
         </Card>
 
-        <Card>
+        {isPro ? (
+          <>
+          <Card>
           <Text style={styles.cardLabel}>{isEn ? 'Craving & trigger analysis' : 'İstek & tetik analizi'}</Text>
           {cravings.length === 0 ? (
             <Text style={styles.cardHint}>
@@ -527,7 +583,14 @@ export function StatsScreen() {
               </View>
             </>
           )}
-        </Card>
+          </Card>
+          </>
+        ) : lockedCard(
+          isEn ? 'Craving & Trigger Analysis' : 'İstek & Tetikleyici Analizi',
+          isEn
+            ? 'See riskiest hours, common triggers and your personalized trigger map with PRO. Watch an ad for 1 day of PRO or subscribe to unlock it.'
+            : 'En riskli saatlerini, sık tetikleyicilerini ve kişisel tetikleyici haritanı PRO ile gör. Reklam izleyerek 1 gün PRO açabilir veya abone olabilirsin.',
+        )}
 
         {todayRecord.smoked > 0 ? (
           <Text style={styles.tip}>
@@ -549,8 +612,32 @@ export function StatsScreen() {
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setShareModalOpen(false)} />
           <View style={styles.shareModalCard}>
             <ScrollView contentContainerStyle={styles.shareModalContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.shareThemeTitle}>
+                {isEn ? 'Card theme' : 'Kart teması'}
+              </Text>
+              <View style={styles.shareThemeRow}>
+                {localizedShareThemes.map((th) => {
+                  const locked = th.proOnly && !isPro;
+                  return (
+                    <Pressable
+                      key={th.id}
+                      style={[styles.shareThemeChip, locked && styles.shareThemeChipLocked]}
+                      onPress={() => selectShareTheme(th.id, th.proOnly)}
+                    >
+                      <View style={[styles.shareThemeSwatch, { backgroundColor: th.colors[1], borderColor: th.accent }]} />
+                      <Text style={styles.shareThemeName}>
+                        {th.name}{locked ? ' 🔒' : ''}
+                      </Text>
+                      <Text style={styles.shareThemeMeta}>
+                        {th.proOnly ? (locked ? 'PRO' : (isEn ? 'PRO' : 'PRO ✓')) : (isEn ? 'Free' : 'Ücretsiz')}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
               <SuccessShareCard
                 ref={shareCardRef}
+                themeId={shareTheme}
                 days={Math.max(0, Math.floor(elapsedDays(plan)))}
                 avoided={Math.max(0, Math.round(avoided))}
                 savedText={formatMoney(saved, plan.currency)}
@@ -567,6 +654,7 @@ export function StatsScreen() {
           </View>
         </View>
       </Modal>
+      <ProScreen visible={proOpen} onClose={() => setProOpen(false)} />
     </View>
   );
 }
@@ -937,4 +1025,70 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
   },
   shareModalGhostText: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.textMuted },
+  lockHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  proPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.round,
+    backgroundColor: '#5A3B00',
+  },
+  proPillText: { fontSize: 10, fontWeight: '900', color: '#FFE082' },
+  lockedPreview: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg,
+    opacity: 0.55,
+  },
+  lockedBar: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.border,
+  },
+  lockedCta: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  lockedCtaText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
+  shareThemeTitle: {
+    alignSelf: 'flex-start',
+    fontSize: fontSizes.sm,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  shareThemeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    width: '100%',
+  },
+  shareThemeChip: {
+    flex: 1,
+    minWidth: 90,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+  },
+  shareThemeChipLocked: { opacity: 0.6 },
+  shareThemeSwatch: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    marginBottom: 6,
+  },
+  shareThemeName: { fontSize: fontSizes.xs, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  shareThemeMeta: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
 });

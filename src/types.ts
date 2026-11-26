@@ -86,7 +86,7 @@ export type AppData = {
   isPremium: boolean;
   /** Ödüllü reklamla açılan geçici PRO erişiminin bitiş zamanı (ms). */
   proUnlockUntil?: number;
-  /** 15 günlük hoş geldin PRO hediyesi daha önce verildi mi? Tek seferlik. */
+  /** 3 günlük hoş geldin PRO hediyesi daha önce verildi mi? Tek seferlik. */
   proTrialUsed?: boolean;
   /** Hoş geldin hediyesinin verildiği zaman (ms). */
   welcomeTrialGrantedAt?: number;
@@ -97,7 +97,7 @@ export type AppData = {
   language?: AppLanguage;
   /** "1 Dal İçtim" kaçamak kayıtları (tetikleyici analizi için). */
   slipLogs?: SlipLog[];
-  /** Bırakma koçu günlük mesaj kullanımı (günde 5 ücretsiz). */
+  /** Bırakma koçu günlük mesaj kullanımı (günde 2 ücretsiz). */
   coachUsage?: CoachUsage;
   /** Duygusal motivasyon çapası: bırakma sebebi notu ve/veya fotoğraf. */
   quitMotivation?: QuitMotivation | null;
@@ -107,7 +107,7 @@ export type AppData = {
   happinessPrompts?: HappinessPrompts;
   /** Kullanıcıya özel davet kodu (arkadaş davet sistemi). */
   inviteCode?: string;
-  /** Arkadaş davet kodu girilerek +7 gün PRO ödülü alındı mı? */
+  /** Arkadaş davet kodu girilerek +3 gün PRO ödülü alındı mı? */
   inviteRedeemed?: boolean;
   /** Günlük bırakma yemini verilen günler (YYYY-MM-DD). */
   dailyPledges?: string[];

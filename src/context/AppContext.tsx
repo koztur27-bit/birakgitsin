@@ -873,7 +873,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!/^BG[A-Z0-9]{4,10}$/.test(normalized)) {
       return { ok: false, message: 'invalid' };
     }
-    const ms = 7 * 24 * 60 * 60 * 1000;
+    const ms = 3 * 24 * 60 * 60 * 1000;
     const nextUntil = Math.max(proNow(), data.proUnlockUntil || 0) + ms;
     persist({ ...data, proUnlockUntil: nextUntil, inviteRedeemed: true });
     return { ok: true };

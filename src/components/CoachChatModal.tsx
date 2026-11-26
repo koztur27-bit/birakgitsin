@@ -28,11 +28,12 @@ type Msg = { id: string; role: 'user' | 'coach'; text: string };
 type Props = {
   visible: boolean;
   onClose: () => void;
+  onOpenPro?: () => void;
 };
 
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 2;
 
-export function CoachChatModal({ visible, onClose }: Props) {
+export function CoachChatModal({ visible, onClose, onOpenPro }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
@@ -100,7 +101,7 @@ export function CoachChatModal({ visible, onClose }: Props) {
         text: t('coach.watchAd'),
         onPress: unlockByAd,
       },
-      { text: t('coach.goPro'), onPress: () => {} },
+      { text: t('coach.goPro'), onPress: () => onOpenPro?.() },
     ]);
   };
 
@@ -186,6 +187,9 @@ export function CoachChatModal({ visible, onClose }: Props) {
                 disabled={unlocking}
               >
                 <Text style={styles.limitBtnPrimaryText}>{t('coach.watchAd')}</Text>
+              </Pressable>
+              <Pressable style={styles.limitBtn} onPress={() => onOpenPro?.()}>
+                <Text style={styles.limitBtnText}>{t('coach.goPro')}</Text>
               </Pressable>
             </View>
           </View>
@@ -316,6 +320,7 @@ const createStyles = (colors: any) =>
     },
     limitBtnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
     limitBtnPrimaryText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.white },
+    limitBtnText: { fontSize: fontSizes.sm, fontWeight: '800', color: colors.text },
     messages: { flex: 1 },
     messagesContent: { padding: spacing.md, paddingBottom: spacing.lg },
     bubbleRow: { marginBottom: spacing.sm, flexDirection: 'row' },

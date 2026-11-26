@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { WELCOME_TRIAL_DAYS } from './lib/proAccess';
 import { clearProState, loadProState, saveProState } from './lib/proEntitlementStore';
 import { AppData, AppLanguage } from './types';
 
@@ -60,10 +61,9 @@ export function generateInviteCode(): string {
   return out;
 }
 
-const WELCOME_TRIAL_DAYS = 15;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** 15 günlük PRO hediyesini yalnızca bir kez verir; sonraki açılışlarda tekrar vermez. */
+/** 3 günlük PRO hediyesini yalnızca bir kez verir; sonraki açılışlarda tekrar vermez. */
 function applyWelcomeTrial(data: AppData): AppData {
   if (data.proTrialUsed) return data;
   const now = Date.now();

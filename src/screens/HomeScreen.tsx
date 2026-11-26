@@ -601,7 +601,14 @@ export function HomeScreen(_props: HomeScreenProps) {
         onGamePassed={onSosGamePassed}
       />
       <HappinessPromptModal visible={showHappiness} onClose={closeHappiness} />
-      <CoachChatModal visible={coachOpen} onClose={() => setCoachOpen(false)} />
+      <CoachChatModal
+        visible={coachOpen}
+        onClose={() => setCoachOpen(false)}
+        onOpenPro={() => {
+          setCoachOpen(false);
+          setProOpen(true);
+        }}
+      />
       <Modal visible={timerOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTimerOpen(false)}>
         <TimerScreen />
         <Pressable style={{position:'absolute',top:8,right:8,padding:8}} onPress={() => setTimerOpen(false)}><Text style={{color:'#fff',fontWeight:'700'}}>✕</Text></Pressable>

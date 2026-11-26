@@ -270,7 +270,7 @@ Doğrulama: `tsc` ✅ · `npm run lint` ✅ · CI: [#45668276380](https://github
 ## 14. vc106 — Hedef yeri ve PRO erişim planı
 
 - **Tasarruf Hedefi** kartı İstatistik ekranından alınıp Ana Sayfa’daki “Bugün / Hedef” panelinin hemen altına taşındı. Düzenleme/kaldırma mantığı `SavingsGoalCard` bileşenine alındı; İstatistik ekranındaki kopya kaldırıldı.
-- **Hoş geldin hediyesi:** Her cihaz ilk açılışta **tek seferlik 15 gün PRO** kazanıyor (`proTrialUsed` / `welcomeTrialGrantedAt`). Yedekten geri yükleme ve “tüm verileri sıfırla” hakkı yeniden vermiyor; otomatik yenilenmiyor, aboneliğe dönüşmüyor.
+- **Hoş geldin hediyesi:** Her cihaz ilk açılışta **tek seferlik 3 gün PRO** kazanıyor (`proTrialUsed` / `welcomeTrialGrantedAt`). Yedekten geri yükleme ve “tüm verileri sıfırla” hakkı yeniden vermiyor; otomatik yenilenmiyor, aboneliğe dönüşmüyor.
 - **Haftalık reklam ödülü:** Reklam tamamlandığında **1 gün PRO** veriliyor; hak **her 7 günde bir** yenileniyor (`lastAdProGrantAt`). Aktif PRO varken hak tüketilmiyor. Özel tema, gelişmiş simülatör ve sınırsız koç sohbeti aynı kotayı kullanıyor; reklam gösterilmeden önce kalan hak kontrol ediliyor.
 - PRO ekranında hediye ve haftalık hak açıkça gösteriliyor; “ücretsiz deneme sunulmaz” ifadesi kaldırıldı. Ayarlar’daki PRO kartı da yeni planı anlatıyor.
 

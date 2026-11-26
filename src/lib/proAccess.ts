@@ -1,7 +1,7 @@
 import { AppData } from '../types';
 import { proNow } from './proEntitlementStore';
 
-export const WELCOME_TRIAL_DAYS = 15;
+export const WELCOME_TRIAL_DAYS = 3;
 export const AD_UNLOCK_DAYS = 1;
 export const AD_UNLOCK_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -24,7 +24,7 @@ export function proUnlockRemainingMs(data: AppData): number {
   return Math.max(0, until - proNow());
 }
 
-/** 15 günlük hediye hâlâ kullanılabilir mi (yedekten geri yüklemede yeniden verilmez). */
+/** 3 günlük hediye hâlâ kullanılabilir mi (yedekten geri yüklemede yeniden verilmez). */
 export function welcomeTrialAvailable(data: AppData): boolean {
   return !data.proTrialUsed;
 }
