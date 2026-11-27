@@ -2,11 +2,16 @@
   "expo": {
     "name": "Let It Go",
     "slug": "birakgitsin",
-    "version": "2.5.4",
+    "version": "2.5.5",
     "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "androidNavigationBar": {
+      "visible": "leanback",
+      "barStyle": "dark-content",
+      "backgroundColor": "#FFFFFF"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.birakgitsin.app",
@@ -16,7 +21,8 @@
     },
     "android": {
       "package": "com.birakgitsin.app",
-      "versionCode": 110,
+      "versionCode": 111,
+      "edgeToEdgeEnabled": false,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/android-icon-foreground.png",

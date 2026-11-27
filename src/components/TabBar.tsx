@@ -1,7 +1,8 @@
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../i18n';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabKey } from '../types';
 import { fontSizes, spacing } from '../theme';
 
@@ -14,6 +15,9 @@ export function TabBar({ active, onChange }: TabBarProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
+  // Android 3 tuşlu bar bazı cihazlarda insets.bottom değerini 0 döndürebildiği için minimum güvenli boşluk veriyoruz:
+  const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 24) : insets.bottom;
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'home', label: t('tabs.home') },
     { key: 'craving', label: t('tabs.craving') },
@@ -22,7 +26,7 @@ export function TabBar({ active, onChange }: TabBarProps) {
     { key: 'settings', label: t('tabs.settings') },
   ];
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, { paddingBottom: bottomInset + spacing.sm }]}>
       {tabs.map((tab) => {
         const isActive = tab.key === active;
         return (
@@ -49,7 +53,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     paddingVertical: spacing.sm,
-    paddingBottom: spacing.sm + 6,
   },
   tab: {
     flex: 1,
